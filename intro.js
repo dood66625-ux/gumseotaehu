@@ -1,0 +1,1 @@
+(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const el=document.getElementById('intro-copy');if(!el)return;[[1600,'아득한 시간, 금서에 남겨진 한 사람의 기운.'],[3300,'그 안에 그대의 이야기가 잠들어 있느니라.'],[5000,'이제, 그대의 이야기를 펼칠 시간.']].forEach(([t,text])=>setTimeout(()=>{el.textContent=text;},t));})();
