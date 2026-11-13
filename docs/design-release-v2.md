@@ -33,3 +33,12 @@
 [PDF 예시](royal-sample-report.pdf)
 
 현재 공개 주소는 고정된 가상 정보 전용 체험판이다. 실제 운영 Next.js 서버·관리자·고객정보 수집·결제·AI·메일의 외부 공개/활성화는 진행하지 않는다. 법무·사업자·만세력 검수·API/인프라 개발은 별도 단계다.
+
+## 공개 주소 최종 확인
+
+- Pages 배포 커밋: `29b34d1c862e5545c0c250f0f47216b06343dcfa`,게시 빌드 성공.
+- 실제 외부 URL에서 HTTP200,모바일 신규초상/명조폰트 정상,첫 화면 React요청 없음,axe 위반0/콘솔·자산 오류0 확인. `royal-live-landing-test.json`.
+- 실제 외부 URL에서 가상 입력→인증/모의결제→운명서/PDF→재열람→가상문의·관리자제한 통과. `royal-live-preview-test.json`.
+- [GitHub 독립 실행 환경의 전체 CI 성공](https://github.com/dood66625-ux/gumseotaehu/actions/runs/43454268574):타입/191개 단위·통합/빌드/21개 E2E/정적미리보기 빌드 및 흐름 검사.
+
+![실제 게시 주소 모바일 화면](royal-live-hero.png)
