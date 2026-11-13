@@ -35,8 +35,8 @@ export default function StartForm() {
   return (
     <>
       <div className="card">
-        <p className="eyebrow">01 / THE BEGINNING</p>
-        <h2>먼저, 이용자의 연령을 알려주세요.</h2>
+        <p className="eyebrow">먼저 확인할 이야기</p>
+        <h2>그대를 맞이하기 전에.</h2>
         <div className="field">
           <label htmlFor="age">이용자·구매자 연령</label>
           <select
@@ -70,10 +70,10 @@ export default function StartForm() {
       {(age === "19+" || age === "14-18") && (
         <form onSubmit={submit}>
           <div className="card">
-            <p className="eyebrow">02 / YOUR BIRTH CHART</p>
+            <p className="eyebrow">그대의 생이 시작된 순간</p>
             <h2>태어난 순간을 들려주거라.</h2>
             <p className="hint">
-              실명은 필요 없습니다. 현재 검증 범위: 1989년 이후 한국 출생,
+              실명은 필요 없습니다. 현재 지원 범위는 1989년 이후 한국 출생,
               대상자 본인 만 14세 이상. 해외 출생·역사 시간대·제3자 입력은
               지원하지 않습니다.
             </p>
@@ -97,7 +97,7 @@ export default function StartForm() {
                   onChange={(e) => setCalendar(e.target.value)}
                 >
                   <option value="solar">양력</option>
-                  <option value="lunar">음력 · 독립 검증 전 시험용</option>
+                  <option value="lunar">음력</option>
                 </select>
               </div>
               <div className="field">

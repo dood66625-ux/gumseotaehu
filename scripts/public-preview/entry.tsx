@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import Shell from "../../components/Shell";
-import StartForm from "../../components/StartForm";
+import StartExperience from "../../components/StartExperience";
 import Preview from "../../components/Preview";
 import Checkout from "../../components/Checkout";
 import PaymentStatus from "../../components/PaymentStatus";
@@ -168,12 +168,11 @@ if (screen !== "home") {
   const content =
     screen === "start" ? (
       <>
-        <h1>가상 정보로 체험하기</h1>
         <p className="notice">
-          1995-05-15생 가온이라는 가상 예시만 사용합니다. 실제 개인정보는
-          입력하지 마세요.
+          가상 인물 ‘가온’의 정보로 체험합니다. 실제 개인정보는 입력하지
+          않습니다.
         </p>
-        <StartForm />
+        <StartExperience />
       </>
     ) : screen === "preview" ? (
       <Preview id={snapshot.reading.id} />

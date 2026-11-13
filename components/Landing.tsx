@@ -1,162 +1,277 @@
-import { readFileSync } from "node:fs";
-const portrait =
-  "data:image/svg+xml;base64," +
-  readFileSync("public/empress.svg").toString("base64");
 import Intro from "@/components/Intro";
-
-export default function Home() {
+export default function Landing() {
   return (
     <>
-      <section className="hero">
+      <section className="hero" aria-label="금서태후의 금서를 펼치다">
+        <div className="hero-portrait">
+          <picture>
+            <source
+              media="(max-width:600px)"
+              srcSet="/empress-mobile-v2.webp"
+            />
+            <img
+              src="/empress-royal-v2.webp"
+              width="1200"
+              height="1500"
+              alt="봉황 관과 자주색 비단 예복을 입고 오래된 금서를 든 금서태후의 AI 생성 창작 초상"
+              fetchPriority="high"
+              loading="eager"
+            />
+          </picture>
+        </div>
+        <div className="hero-shade" aria-hidden="true" />
+        <div className="hero-grain" aria-hidden="true" />
+        <div className="imperial-script" aria-hidden="true">
+          禁書太后 <span>封印之書</span>
+        </div>
         <div className="hero-content">
-          <p className="eyebrow">THE EMPRESS’S BOOK OF DESTINY</p>
-          <p className="hero-pre">오래된 지혜가, 지금의 그대를 비추다</p>
+          <p className="eyebrow">THE SEALED ARCHIVE · 禁書</p>
+          <p className="hero-pre">오직 그대를 위해, 봉인을 풀다</p>
           <h1>
-            그대의 운명에는
-            <br />
-            <em>어떤 결</em>이<br className="mobile-br" /> 담겨 있느냐.
+            그대의 <em>운명</em>을<br />
+            펼쳐보겠느냐.
           </h1>
           <p className="hero-copy">
-            태어난 순간의 기운에서 시작하는
-            <br />
-            오직 그대를 위한 한 권의 이야기.
+            태어난 순간에 새겨진 기운.
+            <br />그 오래된 이야기를, 이제 그대에게.
           </p>
           <a className="button hero-cta" href="/start">
-            내 사주 펼쳐보기 <span>↗</span>
+            <span>내 사주 펼쳐보기</span>
+            <span className="cta-arrow" aria-hidden="true">
+              →
+            </span>
           </a>
           <p className="cta-note">무료 풀이 먼저 · 회원가입 없이 시작</p>
           <Intro />
         </div>
-        <div className="hero-portrait">
-          <img
-            src={portrait}
-            width="640"
-            height="800"
-            alt="금빛 관과 자주색 황실 의복을 입고 운명서를 든 금서태후의 창작 일러스트"
-            fetchPriority="high"
-          />
-          <div className="portrait-label">
-            <span>禁書太后</span>
-            <small>금지된 책을 지키는 이</small>
-          </div>
-          <span className="portrait-caption">
-            ORIGINAL CHARACTER ILLUSTRATION
-          </span>
-        </div>
         <div className="hero-bottom">
-          <span>한 사람의 기운, 한 권의 운명서</span>
-          <span>아래로 펼쳐보기 ↓</span>
+          <span>
+            一人一書 <i /> 한 사람을 위한 한 권
+          </span>
+          <a href="#the-archive">
+            금서의 이야기 <span aria-hidden="true">↓</span>
+          </a>
         </div>
       </section>
-      <section className="promise-strip">
-        <span>전통 명리학 기반 계산</span>
-        <span>한 번의 결제, 33,000원</span>
-        <span>구매 후 1년 무료 재열람</span>
-      </section>
-      <section className="section">
-        <p className="eyebrow">A QUIET MOMENT FOR YOURSELF</p>
+      <div className="promise-strip">
+        <span>
+          <i aria-hidden="true">壹</i> 전통 명리학의 계산
+        </span>
+        <span>
+          <i aria-hidden="true">貳</i> 33,000원 한 번의 결제
+        </span>
+        <span>
+          <i aria-hidden="true">參</i> 1년 무료 재열람
+        </span>
+      </div>
+      <section id="the-archive" className="section archive-intro">
+        <div className="section-flourish" aria-hidden="true">
+          禁
+        </div>
+        <p className="eyebrow">A STORY THAT BEGINS WITH YOU</p>
         <h2>
-          미래를 단정하기보다,
+          같은 하늘 아래 태어나도,
           <br />
-          그대를 더 깊이 이해하도록.
+          같은 운명을 품지는 않으니.
         </h2>
-        <p className="muted lead">
-          타고난 기질과 흐름을 읽고,
+        <p className="lead muted">
+          사주팔자에 담긴 기질, 삶에서 마주하는 인연과 선택.
           <br />
-          지금의 선택을 돌아볼 여백을 드립니다.
+          금서태후는 오래된 명리의 언어로
+          <br className="mobile-br" /> 그대의 이야기를 읽습니다.
+        </p>
+        <p className="archive-aside">
+          미래를 단정하는 예언이 아닌,
+          <br />
+          나를 이해하고 선택을 돌아보는 한 권의 기록.
         </p>
         <div className="grid three">
           <article className="feature">
-            <span className="chapter-number">壹 · 01</span>
-            <h3>타고난 나의 결</h3>
+            <div className="feature-orbit" aria-hidden="true">
+              <span>木</span>
+            </div>
+            <span className="chapter-number">第一章 · THE SELF</span>
+            <h3>타고난 기운의 결</h3>
             <p>
-              사주팔자와 오행에서 살피는
+              사주팔자와 오행으로 살피는
               <br />
-              그대만의 성향과 가능성.
+              그대의 기질과 가능성.
             </p>
           </article>
           <article className="feature">
-            <span className="chapter-number">貳 · 02</span>
-            <h3>삶을 이루는 이야기</h3>
+            <div className="feature-orbit second" aria-hidden="true">
+              <span>緣</span>
+            </div>
+            <span className="chapter-number">第二章 · THE CONNECTION</span>
+            <h3>삶을 잇는 인연</h3>
             <p>
-              재물, 인연, 직업과 관계.
+              재물과 관계, 사랑과 일.
               <br />
-              일상의 고민을 다른 시선으로.
+              그대의 일상을 이루는 이야기.
             </p>
           </article>
           <article className="feature">
-            <span className="chapter-number">參 · 03</span>
+            <div className="feature-orbit third" aria-hidden="true">
+              <span>時</span>
+            </div>
+            <span className="chapter-number">第三章 · THE FLOW</span>
             <h3>시간이 남기는 흐름</h3>
             <p>
               대운과 연간·월별 흐름으로
               <br />
-              앞으로의 계획을 차분하게.
+              앞으로의 선택을 차분하게.
             </p>
           </article>
         </div>
       </section>
+      <section className="empress-quote">
+        <span className="quote-mark" aria-hidden="true">
+          “
+        </span>
+        <p>
+          운명은 그대를 가두는 답이 아니니라.
+          <br />
+          그대 안에 잠든 가능성을
+          <br className="mobile-br" /> 읽어내는 것이지.
+        </p>
+        <span className="signature">
+          금서태후 <i>禁書太后</i>
+        </span>
+      </section>
       <section className="book-section">
-        <div className="book-art" aria-hidden="true">
-          <div className="book-spine" />
-          <span>
-            禁<br />書
-          </span>
-          <small>그대를 위한 운명서</small>
+        <div className="book-scene" aria-hidden="true">
+          <div className="book-halo" />
+          <div className="book-art">
+            <div className="book-spine" />
+            <div className="book-frame" />
+            <span>
+              禁<br />書
+            </span>
+            <small>금서태후의 종합 운명서</small>
+            <i>一人一書</i>
+          </div>
+          <div className="book-shadow" />
         </div>
-        <div>
-          <p className="eyebrow">ONE BOOK. YOUR STORY.</p>
+        <div className="book-copy">
+          <p className="eyebrow">A PRIVATE ARCHIVE OF YOUR OWN</p>
           <h2>
-            그대의 이야기는
+            봉인된 아홉 장.
             <br />
-            언제든 다시 펼칠 수 있느니라.
+            오직 그대를 위한 운명서.
           </h2>
           <p className="muted">
-            웹으로 읽고, PDF로 간직하고.
+            지금의 나를 이해하는 첫 장에서
             <br />
-            창을 닫아도 구매 이메일 인증으로 다시 찾으세요.
+            다가올 시간의 흐름을 읽는 마지막 장까지.
           </p>
-          <ul className="clean-list">
-            <li>종합 운명서 9개 장 · 2027년 흐름 포함</li>
-            <li>33,000원 일회성 · 자동 구독 없음</li>
-            <li>구매일로부터 1년간 무료 재열람</li>
-          </ul>
+          <ol className="book-chapters">
+            <li>
+              <span>01—02</span> 사주 구조 · 타고난 성향
+            </li>
+            <li>
+              <span>03—04</span> 재물과 선택 · 연애와 인연
+            </li>
+            <li>
+              <span>05—06</span> 직업과 성장 · 관계와 균형
+            </li>
+            <li>
+              <span>07—09</span> 대운 · 2027년 흐름 · 종합 조언
+            </li>
+          </ol>
+          <div className="book-price">
+            <strong>
+              33,000<span>원</span>
+            </strong>
+            <p>
+              단 한 번의 결제
+              <br />
+              자동 구독·추가 과금 없음
+            </p>
+          </div>
           <a className="button secondary" href="/start">
-            무료 풀이부터 시작하기 ↗
+            무료 풀이부터 시작하기 <span aria-hidden="true">→</span>
           </a>
+          <p className="fine">
+            웹 전체 열람 · PDF 저장 · 구매 후 1년 무료 재열람
+            <br />
+            출생시간 미상·대운 계산 구분 미선택 시 관련 분석은 제한됩니다.
+          </p>
+        </div>
+      </section>
+      <section className="section journey-section">
+        <p className="eyebrow">FROM THE FIRST MOMENT TO YOUR OWN BOOK</p>
+        <h2>그대의 금서를 여는 방법</h2>
+        <div className="journey-cards">
+          <article>
+            <span>一</span>
+            <h3>태어난 순간</h3>
+            <p>
+              출생정보를 알려주세요.
+              <br />
+              만세력 계산에서 이야기가 시작됩니다.
+            </p>
+          </article>
+          <article>
+            <span>二</span>
+            <h3>첫 번째 해석</h3>
+            <p>
+              일간과 오행에 담긴 기운을
+              <br />
+              무료 풀이로 먼저 만나보세요.
+            </p>
+          </article>
+          <article>
+            <span>三</span>
+            <h3>그대만의 한 권</h3>
+            <p>
+              전체 운명서를 펼치고,
+              <br />
+              PDF로 오래 간직하세요.
+            </p>
+          </article>
         </div>
       </section>
       <section className="section faq">
-        <p className="eyebrow">BEFORE YOU BEGIN</p>
-        <h2>궁금한 것을 먼저 살펴보거라.</h2>
+        <p className="eyebrow">BEFORE THE SEAL IS BROKEN</p>
+        <h2>펼치기 전, 궁금한 이야기.</h2>
         <details>
           <summary>무료로 어디까지 볼 수 있나요?</summary>
           <p>
-            입력한 출생정보로 계산한 일간·오행과 두 가지 기초 풀이를 제공합니다.
-            유료 결제 여부는 무료 풀이 후 결정할 수 있습니다.
+            출생정보로 계산한 일간·오행과 두 가지 기초 풀이를 제공합니다. 무료
+            풀이를 본 뒤 전체 운명서 구매 여부를 결정할 수 있습니다.
           </p>
         </details>
         <details>
           <summary>출생시간을 몰라도 되나요?</summary>
           <p>
             시간 미상으로 입력할 수 있습니다. 시주와 대운 시작시각은 생성하지
-            않으며, 해석 범위를 명확히 알려드립니다.
+            않으며 해석의 범위를 함께 안내합니다. 절입일에는 년·월주의
+            불확실성이 추가될 수 있습니다.
           </p>
         </details>
         <details>
           <summary>보고서를 잃어버리면 다시 결제해야 하나요?</summary>
           <p>
-            구매 후 1년간 이메일 인증으로 같은 운명서를 다시 볼 수 있고 PDF도
-            다시 내려받을 수 있습니다.
+            구매 후 1년 동안 이메일 인증으로 같은 운명서를 다시 볼 수 있습니다.
+            PDF도 추가 결제 없이 다시 내려받을 수 있습니다.
           </p>
         </details>
         <details>
           <summary>AI가 미래를 예측하나요?</summary>
           <p>
-            전통 명리학의 계산과 AI 해석은 과학적으로 검증된 미래 예측이
-            아닙니다. 선택의 참고자료로 이용해 주세요. 현재 로컬 검증판은 실제
-            AI를 호출하지 않습니다.
+            명리학 해석은 미래의 사건을 확정하지 않으며 의료·법률·투자 조언을
+            대신하지 않습니다. 금서태후는 창작 캐릭터입니다. 정식 서비스는 AI
+            생성 사실을 표시하며, 현재 체험판은 가상 정보와 규칙 기반 예시를
+            사용합니다.
           </p>
         </details>
+        <div className="faq-final">
+          <span aria-hidden="true">禁</span>
+          <p>이제, 그대의 이야기를 들려주거라.</p>
+          <a className="button" href="/start">
+            그대의 사주 시작하기 <span aria-hidden="true">→</span>
+          </a>
+        </div>
       </section>
     </>
   );

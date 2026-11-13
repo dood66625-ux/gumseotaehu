@@ -10,12 +10,5 @@
 ## 검증
 `npm run build:preview`, `npm run typecheck` 및 `scripts/test-public-preview.mjs` 실행. 잠긴 입력→무료→가상 OTP→모의 결제→보고서/PDF→재열람→가상 문의, 관리자 제한을 확인했다. `docs/public-preview-test.json` 참조.
 
-## 게시 차단 및 사용자 작업
-산출물은 `gh-pages` 브랜치에 업로드했으나, 연결된 GitHub App의 Pages 쓰기 권한이 없어 Pages 활성화 요청이 **403 Resource not accessible by integration**으로 거절되었다. 사이트가 게시된 것으로 주장하지 않는다.
-
-계정 소유자가 https://github.com/dood66625-ux/gumseotaehu/settings/pages 에서:
-1. Source: **Deploy from a branch**
-2. Branch: **gh-pages**, Folder: **/(root)**
-3. **Save**
-
-저장 이후 GitHub Pages 빌드를 완료하고 실제 외부 URL 접속/브라우저 흐름을 다시 확인해야 한다. 링크가 확인되기 전까지 상태는 활성화 대기다. 공개 미리보기에는 보안이 필요한 실제 데이터가 없으므로 암호 보호를 가장하지 않는다. 실제 개인정보를 입력하는 운영 서버는 계속 비공개이며 별도 승인·검증이 필요하다.
+## 게시 상태
+계정 소유자가 Pages를 활성화하여 현재 gh-pages 브랜치가 게시된다. 초기 API403은 연동 권한 문제였으며 사용자 설정으로 해결했다. Royal v2 링크: https://dood66625-ux.github.io/gumseotaehu/?v=royal-2 .실 운영 서버는 계속 비공개다.

@@ -64,6 +64,9 @@ const route = (s: string) => {
     "/checkout/success?orderId=": base + "/?screen=success&orderId=",
     "/report/": base + "/?screen=report&id=",
     "/empress.webp": base + "/empress.webp",
+    "/empress-royal-v2.webp": base + "/empress-royal-v2.webp",
+    "/empress-mobile-v2.webp": base + "/empress-mobile-v2.webp",
+    "/empress-avatar-v2.webp": base + "/empress-avatar-v2.webp",
   };
   return paths[s] || s;
 };
@@ -73,7 +76,7 @@ await build({
   bundle: true,
   minify: true,
   jsx: "automatic",
-  outfile: resolve(out, "app.js"),
+  outfile: resolve(out, "royal-v2.js"),
   define: { "process.env.NODE_ENV": '"production"' },
   plugins: [
     {
@@ -142,23 +145,33 @@ let home = renderToStaticMarkup(
   </Shell>,
 )
   .replaceAll("로컬 검증판 · 실제 결제·AI 호출·이메일 발송 없음", banner)
-  .replace(/href="(\/[^\"]*)"/g, (m, p) => `href="${route(p)}"`);
+  .replace(
+    /(href|src|srcset)="(\/[^\"]*)"/gi,
+    (m, attr, p) => `${attr}="${route(p)}"`,
+  );
+const serialized = JSON.stringify(data).replaceAll("<", "\\u003c");
 writeFileSync(
   resolve(out, "index.html"),
-  '<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>금서태후 · 가상 정보 미리보기</title><link rel="stylesheet" href="' +
-    base +
-    '/site.css"><link rel="icon" href="' +
-    base +
-    '/icon.svg"></head><body><div id="home">' +
-    home +
-    '</div><div id="app"></div><script id="preview-data" type="application/json">' +
-    JSON.stringify(data).replaceAll("<", "\\u003c") +
-    '</script><script type="module" src="' +
-    base +
-    '/app.js"></script></body></html>',
+  `<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>금서태후 · 그대의 운명을 펼치다</title><link rel="stylesheet" href="${base}/royal-v2.css"><link rel="icon" href="${base}/icon.svg"><script>if(new URLSearchParams(location.search).has('screen'))document.documentElement.dataset.view='inner';</script><style>#app>.loading{display:none}html[data-view=inner] #home{display:none}html[data-view=inner] #app>.loading{display:block}</style></head><body><div id="home">${home}</div><div id="app"><div class="loading" role="status"><span>禁</span>그대의 금서를 펼치고 있습니다.</div></div><script id="preview-data" type="application/json">${serialized}</script><script type="module">if(new URLSearchParams(location.search).has('screen'))import('${base}/royal-v2.js');</script><script defer src="${base}/intro-v2.js"></script></body></html>`,
 );
-for (const file of ["empress.webp", "icon.svg"])
+
+for (const file of [
+  "empress.webp",
+  "icon.svg",
+  "empress-royal-v2.webp",
+  "empress-mobile-v2.webp",
+  "empress-avatar-v2.webp",
+  "imperial-serif-v2.woff2",
+  "intro.js",
+])
   copyFileSync("public/" + file, resolve(out, file));
-copyFileSync("app/globals.css", resolve(out, "site.css"));
+writeFileSync(
+  resolve(out, "royal-v2.css"),
+  readFileSync("app/globals.css", "utf8").replace(
+    /url\((['"]?)\//g,
+    (_m, q) => `url(${q}${base}/`,
+  ),
+);
+copyFileSync("public/intro.js", resolve(out, "intro-v2.js"));
 writeFileSync(resolve(out, ".nojekyll"), "");
 console.log("Synthetic-only static preview built:", out);

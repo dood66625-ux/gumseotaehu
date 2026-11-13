@@ -39,15 +39,13 @@ try {
   )
     throw Error("Synthetic email missing");
   await page.getByRole("button", { name: "인증번호 요청" }).click();
-  await page.getByRole("button", { name: "로컬 시험 수신함 열기" }).click();
+  await page.getByRole("button", { name: "체험용 인증번호 확인" }).click();
   await page.getByLabel("인증번호 6자리").fill("123456");
   await page.getByRole("button", { name: "이메일 인증 완료" }).click();
   await page.getByText("구매 이메일 인증이 완료되었습니다.").waitFor();
   for (const c of await page.locator("form").last().getByRole("checkbox").all())
     if ((await c.getAttribute("name")) !== "marketing") await c.check();
-  await page
-    .getByRole("button", { name: "33,000원 모의 결제 · 실제 청구 없음" })
-    .click();
+  await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await page.getByRole("link", { name: "운명서 전체 읽기" }).click();
   await page.getByRole("heading", { name: "가온 님의 종합 운명서" }).waitFor();
   const download = page.waitForEvent("download");
@@ -61,7 +59,7 @@ try {
   await page.getByRole("link", { name: "같은 운명서 다시 읽기" }).waitFor();
   await page.goto(base + "?screen=help");
   await page.getByRole("button", { name: "문의 접수하기" }).click();
-  await page
+  await page.getByRole("article")
     .getByText("가상 미리보기 문의입니다. 실제 상담 접수가 아닙니다.")
     .waitFor();
   await page.goto(base + "?screen=admin");

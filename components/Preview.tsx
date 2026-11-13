@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Journey from "./Journey";
 import { useLoad, Loading, ErrorBox } from "./client";
 import { chapterTitles } from "@/lib/interpretation";
 export default function Preview({ id }: { id: string }) {
@@ -8,7 +9,8 @@ export default function Preview({ id }: { id: string }) {
   if (!r) return <Loading />;
   return (
     <>
-      <span className="status">만세력 계산 완료 · 로컬 검증 결과</span>
+      <Journey step={2} />
+      <span className="status">만세력 계산 완료 · 첫 번째 풀이</span>
       <h1>
         {r.input.name} 님의
         <br />
@@ -17,12 +19,12 @@ export default function Preview({ id }: { id: string }) {
       <div className="card gold">
         <img
           className="mini-portrait"
-          src="/empress.webp"
+          src="/empress-avatar-v2.webp"
           width="74"
           height="90"
           alt="금서태후"
         />
-        <p className="eyebrow">THE EMPRESS SAYS</p>
+        <p className="eyebrow">금서태후가 그대에게</p>
         <p className="quote">{r.preview.intro}</p>
       </div>
       <div className="pillars">
@@ -54,17 +56,21 @@ export default function Preview({ id }: { id: string }) {
         <article className="card" key={c.title}>
           <h2>{c.title}</h2>
           <p>{c.text}</p>
-          <p className="chapter-fact">계산 근거 {c.claimIds.join(", ")}</p>
+          <details className="report-disclosure">
+            <summary>이 풀이의 계산 근거</summary>
+            <p>{c.claimIds.join(", ")}</p>
+          </details>
         </article>
       ))}
-      <div className="notice">
+      <details className="report-disclosure">
+        <summary>계산 기준과 해석의 범위</summary>
         {r.chart.notes.map((n: string) => (
           <p key={n}>{n}</p>
         ))}
         <p>
-          계산 기준: {r.chart.meta.engine} · {r.chart.meta.ziHourPolicy}
+          {r.chart.meta.engine} · {r.chart.meta.ziHourPolicy}
         </p>
-      </div>
+      </details>
       <section className="card gold">
         <p className="quote">{r.preview.bridge}</p>
         <h2>봉인된 종합 운명서</h2>

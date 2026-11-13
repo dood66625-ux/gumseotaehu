@@ -88,8 +88,8 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
     <div className="card">
       <h2>이메일로 안전하게 인증</h2>
       <p className="hint">
-        구매·재열람에 사용할 이메일을 확인합니다. 실제 이메일은 발송되지 않는
-        로컬 시험판입니다.
+        운명서를 다시 찾을 때 사용할 주소입니다. 현재 체험판에서는 실제 이메일을
+        발송하지 않습니다.
       </p>
       <form onSubmit={request}>
         <div className="field">
@@ -125,11 +125,11 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
               }
             }}
           >
-            로컬 시험 수신함 열기
+            체험용 인증번호 확인
           </button>
           {local && (
             <div className="notice">
-              실제 메일 아님 · 현재 브라우저의 시험 인증번호
+              실제 발송 없이 확인하는 체험용 인증번호
               <strong className="otp-code" data-testid="otp">
                 {local}
               </strong>

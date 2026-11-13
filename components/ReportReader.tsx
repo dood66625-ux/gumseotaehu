@@ -56,7 +56,7 @@ export default function ReportReader({ id }: { id: string }) {
   if (!d) return <Loading />;
   return (
     <>
-      <p className="eyebrow">A BOOK WRITTEN FOR YOU</p>
+      <p className="eyebrow">YOUR SEALED ARCHIVE · 예시 운명서</p>
       <h1>
         {d.name} 님의
         <br />
@@ -71,11 +71,21 @@ export default function ReportReader({ id }: { id: string }) {
         })}
         까지
       </p>
-      <p className="notice">
-        현재는 로컬 규칙 기반 모의 콘텐츠입니다. 실제 AI 생성 보고서가 아닙니다.
-        정식 서비스는 AI 생성 사실을 표시합니다. 미래의 사실을 확정하거나 전문
-        조언을 대신하지 않습니다.
-      </p>
+      <div className="report-cover">
+        <p className="eyebrow">A PRIVATE ARCHIVE · 一人一書</p>
+        <strong>禁書</strong>
+        <p>{d.name} 님을 위해 펼친 아홉 장의 이야기</p>
+        <small>금서태후의 종합 운명서 · {d.report.year}</small>
+      </div>
+      <details className="report-disclosure">
+        <summary>이 운명서의 콘텐츠·제공 안내</summary>
+        <p>
+          현재는 가상 정보와 규칙 기반 문장으로 구성한 예시 운명서이며 실제 AI
+          생성 보고서가 아닙니다. 미래의 사실을 확정하거나 전문적인
+          의료·법률·투자 조언을 대신하지 않습니다. 정식 서비스는 AI 생성 사실을
+          별도로 표시합니다.
+        </p>
+      </details>
       <div className="actions">
         <button className="button" onClick={pdf} disabled={busy}>
           {busy ? "PDF 작성 중…" : "PDF 다운로드"}
@@ -91,6 +101,13 @@ export default function ReportReader({ id }: { id: string }) {
       )}
       <ErrorBox error={error} />
       <div className="card gold">
+        <img
+          className="mini-portrait"
+          src="/empress-avatar-v2.webp"
+          width="85"
+          height="108"
+          alt="금서태후"
+        />
         <p className="quote">{d.report.intro}</p>
         <p className="hint">
           입력: {d.birth.date} ·{" "}

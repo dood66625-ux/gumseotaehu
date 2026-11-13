@@ -1,5 +1,7 @@
 # 금서태후 검증 보고서
 
+최신 디자인·글꼴·PDF·로딩 측정은 [Royal v2 릴리스](design-release-v2.md)와 [성능 보고서](performance-budget.md)를 참조한다.
+
 ## 판정
 **로컬 기능 검증판, 상용 출시 BLOCKED.** 실제 AI·Toss·메일, 독립 만세력 전 범위 검수, 운영 DB·관리자 계정·성인 확인, 사업자·법률·세무 검토가 완료되지 않았다. 아래 PASS는 합성 입력과 로컬 mock에 한정한다.
 
@@ -22,11 +24,11 @@
 |PDF 한글 추출/폰트 내장|PASS|PDF /FontFile2,/ToUnicode 및 pdftotext로 표제/장 제목 추출 확인|
 |일관 백업 복구|PASS|SQLite backup을 새 연결로 열고 결제/복호화 본문 동일 검증|
 |의존성 스캔|취약점0|dependency-audit.json;시점 한정|
-|Lighthouse 모바일3회|성능/접근성/Best Practices100|lighthouse-1~3.json,performance-budget.md|
+|Lighthouse 모바일3회|Royal v2 성능99/접근성100/Best Practices100|lighthouse-1~3.json,performance-budget.md|
 |실 iOS/Android/인앱브라우저|BLOCKED|기기·실 PG 앱 전환 검증 미수행|
 |Docker compose 기동|BLOCKED/미실행|이식용 레시피만 제공,실환경 검증 필요|
 
-처음 E2E에서 접근성2건과 WebKit 라이브러리 누락이 발견되었다. 로고 accessible name/안내 landmark를 고치고, 공식 Debian 패키지를 작업 폴더에 추출해 실제 WebKit 실행을 확인한 후 다시 검사했다. 성능도 처음 LCP2.57~2.66초를 측정하고 구조 변경 후0.91~1.01초로 개선했다. 최초 실패를 최종 성공으로 숨기지 않으며 최종 원본 결과를 별도로 보관한다.
+처음 E2E에서 접근성2건과 WebKit 라이브러리 누락이 발견되었다. 로고 accessible name/안내 landmark를 고치고, 공식 Debian 패키지를 작업 폴더에 추출해 실제 WebKit 실행을 확인한 후 다시 검사했다. 성능도 처음 LCP2.57~2.66초를 측정하고 구조 변경 후벡터버전0.91~1.01초,최종실사풍Royal v2약1.97초로 목표를 충족했다. 최초 실패를 최종 성공으로 숨기지 않으며 최종 원본 결과를 별도로 보관한다.
 
 ## 필수 수용 시나리오 18개
 

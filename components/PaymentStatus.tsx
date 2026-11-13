@@ -38,6 +38,13 @@ export default function PaymentStatus({ id }: { id: string }) {
   const ready = !o.deleted && o.payment === "paid" && o.fulfillment === "ready";
   return (
     <>
+      <img
+        className="payment-portrait"
+        src="/empress-avatar-v2.webp"
+        width="144"
+        height="180"
+        alt="금서태후"
+      />
       <span className="status">
         {o.payment === "paid" ? "모의 결제 확인 완료" : "주문 상태 확인"}
       </span>

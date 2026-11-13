@@ -129,9 +129,7 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.getByRole("checkbox").nth(1).check();
   await page.getByRole("checkbox").nth(2).check();
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
-  await expect(
-    page.getByText("만세력 계산 완료 · 로컬 검증 결과"),
-  ).toBeVisible();
+  await expect(page.getByText("만세력 계산 완료 · 첫 번째 풀이")).toBeVisible();
   await page.screenshot({
     path: "docs/" + info.project.name + "-preview.png",
     fullPage: true,
@@ -139,7 +137,7 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
   await page.getByLabel("이메일 주소").fill(email);
   await page.getByRole("button", { name: "인증번호 요청" }).click();
-  await page.getByRole("button", { name: "로컬 시험 수신함 열기" }).click();
+  await page.getByRole("button", { name: "체험용 인증번호 확인" }).click();
   const code = await page.getByTestId("otp").textContent();
   await page.getByLabel("인증번호 6자리").fill(code!);
   await page.getByRole("button", { name: "이메일 인증 완료" }).click();
@@ -154,9 +152,7 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
     const name = await c.getAttribute("name");
     if (name !== "marketing") await c.check();
   }
-  await page
-    .getByRole("button", { name: "33,000원 모의 결제 · 실제 청구 없음" })
-    .click();
+  await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await expect(
     page.getByRole("link", { name: "운명서 전체 읽기" }),
   ).toBeVisible();

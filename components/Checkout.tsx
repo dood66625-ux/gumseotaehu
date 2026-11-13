@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Journey from "./Journey";
 import { useEffect, useState } from "react";
 import { api, useLoad, Loading, EmailAuth, ErrorBox } from "./client";
 export default function Checkout({ id }: { id: string }) {
@@ -62,10 +63,12 @@ export default function Checkout({ id }: { id: string }) {
     );
   return (
     <>
-      <p className="eyebrow">YOUR BOOK, CAREFULLY PREPARED</p>
+      <Journey step={3} />
+      <p className="eyebrow">BEFORE THE SEAL IS BROKEN · 封</p>
       <h1>
-        운명서를 펼치기 전,
-        <br />한 번 더 확인해 주세요.
+        그대만의 한 권을
+        <br />
+        간직할 시간.
       </h1>
       <div className="card">
         <h2>출생정보 최종 확인</h2>
@@ -102,6 +105,9 @@ export default function Checkout({ id }: { id: string }) {
       )}
       <form onSubmit={pay}>
         <section className="card gold">
+          <div className="checkout-book-tag" aria-hidden="true">
+            禁書
+          </div>
           <h2>금서태후의 종합 운명서</h2>
           <p>
             9개 장 · {r.chart.target}년 연간·월별 흐름 포함
@@ -113,9 +119,9 @@ export default function Checkout({ id }: { id: string }) {
             33,000원 <small>최종 결제총액 · 일시불</small>
           </p>
           <p className="hint">
-            실제 과세·사업자 표기는 세무 검토 후 확정합니다. 자동 구독·추가
-            과금·AI 채팅은 없습니다. 작성은 결제 확인 후 별도 서버 작업으로
-            진행됩니다.
+            자동 구독이나 추가 과금은 없습니다. 정식 서비스는 결제 확인 후
+            운명서 작성을 시작하며, 현재 체험에서는 실제 금액을 청구하지
+            않습니다.
           </p>
         </section>
         <section className="card">
@@ -164,27 +170,28 @@ export default function Checkout({ id }: { id: string }) {
             <input name="marketing" type="checkbox" />
             혜택·소식 수신에 동의합니다. (선택 · 현재 발송하지 않음)
           </label>
-          <div className="field">
-            <label htmlFor="scenario">로컬 PG 시험 시나리오</label>
-            <select
-              id="scenario"
-              value={scenario}
-              onChange={(e) => setScenario(e.target.value)}
-            >
-              <option value="success">정상 모의 승인</option>
-              <option value="decline">결제 거절</option>
-              <option value="close">
-                PG 승인 직후 창 닫기 · 워커 대사 복구
-              </option>
-            </select>
-          </div>
+          <details className="report-disclosure">
+            <summary>다른 체험 결제 상황 살펴보기</summary>{" "}
+            <div className="field">
+              <label htmlFor="scenario">체험 결제 옵션</label>
+              <select
+                id="scenario"
+                value={scenario}
+                onChange={(e) => setScenario(e.target.value)}
+              >
+                <option value="success">정상 체험</option>
+                <option value="decline">결제 거절</option>
+                <option value="close">화면을 닫은 뒤 다시 찾기</option>
+              </select>
+            </div>
+          </details>
           <ErrorBox error={error} />
           <button
             className="button"
             style={{ width: "100%" }}
             disabled={busy || !verified}
           >
-            {busy ? "주문 확인 중…" : "33,000원 모의 결제 · 실제 청구 없음"}
+            {busy ? "주문 확인 중…" : "운명서 펼치기 · 체험 결제"}
           </button>
         </section>
       </form>
