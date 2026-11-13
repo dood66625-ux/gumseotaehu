@@ -1,0 +1,809 @@
+import { randomBytes, randomInt } from "node:crypto";
+import { z } from "zod";
+import { all, one, run, tx } from "./db";
+import { audit, event, Fault, hash, id, limit, open, seal } from "./security";
+import {
+  birthSchema,
+  calculate,
+  assertSubjectAge,
+  type Chart,
+} from "./astrology";
+import { preview, generate, type Report } from "./interpretation";
+export type Session = {
+  id: string;
+  email_hash: string | null;
+  role: string;
+  expires: number;
+};
+export function newSession() {
+  const token = randomBytes(32).toString("base64url"),
+    sid = hash(token);
+  run(
+    "INSERT INTO sessions VALUES(?,?,?,?,?)",
+    sid,
+    null,
+    "customer",
+    Date.now() + 2 * 3600000,
+    Date.now(),
+  );
+  return {
+    token,
+    session: one<Session>("SELECT * FROM sessions WHERE id=?", sid)!,
+  };
+}
+export function sessionFor(token: string) {
+  return one<Session>(
+    "SELECT * FROM sessions WHERE id=? AND expires>?",
+    hash(token),
+    Date.now(),
+  );
+}
+export function requireEmail(s: Session) {
+  if (!s.email_hash) throw new Fault("이메일 인증이 필요합니다.", 401);
+}
+export function readingFor(
+  s: Session,
+  rid: string,
+): Record<string, any> & { input: any; chart: Chart; preview: any } {
+  const r = one(
+    "SELECT * FROM readings WHERE id=? AND session_id=?",
+    rid,
+    s.id,
+  );
+  if (!r || open(r.input_enc) === null)
+    throw new Fault("풀이를 찾을 수 없습니다.", 404);
+  return {
+    ...r,
+    input: open(r.input_enc),
+    chart: open<Chart>(r.chart_enc),
+    preview: open(r.preview_enc),
+  };
+}
+export function makeReading(s: Session, raw: unknown) {
+  limit("reading:" + s.id, 20, 86400000);
+  const input = birthSchema.parse(raw),
+    chart = calculate(input),
+    p = preview(chart),
+    rid = id();
+  assertSubjectAge(chart.solarDate);
+  run(
+    "INSERT INTO readings VALUES(?,?,?,?,?,?,?)",
+    rid,
+    s.id,
+    input.age,
+    seal(input),
+    seal(chart),
+    seal(p),
+    Date.now(),
+  );
+  event("preview_ready", rid);
+  return rid;
+}
+const emailSchema = z.string().trim().toLowerCase().email().max(254);
+export function enqueueMail(emailHash: string, payload: unknown) {
+  const mid = id();
+  run(
+    "INSERT INTO outbox VALUES(?,?,?,?,?)",
+    mid,
+    emailHash,
+    seal(payload),
+    Date.now(),
+    "local_only",
+  );
+  return mid;
+}
+export function requestOtp(s: Session, email: unknown) {
+  const e = emailSchema.parse(email);
+  limit("otp-session:" + s.id, 5, 900000);
+  limit("otp-email:" + hash(e), 5, 900000);
+  const cid = id(),
+    code = randomInt(0, 1000000).toString().padStart(6, "0");
+  tx(() => {
+    run("UPDATE challenges SET consumed=1 WHERE session_id=?", s.id);
+    run(
+      "INSERT INTO challenges(id,email_hash,email_enc,code_hash,session_id,expires) VALUES(?,?,?,?,?,?)",
+      cid,
+      hash(e),
+      seal(e),
+      hash(cid + code),
+      s.id,
+      Date.now() + 900000,
+    );
+    enqueueMail(hash(e), {
+      template: "otp",
+      challengeId: cid,
+      code,
+      body: "15분 동안 유효한 1회용 로컬 시험 인증번호입니다. 실제 이메일은 발송되지 않습니다.",
+    });
+  });
+  event("recovery_requested", cid);
+  return cid;
+}
+export function localOtp(s: Session, cid: string) {
+  const c = one(
+    "SELECT * FROM challenges WHERE id=? AND session_id=? AND consumed=0 AND expires>?",
+    cid,
+    s.id,
+    Date.now(),
+  );
+  if (!c) throw new Fault("로컬 인증메일이 없습니다.", 404);
+  const mail = all(
+    "SELECT payload FROM outbox WHERE email_hash=? ORDER BY created DESC",
+    c.email_hash,
+  )
+    .map((m) => open(m.payload))
+    .find((m) => m.challengeId === cid);
+  return mail;
+}
+export function verifyOtp(s: Session, cid: string, code: string) {
+  limit("otp-verify:" + s.id, 15, 900000);
+  const ok = tx(() => {
+    const c = one(
+      "SELECT * FROM challenges WHERE id=? AND session_id=?",
+      cid,
+      s.id,
+    );
+    if (!c || c.consumed || c.expires < Date.now() || c.attempts >= 5)
+      return false;
+    run("UPDATE challenges SET attempts=attempts+1 WHERE id=?", cid);
+    if (hash(cid + code) !== c.code_hash) return false;
+    run("UPDATE challenges SET consumed=1 WHERE id=?", cid);
+    run("UPDATE sessions SET email_hash=? WHERE id=?", c.email_hash, s.id);
+    return true;
+  });
+  if (!ok)
+    throw new Fault(
+      "인증번호가 틀렸거나 만료되었습니다. 새 번호를 요청해 주세요.",
+      400,
+    );
+}
+export function createOrder(s: Session, rid: string, consent: unknown) {
+  requireEmail(s);
+  const c = z
+    .object({
+      terms: z.literal(true),
+      privacy: z.literal(true),
+      withdrawal: z.literal(true),
+      confirmedBirth: z.literal(true),
+      marketing: z.boolean().default(false),
+    })
+    .parse(consent);
+  const r = readingFor(s, rid);
+  if (r.age_category !== "19+")
+    throw new Fault(
+      "만 14~18세는 무료 풀이만 가능합니다. 보호자 확인 절차 준비 전에는 구매할 수 없습니다.",
+      403,
+    );
+  const verified = one(
+    "SELECT email_enc FROM challenges WHERE session_id=? AND consumed=1 AND email_hash=? ORDER BY expires DESC",
+    s.id,
+    s.email_hash,
+  );
+  if (!verified) throw new Fault("이메일을 다시 인증해 주세요.", 401);
+  return tx(() => {
+    const existing = one(
+      "SELECT id FROM orders WHERE reading_id=? AND email_hash=?",
+      rid,
+      s.email_hash,
+    );
+    if (existing) return existing.id as string;
+    const oid = id();
+    run(
+      "INSERT INTO orders(id,reading_id,email_hash,email_enc,amount,payment_status,fulfillment,created,consent_enc) VALUES(?,?,?,?,?,?,?,?,?)",
+      oid,
+      rid,
+      s.email_hash,
+      verified.email_enc,
+      33000,
+      "pending",
+      "waiting",
+      Date.now(),
+      seal({
+        ...c,
+        policy: "draft-2026-11-13",
+        time: Date.now(),
+        product: "2027-v1",
+        age: r.age_category,
+      }),
+    );
+    run("INSERT INTO reading_history VALUES(?,?,?)", oid, rid, 1);
+    event("checkout_open", oid);
+    return oid;
+  });
+}
+export function ownOrder(s: Session, oid: string) {
+  requireEmail(s);
+  const o = one(
+    "SELECT * FROM orders WHERE id=? AND email_hash=?",
+    oid,
+    s.email_hash,
+  );
+  if (!o) throw new Fault("주문을 찾을 수 없습니다.", 404);
+  return o;
+}
+export function mockAuthenticate(
+  s: Session,
+  oid: string,
+  scenario = "success",
+) {
+  const o = ownOrder(s, oid);
+  if (o.payment_status !== "pending") return o.payment_key;
+  if (scenario === "decline")
+    throw new Fault("모의 결제가 거절되었습니다. 청구되지 않았습니다.");
+  const key = "mock_" + id();
+  return tx(() => {
+    const old = one("SELECT * FROM pg_ledger WHERE order_id=?", oid);
+    if (old) return old.payment_key;
+    run(
+      "INSERT INTO pg_ledger(payment_key,order_id,amount,status) VALUES(?,?,?,?)",
+      key,
+      oid,
+      33000,
+      "DONE",
+    );
+    event("payment_initiated", oid);
+    return key;
+  });
+}
+export function confirmPayment(
+  s: Session,
+  oid: string,
+  key: string,
+  amount: number,
+  failAfterPg = false,
+) {
+  const o = ownOrder(s, oid);
+  if (amount !== 33000 || amount !== o.amount)
+    throw new Fault("주문금액 검증에 실패했습니다.");
+  const pg = one(
+    "SELECT * FROM pg_ledger WHERE payment_key=? AND order_id=?",
+    key,
+    oid,
+  );
+  if (!pg || pg.amount !== o.amount || pg.status !== "DONE")
+    throw new Fault("결제 승인 사실을 확인할 수 없습니다.");
+  if (failAfterPg) throw Error("SIMULATED_DB_FAILURE");
+  finalizePayment(oid, key);
+}
+function finalizePayment(oid: string, key: string) {
+  tx(() => {
+    const o = one("SELECT * FROM orders WHERE id=?", oid);
+    if (!o || o.payment_status !== "pending") return;
+    const now = Date.now(),
+      expiry = new Date(now);
+    expiry.setUTCFullYear(expiry.getUTCFullYear() + 1);
+    run(
+      "UPDATE orders SET payment_status='paid',fulfillment='queued',payment_key=?,paid_at=?,expires=? WHERE id=?",
+      key,
+      now,
+      expiry.getTime(),
+      oid,
+    );
+    run(
+      "INSERT OR IGNORE INTO jobs(id,order_id,version,state,scheduled) VALUES(?,?,?,?,?)",
+      id(),
+      oid,
+      o.version,
+      "queued",
+      now,
+    );
+    event("payment_confirmed", oid);
+    audit("system", "payment_verified", oid);
+    enqueueMail(o.email_hash, {
+      template: "payment_confirmed",
+      orderId: oid,
+      amount: 33000,
+      body: "모의 결제 확인. 운명서 작성 상태는 다시 찾기에서 확인할 수 있습니다.",
+    });
+  });
+}
+export function reconcile() {
+  const pending = all(
+    "SELECT o.id,p.payment_key FROM orders o JOIN pg_ledger p ON p.order_id=o.id WHERE o.payment_status='pending' AND p.status='DONE' AND o.amount=p.amount",
+  );
+  for (const p of pending) finalizePayment(p.id, p.payment_key);
+}
+export function workOnce(failGeneration = false) {
+  reconcile();
+  const job: Record<string, any> | null = tx(() => {
+    const now = Date.now();
+    const j = one(
+      "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id WHERE o.payment_status='paid' AND o.content_deleted=0 AND o.expires>0 AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
+      now,
+      now,
+    );
+    if (!j) return null;
+    run(
+      "UPDATE jobs SET state='running',attempts=attempts+1,lease_until=? WHERE id=?",
+      now + 60000,
+      j.id,
+    );
+    run("UPDATE orders SET fulfillment='generating' WHERE id=?", j.order_id);
+    return { ...j, attempts: j.attempts + 1 };
+  });
+  if (!job) return false;
+  try {
+    const o = one("SELECT * FROM orders WHERE id=?", job.order_id)!;
+    const r = one("SELECT * FROM readings WHERE id=?", o.reading_id)!;
+    const chart = open<Chart>(r.chart_enc);
+    if (failGeneration) throw Error("MOCK_AI_TIMEOUT");
+    const report = generate(chart);
+    tx(() => {
+      const lease = one("SELECT state,attempts FROM jobs WHERE id=?", job.id);
+      if (lease?.state !== "running" || lease.attempts !== job.attempts) return;
+      const current = one("SELECT * FROM orders WHERE id=?", o.id);
+      if (
+        current?.payment_status !== "paid" ||
+        current.version !== job.version ||
+        current.content_deleted ||
+        current.expires < Date.now()
+      ) {
+        run("UPDATE jobs SET state='canceled' WHERE id=?", job.id);
+        return;
+      }
+      run(
+        "INSERT OR IGNORE INTO reports VALUES(?,?,?,?,?)",
+        id(),
+        o.id,
+        job.version,
+        seal(report),
+        Date.now(),
+      );
+      run(
+        "UPDATE jobs SET state='done',lease_until=NULL,error=NULL WHERE id=?",
+        job.id,
+      );
+      run("UPDATE orders SET fulfillment='ready' WHERE id=?", o.id);
+      enqueueMail(o.email_hash, {
+        template: "report_ready",
+        orderId: o.id,
+        body: "운명서가 준비되었습니다. 이메일 인증으로 1년 무료 재열람과 PDF 저장이 가능합니다.",
+      });
+      event("report_ready", o.id);
+    });
+  } catch {
+    tx(() => {
+      const lease = one("SELECT state,attempts FROM jobs WHERE id=?", job.id);
+      if (lease?.state !== "running" || lease.attempts !== job.attempts) return;
+      const exhausted = job.attempts >= 4;
+      run(
+        "UPDATE jobs SET state=?,error=?,scheduled=?,lease_until=NULL WHERE id=?",
+        exhausted ? "failed" : "retrying",
+        "GENERATION_UNAVAILABLE",
+        Date.now() + Math.min(60000, 1000 * 2 ** job.attempts),
+        job.id,
+      );
+      run(
+        "UPDATE orders SET fulfillment=? WHERE id=?",
+        exhausted ? "failed" : "retrying",
+        job.order_id,
+      );
+      if (exhausted) {
+        audit("system", "generation_failed_alert", job.order_id);
+        const o = one(
+          "SELECT email_hash FROM orders WHERE id=?",
+          job.order_id,
+        )!;
+        enqueueMail(o.email_hash, {
+          template: "generation_failed",
+          orderId: job.order_id,
+          body: "결제는 확인되었으나 작성에 실패했습니다. 고객센터에서 복구 또는 환불을 신청할 수 있습니다.",
+        });
+      }
+    });
+  }
+  return true;
+}
+export function orderView(o: Record<string, any>) {
+  return {
+    id: o.id,
+    amount: o.amount,
+    payment: o.payment_status,
+    fulfillment: o.fulfillment,
+    expires: o.expires,
+    version: o.version,
+    created: o.created,
+    deleted: Boolean(o.content_deleted),
+  };
+}
+export function listOrders(s: Session) {
+  requireEmail(s);
+  return all(
+    "SELECT * FROM orders WHERE email_hash=? ORDER BY created DESC",
+    s.email_hash,
+  ).map(orderView);
+}
+export function getReport(s: Session, oid: string) {
+  const o = ownOrder(s, oid);
+  if (o.payment_status !== "paid" || o.fulfillment !== "ready")
+    throw new Fault("결제·운명서 제공 상태를 확인해 주세요.", 403);
+  if (!o.expires || o.expires < Date.now())
+    throw new Fault(
+      "무료 재열람 기간이 종료되었습니다. 고객센터로 문의해 주세요.",
+      410,
+    );
+  if (o.content_deleted) throw new Fault("삭제된 운명서입니다.", 410);
+  const r = one(
+    "SELECT * FROM reports WHERE order_id=? AND version=?",
+    oid,
+    o.version,
+  );
+  if (!r) throw new Fault("운명서 복구가 필요합니다.", 503);
+  const source = one(
+    "SELECT input_enc FROM readings WHERE id=?",
+    o.reading_id,
+  )!;
+  const b = open(source.input_enc);
+  if (!b) throw new Fault("삭제된 운명서입니다.", 410);
+  event("report_open", oid);
+  return {
+    id: r.id,
+    order: orderView(o),
+    name: b.name,
+    birth: b,
+    created: r.created,
+    report: open<Report>(r.payload),
+  };
+}
+export function resend(s: Session, oid: string) {
+  const o = ownOrder(s, oid);
+  limit("mail:" + oid, 3, 3600000);
+  enqueueMail(o.email_hash, {
+    template: "report_link",
+    orderId: oid,
+    body: "이메일 인증 후 같은 운명서를 열람하세요. PDF 공개 첨부는 제공하지 않습니다.",
+  });
+  audit(s.id, "mail_resend_local", oid);
+}
+export function ticket(s: Session, raw: unknown) {
+  requireEmail(s);
+  const t = z
+    .object({
+      orderId: z.string().uuid().optional(),
+      category: z.enum([
+        "refund",
+        "correction",
+        "email",
+        "privacy",
+        "guardian",
+        "other",
+      ]),
+      message: z.string().trim().min(5).max(2000),
+    })
+    .parse(raw);
+  if (t.orderId) ownOrder(s, t.orderId);
+  limit("help:" + s.id, 10);
+  const tid = id(),
+    now = Date.now();
+  run(
+    "INSERT INTO tickets(id,email_hash,order_id,category,payload,created,due) VALUES(?,?,?,?,?,?,?)",
+    tid,
+    s.email_hash,
+    t.orderId || null,
+    t.category,
+    seal({ message: t.message }),
+    now,
+    now + 3 * 86400000,
+  );
+  event(t.category === "refund" ? "refund_requested" : "support_ticket", tid);
+  return tid;
+}
+export function getTickets(s: Session) {
+  requireEmail(s);
+  return all(
+    "SELECT * FROM tickets WHERE email_hash=? ORDER BY created DESC",
+    s.email_hash,
+  ).map((t) => ({
+    id: t.id,
+    orderId: t.order_id,
+    category: t.category,
+    status: t.status,
+    created: t.created,
+    due: t.due,
+    ...open(t.payload),
+  }));
+}
+export function adminRequired(
+  s: Session,
+  roles = ["operations", "finance", "support"],
+) {
+  if (!roles.includes(s.role))
+    throw new Fault("관리자 권한이 필요합니다.", 403);
+}
+export function adminOverview(s: Session) {
+  adminRequired(s);
+  const orders = all("SELECT * FROM orders ORDER BY created DESC").map((o) => ({
+    ...orderView(o),
+    email: `${o.email_hash.slice(0, 8)}…`,
+    corrections: o.corrections,
+  }));
+  return {
+    orders,
+    tickets: all("SELECT * FROM tickets ORDER BY created DESC").map((t) => ({
+      id: t.id,
+      orderId: t.order_id,
+      category: t.category,
+      status: t.status,
+      created: t.created,
+      due: t.due,
+      ...open(t.payload),
+    })),
+    jobs: all(
+      "SELECT id,order_id,state,attempts,error,scheduled FROM jobs ORDER BY scheduled DESC",
+    ),
+    refunds: all(
+      "SELECT id,order_id,amount,status,created,resolved FROM refunds ORDER BY created DESC",
+    ),
+    audit: all("SELECT * FROM audit ORDER BY id DESC LIMIT 100"),
+    events: all("SELECT event,count(*) AS count FROM events GROUP BY event"),
+    metrics: {
+      gross:
+        orders.filter(
+          (o) =>
+            o.payment === "paid" ||
+            o.payment === "refund_pending" ||
+            o.payment === "refunded",
+        ).length * 33000,
+      refunds: orders.filter((o) => o.payment === "refunded").length * 33000,
+      aiCostKrw: 0,
+      pgCostKrw: 0,
+      mode: "local mock; 실제 매출 아님",
+    },
+    mailCount: one("SELECT count(*) AS n FROM outbox")!.n,
+  };
+}
+export function adminRetry(s: Session, oid: string) {
+  adminRequired(s, ["operations"]);
+  tx(() => {
+    const o = one("SELECT * FROM orders WHERE id=?", oid);
+    if (
+      !o ||
+      o.content_deleted ||
+      o.payment_status !== "paid" ||
+      o.fulfillment === "ready"
+    )
+      throw new Fault("재처리 대상 주문이 아닙니다.");
+    run(
+      "UPDATE jobs SET state='queued',attempts=0,scheduled=?,error=NULL WHERE order_id=? AND version=?",
+      Date.now(),
+      oid,
+      o.version,
+    );
+    run("UPDATE orders SET fulfillment='queued' WHERE id=?", oid);
+    audit(s.id, "generation_retry", oid);
+  });
+}
+export function refund(
+  s: Session,
+  oid: string,
+  reason: string,
+  pgFailure = false,
+) {
+  adminRequired(s, ["operations", "finance"]);
+  if (reason.trim().length < 5)
+    throw new Fault("환불 검토 사유를 5자 이상 기록해 주세요.");
+  const o = one("SELECT * FROM orders WHERE id=?", oid);
+  if (!o) throw new Fault("주문이 없습니다.", 404);
+  if (o.payment_status === "refunded") return;
+  if (!["paid", "refund_pending"].includes(o.payment_status))
+    throw new Fault("환불 가능한 결제가 없습니다.");
+  tx(() => {
+    run(
+      "INSERT OR IGNORE INTO refunds(id,order_id,amount,reason_enc,status,created) VALUES(?,?,?,?,?,?)",
+      id(),
+      oid,
+      33000,
+      seal({ reason, actor: s.id }),
+      "pending",
+      Date.now(),
+    );
+    run("UPDATE orders SET payment_status='refund_pending' WHERE id=?", oid);
+    audit(s.id, "refund_requested", oid);
+  });
+  if (pgFailure) {
+    run("UPDATE refunds SET status='error' WHERE order_id=?", oid);
+    throw new Fault("PG 모의 취소 실패: 환불 대기 상태를 유지합니다.", 503);
+  }
+  const cancel = id();
+  run(
+    "UPDATE pg_ledger SET status='CANCELED',cancel_id=COALESCE(cancel_id,?) WHERE order_id=?",
+    cancel,
+    oid,
+  );
+  finalizeRefund(oid);
+}
+function finalizeRefund(oid: string) {
+  tx(() => {
+    const pg = one(
+      "SELECT * FROM pg_ledger WHERE order_id=? AND status='CANCELED'",
+      oid,
+    );
+    if (!pg) return;
+    const o = one("SELECT * FROM orders WHERE id=?", oid)!;
+    if (o.payment_status === "refunded") return;
+    run("UPDATE orders SET payment_status='refunded' WHERE id=?", oid);
+    run(
+      "UPDATE refunds SET status='completed',cancel_id=?,resolved=? WHERE order_id=?",
+      pg.cancel_id,
+      Date.now(),
+      oid,
+    );
+    run(
+      "UPDATE jobs SET state='canceled' WHERE order_id=? AND state!='done'",
+      oid,
+    );
+    event("refund_completed", oid);
+    audit("system", "refund_verified_access_revoked", oid);
+    enqueueMail(o.email_hash, {
+      template: "refund_completed",
+      orderId: oid,
+      body: "모의 전액 취소가 확인되었습니다. 웹 재열람 권한은 종료됩니다. 이미 저장한 파일의 원격 삭제를 뜻하지 않습니다.",
+    });
+  });
+}
+export function reconcileRefunds() {
+  for (const o of all(
+    "SELECT id FROM orders WHERE payment_status='refund_pending'",
+  ))
+    finalizeRefund(o.id);
+}
+export function correctBirth(
+  s: Session,
+  oid: string,
+  raw: unknown,
+  reason: string,
+) {
+  adminRequired(s, ["operations"]);
+  if (reason.trim().length < 5)
+    throw new Fault("본인확인·정정 사유를 기록해 주세요.");
+  const o = one("SELECT * FROM orders WHERE id=?", oid);
+  if (
+    !o ||
+    o.payment_status !== "paid" ||
+    o.content_deleted ||
+    o.corrections >= 1 ||
+    Date.now() - o.paid_at > 7 * 86400000
+  )
+    throw new Fault(
+      "7일 이내 1회 정정 대상인지 확인해 주세요. 법정권리는 별도 문의로 검토합니다.",
+    );
+  const b = birthSchema.parse(raw);
+  if (b.age !== "19+")
+    throw new Fault(
+      "구매자 연령 변경으로 구매 제한을 우회할 수 없습니다.",
+      403,
+    );
+  const c = calculate(b);
+  assertSubjectAge(c.solarDate);
+  const old = one("SELECT * FROM readings WHERE id=?", o.reading_id)!;
+  tx(() => {
+    const rid = id(),
+      v = o.version + 1;
+    run(
+      "INSERT INTO readings VALUES(?,?,?,?,?,?,?)",
+      rid,
+      old.session_id,
+      old.age_category,
+      seal(b),
+      seal(c),
+      seal(preview(c)),
+      Date.now(),
+    );
+    run(
+      "UPDATE orders SET reading_id=?,version=?,corrections=1,fulfillment='queued' WHERE id=?",
+      rid,
+      v,
+      oid,
+    );
+    run("INSERT INTO reading_history VALUES(?,?,?)", oid, rid, v);
+    run(
+      "UPDATE jobs SET state='canceled' WHERE order_id=? AND state!='done'",
+      oid,
+    );
+    run(
+      "INSERT INTO jobs(id,order_id,version,state,scheduled) VALUES(?,?,?,?,?)",
+      id(),
+      oid,
+      v,
+      "queued",
+      Date.now(),
+    );
+    audit(s.id, "birth_corrected_identity_reviewed", oid);
+  });
+}
+export function adminResend(s: Session, oid: string) {
+  adminRequired(s);
+  const o = one("SELECT * FROM orders WHERE id=?", oid);
+  if (!o) throw new Fault("주문이 없습니다.", 404);
+  limit("admin-mail:" + oid, 5);
+  enqueueMail(o.email_hash, {
+    template: "report_link",
+    orderId: oid,
+    body: "안전한 이메일 인증 후 운명서를 다시 열람할 수 있습니다.",
+  });
+  audit(s.id, "admin_mail_resend_local", oid);
+}
+export function answerTicket(s: Session, tid: string, message: string) {
+  adminRequired(s);
+  if (message.trim().length < 5 || message.length > 2000)
+    throw new Fault("답변은 5~2000자로 작성해 주세요.");
+  const t = one("SELECT * FROM tickets WHERE id=?", tid);
+  if (!t) throw new Fault("문의가 없습니다.", 404);
+  run(
+    "UPDATE tickets SET status='answered',payload=? WHERE id=?",
+    seal({ ...open<Record<string, unknown>>(t.payload), answer: message }),
+    tid,
+  );
+  audit(s.id, "ticket_answered", tid);
+  enqueueMail(t.email_hash, {
+    template: "support_answered",
+    ticketId: tid,
+    body: "문의 답변이 등록되었습니다. 인증 후 고객센터에서 확인하세요.",
+  });
+}
+export function deleteContent(
+  s: Session,
+  oid: string,
+  ticketId: string,
+  reason: string,
+) {
+  adminRequired(s, ["operations"]);
+  if (reason.trim().length < 5)
+    throw new Fault("삭제 검토 근거를 기록해 주세요.");
+  const t = one(
+    "SELECT * FROM tickets WHERE id=? AND category='privacy'",
+    ticketId,
+  );
+  const o = t
+    ? one("SELECT * FROM orders WHERE id=? AND email_hash=?", oid, t.email_hash)
+    : null;
+  if (!o) throw new Fault("본인 인증된 삭제 문의와 주문을 대조해 주세요.");
+  tx(() => {
+    wipeContent(oid);
+    audit(s.id, "content_deleted_transaction_retained", oid);
+    run(
+      "UPDATE tickets SET status='answered',payload=? WHERE id=?",
+      seal({
+        ...open<Record<string, unknown>>(t!.payload),
+        answer:
+          "운명서·출생정보를 삭제했습니다. 법적 근거 검토 대상 거래기록은 분리 보존합니다.",
+      }),
+      ticketId,
+    );
+  });
+}
+function wipeContent(oid: string) {
+  run("DELETE FROM reports WHERE order_id=?", oid);
+  for (const r of all(
+    "SELECT reading_id FROM reading_history WHERE order_id=?",
+    oid,
+  ))
+    run(
+      "UPDATE readings SET input_enc=?,chart_enc=?,preview_enc=? WHERE id=?",
+      seal(null),
+      seal(null),
+      seal(null),
+      r.reading_id,
+    );
+  run("UPDATE jobs SET state='canceled' WHERE order_id=?", oid);
+  run("UPDATE orders SET content_deleted=1 WHERE id=?", oid);
+}
+export function purgeExpired() {
+  const now = Date.now();
+  tx(() => {
+    for (const o of all(
+      "SELECT id FROM orders WHERE expires<? AND content_deleted=0",
+      now,
+    )) {
+      wipeContent(o.id);
+    }
+    run("DELETE FROM sessions WHERE expires<?", now);
+    run("DELETE FROM challenges WHERE expires<?", now - 86400000);
+    run("DELETE FROM outbox WHERE created<?", now - 7 * 86400000);
+    run("DELETE FROM rate_limits WHERE reset<?", now);
+    run(
+      "DELETE FROM readings WHERE created<? AND id NOT IN (SELECT reading_id FROM reading_history)",
+      now - 86400000,
+    );
+  });
+}

@@ -1,0 +1,50 @@
+{
+  "name": "geumseo-taehou",
+  "version": "1.0.0",
+  "description": "금서태후 독립형 로컬 검증 환경",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "tsx scripts/start.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "worker": "tsx scripts/worker.ts",
+    "setup": "tsx scripts/setup.ts",
+    "check": "npm run typecheck && npm test && npm run build",
+    "backup": "tsx scripts/backup.ts",
+    "admin:code": "tsx scripts/admin-code.ts",
+    "test:performance": "node scripts/performance.mjs",
+    "landing": "tsx scripts/build-landing.tsx",
+    "prebuild": "npm run landing",
+    "predev": "npm run landing"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "module",
+  "dependencies": {
+    "@fontsource/noto-sans-kr": "5.3.1",
+    "lunar-javascript": "1.7.8",
+    "next": "16.4.6",
+    "pdfkit": "0.20.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.0",
+    "@types/node": "26.6.6",
+    "@types/pdfkit": "0.17.7",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "lighthouse": "13.6.0",
+    "prettier": "3.10.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  },
+  "private": true
+}

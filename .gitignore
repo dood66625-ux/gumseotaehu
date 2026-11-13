@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.env*
+!.env.example
+var/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+public/landing.html
+public/site.css
+
+docs/reference-master-brief.md

@@ -1,0 +1,618 @@
+{
+  "date": "2026-11-13T14:25:46.962Z",
+  "environment": "Local production build; Chromium; 390x844; cold context; 150ms RTT/1.6Mbps/4x CPU. Lab samples, not field p75.",
+  "lab": [
+    {
+      "lcpMs": 760,
+      "cls": 0,
+      "scriptedInpMs": 24,
+      "interactionCount": 4,
+      "resources": [
+        {
+          "name": "/empress.webp",
+          "bytes": 17102,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/25ym5-t6_30x4.css",
+          "bytes": 4433,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/310vm2bl3xxpt.js",
+          "bytes": 2270,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/1wnov70f88xjy.js",
+          "bytes": 7950,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/39_j1bdzreq0m.js",
+          "bytes": 72052,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0c1ad7rcpjghx.js",
+          "bytes": 46746,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/turbopack-077hmtqrhcoji.js",
+          "bytes": 4654,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/08mika-44sn50.js",
+          "bytes": 6625,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/3yz50_p0oap24.js",
+          "bytes": 989,
+          "type": "script"
+        },
+        {
+          "name": "/",
+          "bytes": 500,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 481,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 479,
+          "type": "fetch"
+        },
+        {
+          "name": "/",
+          "bytes": 3946,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 2331,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 2314,
+          "type": "fetch"
+        },
+        {
+          "name": "/_next/static/chunks/3kn8jkx_yc38-.js",
+          "bytes": 2486,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0tesu_yukakfk.js",
+          "bytes": 3657,
+          "type": "script"
+        },
+        {
+          "name": "/legal/terms",
+          "bytes": 512,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/privacy",
+          "bytes": 516,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/refund",
+          "bytes": 515,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/business",
+          "bytes": 515,
+          "type": "fetch"
+        }
+      ],
+      "navigationTtfb": 155.19999999995343,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 752,
+      "cls": 0,
+      "scriptedInpMs": 24,
+      "interactionCount": 4,
+      "resources": [
+        {
+          "name": "/empress.webp",
+          "bytes": 17102,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/25ym5-t6_30x4.css",
+          "bytes": 4433,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/310vm2bl3xxpt.js",
+          "bytes": 2270,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/1wnov70f88xjy.js",
+          "bytes": 7950,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/39_j1bdzreq0m.js",
+          "bytes": 72052,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0c1ad7rcpjghx.js",
+          "bytes": 46746,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/turbopack-077hmtqrhcoji.js",
+          "bytes": 4654,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/08mika-44sn50.js",
+          "bytes": 6625,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/3yz50_p0oap24.js",
+          "bytes": 989,
+          "type": "script"
+        },
+        {
+          "name": "/",
+          "bytes": 500,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 481,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 479,
+          "type": "fetch"
+        },
+        {
+          "name": "/",
+          "bytes": 3946,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 2331,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 2314,
+          "type": "fetch"
+        },
+        {
+          "name": "/_next/static/chunks/3kn8jkx_yc38-.js",
+          "bytes": 2486,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0tesu_yukakfk.js",
+          "bytes": 3657,
+          "type": "script"
+        },
+        {
+          "name": "/legal/terms",
+          "bytes": 512,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/privacy",
+          "bytes": 516,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/refund",
+          "bytes": 515,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/business",
+          "bytes": 515,
+          "type": "fetch"
+        }
+      ],
+      "navigationTtfb": 154.19999999995343,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 740,
+      "cls": 0,
+      "scriptedInpMs": 24,
+      "interactionCount": 4,
+      "resources": [
+        {
+          "name": "/empress.webp",
+          "bytes": 17102,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/25ym5-t6_30x4.css",
+          "bytes": 4433,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/310vm2bl3xxpt.js",
+          "bytes": 2270,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/1wnov70f88xjy.js",
+          "bytes": 7950,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0c1ad7rcpjghx.js",
+          "bytes": 46746,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/39_j1bdzreq0m.js",
+          "bytes": 72052,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/turbopack-077hmtqrhcoji.js",
+          "bytes": 4654,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/3yz50_p0oap24.js",
+          "bytes": 989,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/08mika-44sn50.js",
+          "bytes": 6625,
+          "type": "script"
+        },
+        {
+          "name": "/",
+          "bytes": 500,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 481,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 479,
+          "type": "fetch"
+        },
+        {
+          "name": "/",
+          "bytes": 3946,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 2331,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 2314,
+          "type": "fetch"
+        },
+        {
+          "name": "/_next/static/chunks/3kn8jkx_yc38-.js",
+          "bytes": 2486,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0tesu_yukakfk.js",
+          "bytes": 3657,
+          "type": "script"
+        },
+        {
+          "name": "/legal/terms",
+          "bytes": 512,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/privacy",
+          "bytes": 516,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/refund",
+          "bytes": 515,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/business",
+          "bytes": 515,
+          "type": "fetch"
+        }
+      ],
+      "navigationTtfb": 151.80000000004657,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 740,
+      "cls": 0,
+      "scriptedInpMs": 40,
+      "interactionCount": 4,
+      "resources": [
+        {
+          "name": "/empress.webp",
+          "bytes": 17102,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/25ym5-t6_30x4.css",
+          "bytes": 4433,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/310vm2bl3xxpt.js",
+          "bytes": 2270,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/1wnov70f88xjy.js",
+          "bytes": 7950,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/39_j1bdzreq0m.js",
+          "bytes": 72052,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0c1ad7rcpjghx.js",
+          "bytes": 46746,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/turbopack-077hmtqrhcoji.js",
+          "bytes": 4654,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/08mika-44sn50.js",
+          "bytes": 6625,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/3yz50_p0oap24.js",
+          "bytes": 989,
+          "type": "script"
+        },
+        {
+          "name": "/",
+          "bytes": 500,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 481,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 479,
+          "type": "fetch"
+        },
+        {
+          "name": "/",
+          "bytes": 3946,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 2331,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 2314,
+          "type": "fetch"
+        },
+        {
+          "name": "/_next/static/chunks/3kn8jkx_yc38-.js",
+          "bytes": 2486,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0tesu_yukakfk.js",
+          "bytes": 3657,
+          "type": "script"
+        },
+        {
+          "name": "/legal/terms",
+          "bytes": 512,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/privacy",
+          "bytes": 516,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/refund",
+          "bytes": 515,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/business",
+          "bytes": 515,
+          "type": "fetch"
+        }
+      ],
+      "navigationTtfb": 153.4000000001397,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 772,
+      "cls": 0,
+      "scriptedInpMs": 24,
+      "interactionCount": 4,
+      "resources": [
+        {
+          "name": "/empress.webp",
+          "bytes": 17102,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/25ym5-t6_30x4.css",
+          "bytes": 4433,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/310vm2bl3xxpt.js",
+          "bytes": 2270,
+          "type": "link"
+        },
+        {
+          "name": "/_next/static/chunks/1wnov70f88xjy.js",
+          "bytes": 7950,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/39_j1bdzreq0m.js",
+          "bytes": 72052,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0c1ad7rcpjghx.js",
+          "bytes": 46746,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/turbopack-077hmtqrhcoji.js",
+          "bytes": 4654,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/3yz50_p0oap24.js",
+          "bytes": 989,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/08mika-44sn50.js",
+          "bytes": 6625,
+          "type": "script"
+        },
+        {
+          "name": "/",
+          "bytes": 500,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 481,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 479,
+          "type": "fetch"
+        },
+        {
+          "name": "/",
+          "bytes": 3946,
+          "type": "fetch"
+        },
+        {
+          "name": "/recover",
+          "bytes": 2331,
+          "type": "fetch"
+        },
+        {
+          "name": "/start",
+          "bytes": 2314,
+          "type": "fetch"
+        },
+        {
+          "name": "/_next/static/chunks/3kn8jkx_yc38-.js",
+          "bytes": 2486,
+          "type": "script"
+        },
+        {
+          "name": "/_next/static/chunks/0tesu_yukakfk.js",
+          "bytes": 3657,
+          "type": "script"
+        },
+        {
+          "name": "/legal/terms",
+          "bytes": 512,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/privacy",
+          "bytes": 516,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/refund",
+          "bytes": 515,
+          "type": "fetch"
+        },
+        {
+          "name": "/legal/business",
+          "bytes": 515,
+          "type": "fetch"
+        }
+      ],
+      "navigationTtfb": 152.19999999995343,
+      "ctaInitiallyInViewport": true
+    }
+  ],
+  "lighthouse": [
+    {
+      "performance": 0.82,
+      "accessibility": 1,
+      "bestPractices": 0.96,
+      "lcpMs": 2657.9704,
+      "cls": 0,
+      "tbtMs": 559.5,
+      "fcpMs": 762.9703999999999,
+      "transferBytes": 194642
+    },
+    {
+      "performance": 0.85,
+      "accessibility": 1,
+      "bestPractices": 0.96,
+      "lcpMs": 2642.7559,
+      "cls": 0,
+      "tbtMs": 471,
+      "fcpMs": 771.7559000000001,
+      "transferBytes": 194642
+    },
+    {
+      "performance": 0.89,
+      "accessibility": 1,
+      "bestPractices": 0.96,
+      "lcpMs": 2566.6624,
+      "cls": 0,
+      "tbtMs": 356,
+      "fcpMs": 766.6623999999999,
+      "transferBytes": 194642
+    }
+  ],
+  "labP75": {
+    "lcpMs": 760,
+    "cls": 0,
+    "scriptedInpMs": 24
+  }
+}

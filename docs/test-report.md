@@ -1,0 +1,68 @@
+# 금서태후 검증 보고서
+
+## 판정
+**로컬 기능 검증판, 상용 출시 BLOCKED.** 실제 AI·Toss·메일, 독립 만세력 전 범위 검수, 운영 DB·관리자 계정·성인 확인, 사업자·법률·세무 검토가 완료되지 않았다. 아래 PASS는 합성 입력과 로컬 mock에 한정한다.
+
+## 구현·검증 단계
+- 설계: architecture/decisions/assumptions/risk-register/implementation-plan/data-model/state-machine/API 문서와 SQLite migration1.
+- 고객 여정: 정적 랜딩·실제 계산·개인화 무료풀이·인증·가격 고정 주문·모의 결제·보고서 저장/열람·한글 PDF·무료 재열람·문의.
+- 운영: 별도 durable worker·lease/fencing·최대4회 retry·PG 원장 대사·환불 상태 대조·CS 답변·7일1회 정정·원문 삭제·비식별 CSV·감사로그.
+- 보안/속도: 암호화·소유권·OTP/세션·Origin·서버 연령 게이트, 정적 root HTML로 브라우저 React 실행 제거.
+
+## 실제 실행 결과
+
+|검사|결과|증거|
+|---|---|---|
+|TypeScript strict|PASS|npm run typecheck|
+|단위·통합·보안·오프라인 계약|**191 PASS**|tests/core.test.ts,contracts.test.ts,ai-contract.test.ts|
+|일주 독립 산술 대조|120/120 PASS|Gregorian JDN 별도 공식;120개 서로 다른 날짜|
+|알려진 양음력 날짜|3/3 PASS|라이브러리 합성 픽스처;공식 데이터 전 범위 검증 아님|
+|절입/자시/시각 미상/윤달 오류|로컬 케이스 PASS|core.test.ts|
+|모바일/데스크톱 E2E|**21 PASS**,55.6초|Chromium Pixel7,WebKit iPhone13 에뮬레이션,Desktop Chromium|
+|PDF 한글 추출/폰트 내장|PASS|PDF /FontFile2,/ToUnicode 및 pdftotext로 표제/장 제목 추출 확인|
+|일관 백업 복구|PASS|SQLite backup을 새 연결로 열고 결제/복호화 본문 동일 검증|
+|의존성 스캔|취약점0|dependency-audit.json;시점 한정|
+|Lighthouse 모바일3회|성능/접근성/Best Practices100|lighthouse-1~3.json,performance-budget.md|
+|실 iOS/Android/인앱브라우저|BLOCKED|기기·실 PG 앱 전환 검증 미수행|
+|Docker compose 기동|BLOCKED/미실행|이식용 레시피만 제공,실환경 검증 필요|
+
+처음 E2E에서 접근성2건과 WebKit 라이브러리 누락이 발견되었다. 로고 accessible name/안내 landmark를 고치고, 공식 Debian 패키지를 작업 폴더에 추출해 실제 WebKit 실행을 확인한 후 다시 검사했다. 성능도 처음 LCP2.57~2.66초를 측정하고 구조 변경 후0.91~1.01초로 개선했다. 최초 실패를 최종 성공으로 숨기지 않으며 최종 원본 결과를 별도로 보관한다.
+
+## 필수 수용 시나리오 18개
+
+|번호|요구|판정·범위|
+|---|---|---|
+|1|정적 히어로/CTA·스킵·저속·reduced motion|PASS:로컬4G/JS차단/API차단. 실제 영상은 미첨부,정적대체|
+|2|윤달·날짜·미상·자시·입춘·역사/해외|부분 PASS:지원범위 계산/오류 처리. BLOCKED:해외·역사·한국 전범위 대조|
+|3|동일입력 일관/다른 claimIds|PASS:저장·재열람 불변,실 AI품질 BLOCKED|
+|4|무료100회 남용 방어|PASS:세션20회이후 반복80회 거부,API 전역100회 제한. 운영 분산/IP방어 BLOCKED|
+|5|1원·타인 주문·중복 승인|PASS:서버가격/원장/소유권,동시20요청 E2E|
+|6|승인후 창닫기/재시작/DB확정실패|PASS:별도 로컬 PG원장→워커 대사. 실 PG BLOCKED|
+|7|AI중단·재시도·알림/환불|PASS:합성 실패4회+audit/local안내+재처리/환불. 실 AI BLOCKED|
+|8|메일 실패에도 이메일 인증 재열람|PASS:local outbox삭제후 동일원문 복구. 실제 메일 BLOCKED|
+|9|한글 PDF/웹원문 동일·독립제공|PASS:실PDF내장·추출/본문 동일. 실모바일 저장 UX 추가검증|
+|10|이메일 정정·타인 보고서 비노출|부분 PASS:접근통제/문의. BLOCKED:증빙+새주소소유검증의 이메일 변경 자동 기능|
+|11|14~18세 서버 차단|PASS:guardianConsent위조로도 불가. 실 성인확인 BLOCKED|
+|12|법정대리인 계약취소|PASS:guardian CS분류/답변/운영 검토. 법률·실PG검증 BLOCKED|
+|13|환불 중복/PG실패 상태|PASS:원장고유취소/실패pending유지. 실PG BLOCKED|
+|14|환불 접근권/거래분리|PASS:완료후403;삭제원문재생성차단. 법정 보존기한 파기·법적보류 BLOCKED|
+|15|광고 개인정보 금지/승인 이벤트1회|PASS:외부광고0,내부이벤트무PII·승인1회. GA4/Meta실연동 BLOCKED|
+|16|임의ID/PDF·OTP/속도제한|PASS:401/403/404·5회/15분/단일사용·새브라우저복구|
+|17|장애중 랜딩/기존구매지원|PASS:root DB/키/AI와독립,재열람/문의 링크|
+|18|승인없는 실제외부행위 차단|PASS:외부 transport기본거부,live키거부,API local모드 강제. 실판매/메일/개인정보전송/사이트배포 없음|
+
+## 화면 증거 (합성 고객만 사용)
+
+### 모바일 랜딩
+![모바일 랜딩](mobile-chromium-landing.png)
+
+### 무료 계산 결과
+![무료 풀이](mobile-chromium-preview.png)
+
+### 보고서
+![운명서](mobile-chromium-report.png)
+
+### 실제 업무가 연결된 로컬 관리자
+![관리자](mobile-chromium-admin.png)
+
+WebKit·데스크톱 스크린샷과 각 환경에서 내려받은 한글 PDF도 같은 docs 폴더에 있다. 원문에 실제 고객 데이터나 비밀값은 없다. source GitHub 저장소는 사용자 지정 `dood66625-ux/gumseotaehu`, 운영 사이트가 아니다.

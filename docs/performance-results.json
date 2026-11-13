@@ -1,0 +1,143 @@
+{
+  "date": "2026-11-13T14:35:04.197Z",
+  "environment": "Local production build; Chromium; 390x844; cold context; 150ms RTT/1.6Mbps/4x CPU. Lab samples, not field p75.",
+  "lab": [
+    {
+      "lcpMs": 584,
+      "cls": 0,
+      "scriptedInpMs": 24,
+      "interactionCount": 3,
+      "resources": [
+        {
+          "name": "/site.css",
+          "bytes": 4819,
+          "type": "link"
+        },
+        {
+          "name": "/intro.js",
+          "bytes": 715,
+          "type": "script"
+        }
+      ],
+      "navigationTtfb": 156.5,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 484,
+      "cls": 0,
+      "scriptedInpMs": 40,
+      "interactionCount": 3,
+      "resources": [
+        {
+          "name": "/site.css",
+          "bytes": 4819,
+          "type": "link"
+        },
+        {
+          "name": "/intro.js",
+          "bytes": 715,
+          "type": "script"
+        }
+      ],
+      "navigationTtfb": 151.39999999990687,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 484,
+      "cls": 0,
+      "scriptedInpMs": 16,
+      "interactionCount": 3,
+      "resources": [
+        {
+          "name": "/site.css",
+          "bytes": 4819,
+          "type": "link"
+        },
+        {
+          "name": "/intro.js",
+          "bytes": 715,
+          "type": "script"
+        }
+      ],
+      "navigationTtfb": 151.89999999990687,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 476,
+      "cls": 0,
+      "scriptedInpMs": 24,
+      "interactionCount": 2,
+      "resources": [
+        {
+          "name": "/site.css",
+          "bytes": 4819,
+          "type": "link"
+        },
+        {
+          "name": "/intro.js",
+          "bytes": 715,
+          "type": "script"
+        }
+      ],
+      "navigationTtfb": 151.40000000037253,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 580,
+      "cls": 0,
+      "scriptedInpMs": 24,
+      "interactionCount": 3,
+      "resources": [
+        {
+          "name": "/site.css",
+          "bytes": 4819,
+          "type": "link"
+        },
+        {
+          "name": "/intro.js",
+          "bytes": 715,
+          "type": "script"
+        }
+      ],
+      "navigationTtfb": 154.6999999997206,
+      "ctaInitiallyInViewport": true
+    }
+  ],
+  "lighthouse": [
+    {
+      "performance": 1,
+      "accessibility": 1,
+      "bestPractices": 1,
+      "lcpMs": 968.3468,
+      "cls": 0.0001072260978181429,
+      "tbtMs": 11,
+      "fcpMs": 760.3468,
+      "transferBytes": 13716
+    },
+    {
+      "performance": 1,
+      "accessibility": 1,
+      "bestPractices": 1,
+      "lcpMs": 913.6706999999999,
+      "cls": 0.0001072260978181429,
+      "tbtMs": 0,
+      "fcpMs": 763.6706999999999,
+      "transferBytes": 13716
+    },
+    {
+      "performance": 1,
+      "accessibility": 1,
+      "bestPractices": 1,
+      "lcpMs": 1011.7128,
+      "cls": 0.0001072260978181429,
+      "tbtMs": 32,
+      "fcpMs": 780.7128,
+      "transferBytes": 13716
+    }
+  ],
+  "labP75": {
+    "lcpMs": 580,
+    "cls": 0,
+    "scriptedInpMs": 24
+  }
+}

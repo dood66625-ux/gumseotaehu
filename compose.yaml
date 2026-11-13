@@ -1,0 +1,20 @@
+# Local-only recipe; not executed/validated in this environment.
+services:
+  web:
+    build:
+      context: .
+      target: web
+    env_file: .env.local
+    environment:
+      DATABASE_PATH: /data/geumseo.sqlite
+    ports: ["127.0.0.1:3000:3000"]
+    volumes: ["./var:/data"]
+  worker:
+    build:
+      context: .
+      target: worker
+    env_file: .env.local
+    environment:
+      DATABASE_PATH: /data/geumseo.sqlite
+    volumes: ["./var:/data"]
+    user: "1000:1000"

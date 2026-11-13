@@ -1,0 +1,1 @@
+(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const el=document.getElementById('intro-copy');if(!el)return;setTimeout(()=>{el.textContent='금서에 남겨진 지혜, 그대의 기운을 비춘다';},1600);setTimeout(()=>{el.textContent='그대를 위한 한 권의 이야기가 열린다';},3300);setTimeout(()=>{el.textContent='이제, 그대의 이야기를 펼칠 시간';},5000);})();

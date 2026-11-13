@@ -1,0 +1,22 @@
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY,email_hash TEXT,role TEXT NOT NULL DEFAULT 'customer',expires INTEGER NOT NULL,created INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS challenges(id TEXT PRIMARY KEY,email_hash TEXT NOT NULL,email_enc TEXT NOT NULL,code_hash TEXT NOT NULL,session_id TEXT NOT NULL,expires INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,consumed INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS readings(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,age_category TEXT NOT NULL,input_enc TEXT NOT NULL,chart_enc TEXT NOT NULL,preview_enc TEXT NOT NULL,created INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY,reading_id TEXT NOT NULL REFERENCES readings(id),email_hash TEXT NOT NULL,email_enc TEXT NOT NULL,amount INTEGER NOT NULL CHECK(amount=33000),payment_status TEXT NOT NULL CHECK(payment_status IN ('pending','paid','refund_pending','refunded')),fulfillment TEXT NOT NULL CHECK(fulfillment IN ('waiting','queued','generating','ready','retrying','failed')),payment_key TEXT UNIQUE,created INTEGER NOT NULL,paid_at INTEGER,expires INTEGER,version INTEGER NOT NULL DEFAULT 1,corrections INTEGER NOT NULL DEFAULT 0,content_deleted INTEGER NOT NULL DEFAULT 0,consent_enc TEXT NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS one_active_order ON orders(reading_id,email_hash) WHERE payment_status!='refunded';
+CREATE TABLE IF NOT EXISTS pg_ledger(payment_key TEXT PRIMARY KEY,order_id TEXT NOT NULL UNIQUE,amount INTEGER NOT NULL,status TEXT NOT NULL,cancel_id TEXT);
+CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY,order_id TEXT NOT NULL REFERENCES orders(id),version INTEGER NOT NULL,state TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,scheduled INTEGER NOT NULL,lease_until INTEGER,error TEXT,UNIQUE(order_id,version));
+CREATE TABLE IF NOT EXISTS reports(id TEXT PRIMARY KEY,order_id TEXT NOT NULL REFERENCES orders(id),version INTEGER NOT NULL,payload TEXT NOT NULL,created INTEGER NOT NULL,UNIQUE(order_id,version));
+CREATE TABLE IF NOT EXISTS outbox(id TEXT PRIMARY KEY,email_hash TEXT NOT NULL,payload TEXT NOT NULL,created INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'local_only');
+CREATE TABLE IF NOT EXISTS tickets(id TEXT PRIMARY KEY,email_hash TEXT NOT NULL,order_id TEXT,category TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'open',created INTEGER NOT NULL,due INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS refunds(id TEXT PRIMARY KEY,order_id TEXT NOT NULL UNIQUE REFERENCES orders(id),amount INTEGER NOT NULL,reason_enc TEXT NOT NULL,status TEXT NOT NULL,cancel_id TEXT,created INTEGER NOT NULL,resolved INTEGER);
+CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY AUTOINCREMENT,actor TEXT NOT NULL,action TEXT NOT NULL,target TEXT NOT NULL,created INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY,event TEXT NOT NULL,target TEXT NOT NULL,created INTEGER NOT NULL,UNIQUE(event,target));
+CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,reset INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS orders_email ON orders(email_hash);
+CREATE INDEX IF NOT EXISTS jobs_due ON jobs(state,scheduled);
+CREATE INDEX IF NOT EXISTS outbox_email ON outbox(email_hash,created);
+CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY,applied INTEGER NOT NULL);
+INSERT OR IGNORE INTO schema_migrations VALUES(1,unixepoch()*1000);
+
+CREATE TABLE IF NOT EXISTS reading_history(order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,reading_id TEXT NOT NULL REFERENCES readings(id),version INTEGER NOT NULL,PRIMARY KEY(order_id,version));
