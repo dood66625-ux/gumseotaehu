@@ -19,12 +19,17 @@ jobs:
       - run: npm run typecheck && npm test && npm run build
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
+      - run: npm run build:preview
+      - run: npm run preview:serve > /tmp/geumseo-preview.log 2>&1 &
+      - run: npm run test:preview
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: synthetic-test-evidence
           path: |
             docs/e2e-results.json
+            docs/public-preview-test.json
+            docs/public-preview-report.png
             docs/*-landing.png
             docs/*-preview.png
             docs/*-report.png

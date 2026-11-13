@@ -1,5 +1,11 @@
 # 금서태후 (禁書太后)
 
+**외부 미리보기: 파일 준비·검증 완료, GitHub Pages 활성화 대기**
+
+계정 소유자가 [Settings → Pages](https://github.com/dood66625-ux/gumseotaehu/settings/pages)에서 Source=`Deploy from a branch`, Branch=`gh-pages`, Folder=`/(root)`를 선택하고 Save를 누르면 게시됩니다. 연결된 GitHub App에는 Pages 설정 쓰기 권한이 없어 활성화 요청이403으로 거절되었습니다. 활성화 전 외부 사이트가 열리는 상태로 주장하지 않습니다.
+
+준비한 미리보기는 사용자가 별도로 승인한 **정적 체험판**입니다. 고정된 가상 출생정보·이메일만 사용하며 입력 필드는 수정할 수 없습니다. 모의 구매·PDF·재열람·문의 화면을 브라우저 안에서 체험합니다. 운영 Next.js 서버나 실제 관리자·AI·PG·메일이 연결된 주소가 아닙니다.
+
 한국어 모바일 중심 사주 운명서 서비스의 **독립 Next.js + TypeScript 로컬 검증판**. ChatGPT Sites·사이트 빌더를 사용하지 않는다. **상용 출시 준비 완료가 아니다.** 실제 AI·Toss·메일 미연결, 만세력 독립 검증/법률 검토/운영 인프라 미완료로 출시를 차단한다.
 
 ## 실행
@@ -58,3 +64,9 @@ npm run backup
 ## 랜딩 변경
 
 `/`는 `app/route.ts`가 빌드 시 생성한 정적 HTML을 제공합니다. React 서버 JSX로 공통 Shell과 Landing을 렌더링하며 브라우저에는 React 런타임을 보내지 않습니다. `npm run landing` 또는 `npm run build`로 생성합니다. 개발 중 랜딩/CSS를 바꾸면 `npm run landing`을 다시 실행하세요. 선택적 `/intro.js`는 로딩 후 최대5초 텍스트만 전환하며 시작 링크는 JS 없이 동작합니다. 입력·결제·보고서 등은 일반 Next.js App Router입니다.
+
+## 승인된 정적 미리보기
+
+외부 연결 중계가 차단된 개발 환경을 대신해 `gh-pages` 브랜치에 가상 정보 전용 미리보기 산출물을 올렸습니다. Pages 활성화는 계정 소유자 작업이 남았습니다. 실제 서비스 소스는 main에 유지합니다. 미리보기는 기존 화면 컴포넌트를 별도 번들로 빌드하고 `/api` 호출을 브라우저 내부의 합성 어댑터로 처리합니다. 생년월일·이메일·이름·문의 내용은 가상값 고정, 관리자 기능 제외, 서버/외부 API 전송 없음. 전송된 정적 자산과 가상 보고서는 공개 자료입니다. sessionStorage에는 가상 체험 진행 상태만 보관합니다.
+
+재현: `npm run build:preview` → 다른 터미널에서 `npm run preview:serve` → `npm run test:preview`. 원래 Next.js 로컬 실행·운영 아키텍처는 변경하지 않습니다. 운영 서비스 배포/실제 고객 데이터 처리 승인은 여전히 받지 않았습니다. 미리보기는 정식 출시 전 중단하거나 교체할 수 있습니다.

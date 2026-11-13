@@ -18,7 +18,10 @@
     "test:performance": "node scripts/performance.mjs",
     "landing": "tsx scripts/build-landing.tsx",
     "prebuild": "npm run landing",
-    "predev": "npm run landing"
+    "predev": "npm run landing",
+    "build:preview": "tsx scripts/build-public-preview.tsx",
+    "preview:serve": "node scripts/serve-public-preview.mjs",
+    "test:preview": "node scripts/test-public-preview.mjs"
   },
   "keywords": [],
   "author": "",
@@ -40,6 +43,7 @@
     "@types/pdfkit": "0.17.7",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
     "lighthouse": "13.6.0",
     "prettier": "3.10.1",
     "tsx": "4.23.15",

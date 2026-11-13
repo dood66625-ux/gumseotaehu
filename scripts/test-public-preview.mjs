@@ -1,0 +1,85 @@
+import { chromium } from "playwright";
+import { writeFileSync } from "node:fs";
+const base =
+  process.env.PUBLIC_PREVIEW_ORIGIN || "http://127.0.0.1:3200/gumseotaehu/";
+const browser = await chromium.launch(),
+  context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  }),
+  page = await context.newPage();
+const errors = [],
+  apiRequests = [];
+page.on("pageerror", (e) => errors.push(e.message));
+page.on("request", (r) => {
+  if (new URL(r.url()).pathname.startsWith("/api/")) apiRequests.push(r.url());
+});
+try {
+  await page.goto(base);
+  await page.getByRole("link", { name: "내 사주 펼쳐보기" }).click();
+  await page.getByLabel("이용자·구매자 연령").selectOption("19+");
+  for (const name of ["어떻게 불러드릴까요?", "생년월일", "출생시간"]) {
+    const n = page.getByLabel(name, { exact: true });
+    if (
+      !(await n.getAttribute("readonly")) &&
+      (await n.getAttribute("readonly")) !== ""
+    )
+      throw Error("Personal input not locked: " + name);
+  }
+  await page.getByLabel("출생 국가·시간대 확인").selectOption("KR");
+  await page.getByRole("checkbox").nth(1).check();
+  await page.getByRole("checkbox").nth(2).check();
+  await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
+  await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
+  await page.getByLabel("이메일 주소").waitFor();
+  if (
+    (await page.getByLabel("이메일 주소").inputValue()) !==
+    "preview@example.invalid"
+  )
+    throw Error("Synthetic email missing");
+  await page.getByRole("button", { name: "인증번호 요청" }).click();
+  await page.getByRole("button", { name: "로컬 시험 수신함 열기" }).click();
+  await page.getByLabel("인증번호 6자리").fill("123456");
+  await page.getByRole("button", { name: "이메일 인증 완료" }).click();
+  await page.getByText("구매 이메일 인증이 완료되었습니다.").waitFor();
+  for (const c of await page.locator("form").last().getByRole("checkbox").all())
+    if ((await c.getAttribute("name")) !== "marketing") await c.check();
+  await page
+    .getByRole("button", { name: "33,000원 모의 결제 · 실제 청구 없음" })
+    .click();
+  await page.getByRole("link", { name: "운명서 전체 읽기" }).click();
+  await page.getByRole("heading", { name: "가온 님의 종합 운명서" }).waitFor();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "PDF 다운로드" }).click();
+  await (await download).saveAs("var/public-preview-proof.pdf");
+  await page.screenshot({
+    path: "docs/public-preview-report.png",
+    fullPage: true,
+  });
+  await page.goto(base + "?screen=recover");
+  await page.getByRole("link", { name: "같은 운명서 다시 읽기" }).waitFor();
+  await page.goto(base + "?screen=help");
+  await page.getByRole("button", { name: "문의 접수하기" }).click();
+  await page
+    .getByText("가상 미리보기 문의입니다. 실제 상담 접수가 아닙니다.")
+    .waitFor();
+  await page.goto(base + "?screen=admin");
+  await page.getByRole("heading", { name: "관리자 접근 제한" }).waitFor();
+  if (errors.length || apiRequests.length)
+    throw Error(JSON.stringify({ errors, apiRequests }));
+  const result = {
+    passed: true,
+    flow: "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → synthetic inquiry; admin restricted",
+    externalApiRequests: apiRequests.length,
+    realPersonalInputEnabled: false,
+    origin: base,
+  };
+  writeFileSync(
+    "docs/public-preview-test.json",
+    JSON.stringify(result, null, 2),
+  );
+  console.log(JSON.stringify(result));
+} finally {
+  await browser.close();
+}
