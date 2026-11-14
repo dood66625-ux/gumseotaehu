@@ -68,6 +68,7 @@ async function handler(
           input: r.input,
           chart: r.chart,
           preview: r.preview,
+          purchaseEligible: r.purchaseEligible,
         });
       }
       if (p === "orders") return json(svc.listOrders(s));

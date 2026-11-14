@@ -16,8 +16,10 @@ export const birthSchema = z.object({
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
     .nullable(),
   sex: z.enum(["male", "female", "unspecified"]),
-  place: z.literal("KR"),
-  age: z.enum(["under14", "14-18", "19+"]),
+  place: z.literal("KR").default("KR"),
+  age: z
+    .enum(["under14", "14-18", "19+", "unconfirmed"])
+    .default("unconfirmed"),
   self: z.literal(true),
   consent: z.literal(true),
 });
@@ -248,7 +250,7 @@ function getHidden(branch: string) {
 }
 export type Chart = ReturnType<typeof calculate>;
 
-export function assertSubjectAge(solarDate: string) {
+export function ageAtKstDate(solarDate: string) {
   const [y, m, d] = solarDate.split("-").map(Number),
     today = new Date(Date.now() + 9 * 3600000);
   const age =
@@ -257,5 +259,9 @@ export function assertSubjectAge(solarDate: string) {
     ((today.getUTCMonth() + 1) * 100 + today.getUTCDate() < m * 100 + d
       ? 1
       : 0);
-  if (age < 14) throw Error("현재는 대상자 본인 만 14세 이상만 지원합니다.");
+  return age;
+}
+export function assertSubjectAge(solarDate: string) {
+  if (ageAtKstDate(solarDate) < 14)
+    throw Error("현재는 대상자 본인 만 14세 이상만 지원합니다.");
 }

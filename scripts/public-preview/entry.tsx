@@ -50,7 +50,7 @@ window.fetch = async (input: any, init: any = {}) => {
   if (p.startsWith("readings/"))
     return response({
       ...snapshot.reading,
-      input: { ...snapshot.reading.input, age: s.age || "19+" },
+      input: { ...snapshot.reading.input, age: s.age || "unconfirmed" },
     });
   if (p === "auth/request")
     return response({
@@ -70,6 +70,11 @@ window.fetch = async (input: any, init: any = {}) => {
     return response({ ok: true });
   }
   if (p === "orders" && init.method === "POST") {
+    if (b.consent?.buyerAdult !== true)
+      return response(
+        { error: "구매자 본인이 만 19세 이상인지 확인해 주세요." },
+        403,
+      );
     if (!s.authenticated)
       return response({ error: "가상 이메일 인증이 필요합니다." }, 401);
     if (s.age === "14-18")

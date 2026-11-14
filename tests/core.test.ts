@@ -55,6 +55,7 @@ function order() {
       privacy: true,
       withdrawal: true,
       confirmedBirth: true,
+      buyerAdult: true,
     });
   return { s, rid, oid };
 }
@@ -245,6 +246,52 @@ describe("privacy and authentication", () => {
   });
 });
 describe("orders, mock PG and durable recovery", () => {
+  it("minimal free input defaults to Korea without assuming adult buyer", () => {
+    const s = verified();
+    const { age, place, ...input } = birth;
+    const rid = svc.makeReading(s, input),
+      r = svc.readingFor(s, rid);
+    expect(r.input.place).toBe("KR");
+    expect(r.input.age).toBe("unconfirmed");
+    expect(r.age_category).toBe("unconfirmed");
+    expect(r.purchaseEligible).toBe(true);
+  });
+  it("requires separate adult confirmation at checkout and records its source", () => {
+    const s = verified();
+    const { age, ...input } = birth;
+    const rid = svc.makeReading(s, input),
+      consent = {
+        terms: true,
+        privacy: true,
+        withdrawal: true,
+        confirmedBirth: true,
+      };
+    expect(() => svc.createOrder(s, rid, consent)).toThrow();
+    expect(() =>
+      svc.createOrder(s, rid, { ...consent, buyerAdult: false }),
+    ).toThrow();
+    const oid = svc.createOrder(s, rid, { ...consent, buyerAdult: true });
+    const saved = open(svc.ownOrder(s, oid).consent_enc);
+    expect(saved.buyerAdult).toBe(true);
+    expect(saved.ageEvidence).toBe("checkout-self-declaration");
+    expect(svc.readingFor(s, rid).input.age).toBe("unconfirmed");
+  });
+  it("does not allow an under19 self-reading to bypass purchase gate with adult checkbox", () => {
+    const s = verified();
+    const { age, ...input } = birth;
+    const rid = svc.makeReading(s, { ...input, date: "2010-05-15" });
+    expect(svc.readingFor(s, rid).purchaseEligible).toBe(false);
+    expect(() =>
+      svc.createOrder(s, rid, {
+        terms: true,
+        privacy: true,
+        withdrawal: true,
+        confirmedBirth: true,
+        buyerAdult: true,
+      }),
+    ).toThrow("14~18");
+  });
+
   it("server blocks 14-18 paid orders despite guardian flag", () => {
     const s = verified(),
       rid = svc.makeReading(s, { ...birth, age: "14-18" });
@@ -254,6 +301,7 @@ describe("orders, mock PG and durable recovery", () => {
         privacy: true,
         withdrawal: true,
         confirmedBirth: true,
+        buyerAdult: true,
         guardianConsent: true,
       }),
     ).toThrow("14~18");
@@ -274,6 +322,7 @@ describe("orders, mock PG and durable recovery", () => {
         privacy: true,
         withdrawal: true,
         confirmedBirth: true,
+        buyerAdult: true,
       }),
     ).toBe(oid);
     expect(one("SELECT count(*) n FROM orders")?.n).toBe(1);
@@ -570,6 +619,7 @@ describe("admin refunds, correction and support", () => {
         privacy: true,
         withdrawal: true,
         confirmedBirth: true,
+        buyerAdult: true,
       }),
     ).toBe(oid);
     expect(one("SELECT count(*) n FROM orders")?.n).toBe(1);

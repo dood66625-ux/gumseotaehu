@@ -9,6 +9,12 @@ const browser = await chromium.launch(),
     hasTouch: true,
   }),
   page = await context.newPage();
+const go = (screen) => {
+  const url = new URL(base);
+  url.searchParams.set("v", "royal-3");
+  if (screen) url.searchParams.set("screen", screen);
+  return page.goto(url.toString());
+};
 const errors = [],
   apiRequests = [];
 page.on("pageerror", (e) => errors.push(e.message));
@@ -16,9 +22,13 @@ page.on("request", (r) => {
   if (new URL(r.url()).pathname.startsWith("/api/")) apiRequests.push(r.url());
 });
 try {
-  await page.goto(base);
+  await go();
   await page.getByRole("link", { name: "내 사주 펼쳐보기" }).click();
-  await page.getByLabel("이용자·구매자 연령").selectOption("19+");
+  if (
+    (await page.getByLabel("이용자·구매자 연령").count()) ||
+    (await page.getByLabel("출생 국가·시간대 확인").count())
+  )
+    throw Error("Removed selectors still visible");
   for (const name of ["어떻게 불러드릴까요?", "생년월일", "출생시간"]) {
     const n = page.getByLabel(name, { exact: true });
     if (
@@ -27,7 +37,6 @@ try {
     )
       throw Error("Personal input not locked: " + name);
   }
-  await page.getByLabel("출생 국가·시간대 확인").selectOption("KR");
   await page.getByRole("checkbox").nth(1).check();
   await page.getByRole("checkbox").nth(2).check();
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
@@ -55,14 +64,15 @@ try {
     path: "docs/public-preview-report.png",
     fullPage: true,
   });
-  await page.goto(base + "?screen=recover");
+  await go("recover");
   await page.getByRole("link", { name: "같은 운명서 다시 읽기" }).waitFor();
-  await page.goto(base + "?screen=help");
+  await go("help");
   await page.getByRole("button", { name: "문의 접수하기" }).click();
-  await page.getByRole("article")
+  await page
+    .getByRole("article")
     .getByText("가상 미리보기 문의입니다. 실제 상담 접수가 아닙니다.")
     .waitFor();
-  await page.goto(base + "?screen=admin");
+  await go("admin");
   await page.getByRole("heading", { name: "관리자 접근 제한" }).waitFor();
   if (errors.length || apiRequests.length)
     throw Error(JSON.stringify({ errors, apiRequests }));

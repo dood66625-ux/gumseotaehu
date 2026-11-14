@@ -84,7 +84,9 @@ export default function Preview({ id }: { id: string }) {
         <p className="price">
           33,000원 <small>한 번만 결제 · 구독 없음</small>
         </p>
-        {r.input.age === "19+" ? (
+        {r.purchaseEligible !== false &&
+        r.input.age !== "14-18" &&
+        r.input.age !== "under14" ? (
           <Link
             className="button"
             style={{ width: "100%" }}

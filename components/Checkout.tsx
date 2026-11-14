@@ -25,6 +25,7 @@ export default function Checkout({ id }: { id: string }) {
           privacy: f.get("privacy") === "on",
           withdrawal: f.get("withdrawal") === "on",
           confirmedBirth: f.get("confirmedBirth") === "on",
+          buyerAdult: f.get("buyerAdult") === "on",
           marketing: f.get("marketing") === "on",
         },
       });
@@ -55,7 +56,11 @@ export default function Checkout({ id }: { id: string }) {
   }
   if (loadError) return <ErrorBox error={loadError} />;
   if (!r) return <Loading />;
-  if (r.input.age !== "19+")
+  if (
+    r.purchaseEligible === false ||
+    r.input.age === "14-18" ||
+    r.input.age === "under14"
+  )
     return (
       <div className="notice">
         만 19세 이상 구매자만 모의 결제를 이용할 수 있습니다.
@@ -139,6 +144,16 @@ export default function Checkout({ id }: { id: string }) {
             해석은 미래 예측이나 전문 조언을 대신하지 않습니다. 현재는 실제 AI를
             호출하지 않는 규칙 기반 검증판입니다.
           </p>
+          <label className="check">
+            <input name="buyerAdult" type="checkbox" required />
+            <span>
+              구매자 본인은 만 19세 이상입니다. (필수)
+              <small className="hint" style={{ display: "block" }}>
+                만 14~18세는 보호자 확인 절차가 준비되기 전까지 무료 풀이만
+                이용할 수 있습니다.
+              </small>
+            </span>
+          </label>
           <label className="check">
             <input name="confirmedBirth" type="checkbox" required />
             출생정보와 시간 미상 시 해석 한계를 확인했습니다. (필수)

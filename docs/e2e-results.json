@@ -245,7 +245,7 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 4813,
+                  "duration": 4197,
                   "errors": [],
                   "stdout": [],
                   "stderr": [
@@ -254,7 +254,7 @@
                     }
                   ],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:25:53.126Z",
+                  "startTime": "2026-11-14T01:45:16.190Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -272,12 +272,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5679,
+                  "duration": 6516,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:18.996Z",
+                  "startTime": "2026-11-14T01:45:41.818Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -295,7 +295,7 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2325,
+                  "duration": 2796,
                   "errors": [],
                   "stdout": [],
                   "stderr": [
@@ -304,7 +304,7 @@
                     }
                   ],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:49.058Z",
+                  "startTime": "2026-11-14T01:46:16.205Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -314,7 +314,7 @@
           ],
           "id": "bf222bad70f76648f722-b4efd29d2d7d241bb605",
           "file": "journey.spec.ts",
-          "line": 77,
+          "line": 78,
           "column": 1
         },
         {
@@ -333,12 +333,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 16847,
+                  "duration": 16915,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:25:58.194Z",
+                  "startTime": "2026-11-14T01:45:20.607Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -356,12 +356,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 16177,
+                  "duration": 19295,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:24.982Z",
+                  "startTime": "2026-11-14T01:45:48.616Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -379,12 +379,12 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 12632,
+                  "duration": 12051,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:51.655Z",
+                  "startTime": "2026-11-14T01:46:19.260Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -394,7 +394,7 @@
           ],
           "id": "bf222bad70f76648f722-af06daa868a1b700c131",
           "file": "journey.spec.ts",
-          "line": 118,
+          "line": 119,
           "column": 1
         },
         {
@@ -413,12 +413,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 809,
+                  "duration": 614,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:15.051Z",
+                  "startTime": "2026-11-14T01:45:37.538Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -436,12 +436,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1503,
+                  "duration": 1615,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:41.175Z",
+                  "startTime": "2026-11-14T01:46:07.925Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -459,12 +459,12 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1288,
+                  "duration": 555,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:27:04.297Z",
+                  "startTime": "2026-11-14T01:46:31.323Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -474,7 +474,7 @@
           ],
           "id": "bf222bad70f76648f722-5def62aa50ff9497aacb",
           "file": "journey.spec.ts",
-          "line": 220,
+          "line": 219,
           "column": 1
         },
         {
@@ -493,12 +493,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 220,
+                  "duration": 335,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:15.888Z",
+                  "startTime": "2026-11-14T01:45:38.167Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -516,12 +516,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 559,
+                  "duration": 631,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:42.700Z",
+                  "startTime": "2026-11-14T01:46:09.560Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -539,12 +539,12 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 186,
+                  "duration": 266,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:27:05.598Z",
+                  "startTime": "2026-11-14T01:46:31.889Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -554,11 +554,11 @@
           ],
           "id": "bf222bad70f76648f722-22c05ba080669e1b7696",
           "file": "journey.spec.ts",
-          "line": 238,
+          "line": 237,
           "column": 1
         },
         {
-          "title": "time unknown and under14 are handled visibly; input has no browser PII persistence",
+          "title": "simplified input keeps 14+ consent and Korea default without age/country selectors",
           "ok": true,
           "tags": [],
           "tests": [
@@ -573,12 +573,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1176,
+                  "duration": 1533,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:16.117Z",
+                  "startTime": "2026-11-14T01:45:38.516Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -596,12 +596,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2697,
+                  "duration": 2855,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:43.271Z",
+                  "startTime": "2026-11-14T01:46:10.206Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -619,12 +619,12 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1101,
+                  "duration": 1342,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:27:05.793Z",
+                  "startTime": "2026-11-14T01:46:32.166Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -632,9 +632,9 @@
               "status": "expected"
             }
           ],
-          "id": "bf222bad70f76648f722-42bec35a8b6fadee1e03",
+          "id": "bf222bad70f76648f722-62174695fe883325e542",
           "file": "journey.spec.ts",
-          "line": 307,
+          "line": 345,
           "column": 1
         },
         {
@@ -653,12 +653,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 424,
+                  "duration": 555,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:17.326Z",
+                  "startTime": "2026-11-14T01:45:40.060Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -676,12 +676,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1505,
+                  "duration": 1892,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:45.980Z",
+                  "startTime": "2026-11-14T01:46:13.080Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -699,12 +699,12 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1193,
+                  "duration": 510,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:27:06.904Z",
+                  "startTime": "2026-11-14T01:46:33.518Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -714,7 +714,7 @@
           ],
           "id": "bf222bad70f76648f722-99274ab07403138bd779",
           "file": "journey.spec.ts",
-          "line": 324,
+          "line": 367,
           "column": 1
         },
         {
@@ -733,12 +733,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 690,
+                  "duration": 373,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:17.759Z",
+                  "startTime": "2026-11-14T01:45:40.629Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -756,12 +756,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1017,
+                  "duration": 616,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:26:47.501Z",
+                  "startTime": "2026-11-14T01:46:14.982Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -779,12 +779,12 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 836,
+                  "duration": 748,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T15:27:08.107Z",
+                  "startTime": "2026-11-14T01:46:34.041Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -794,7 +794,7 @@
           ],
           "id": "bf222bad70f76648f722-0ea830b64b37a57c09c4",
           "file": "journey.spec.ts",
-          "line": 339,
+          "line": 382,
           "column": 1
         }
       ]
@@ -802,8 +802,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-13T15:25:49.562Z",
-    "duration": 79509.564,
+    "startTime": "2026-11-14T01:45:13.200Z",
+    "duration": 81686.91500000001,
     "expected": 21,
     "skipped": 0,
     "unexpected": 0,

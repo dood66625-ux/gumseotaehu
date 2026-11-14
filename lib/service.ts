@@ -6,6 +6,7 @@ import {
   birthSchema,
   calculate,
   assertSubjectAge,
+  ageAtKstDate,
   type Chart,
 } from "./astrology";
 import { preview, generate, type Report } from "./interpretation";
@@ -57,6 +58,9 @@ export function readingFor(
     input: open(r.input_enc),
     chart: open<Chart>(r.chart_enc),
     preview: open(r.preview_enc),
+    purchaseEligible:
+      r.age_category !== "14-18" &&
+      ageAtKstDate(open<Chart>(r.chart_enc).solarDate) >= 19,
   };
 }
 export function makeReading(s: Session, raw: unknown) {
@@ -165,11 +169,18 @@ export function createOrder(s: Session, rid: string, consent: unknown) {
       privacy: z.literal(true),
       withdrawal: z.literal(true),
       confirmedBirth: z.literal(true),
+      buyerAdult: z.literal(true, {
+        error: "구매자 본인이 만 19세 이상인지 확인해 주세요.",
+      }),
       marketing: z.boolean().default(false),
     })
     .parse(consent);
   const r = readingFor(s, rid);
-  if (r.age_category !== "19+")
+  if (
+    r.age_category === "14-18" ||
+    r.age_category === "under14" ||
+    (r.input.self && ageAtKstDate(r.chart.solarDate) < 19)
+  )
     throw new Fault(
       "만 14~18세는 무료 풀이만 가능합니다. 보호자 확인 절차 준비 전에는 구매할 수 없습니다.",
       403,
@@ -200,10 +211,11 @@ export function createOrder(s: Session, rid: string, consent: unknown) {
       Date.now(),
       seal({
         ...c,
-        policy: "draft-2026-11-13",
+        policy: "draft-2026-11-14-age-v2",
         time: Date.now(),
         product: "2027-v1",
-        age: r.age_category,
+        age: "19+",
+        ageEvidence: "checkout-self-declaration",
       }),
     );
     run("INSERT INTO reading_history VALUES(?,?,?)", oid, rid, 1);

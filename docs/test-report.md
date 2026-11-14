@@ -16,7 +16,7 @@
 |검사|결과|증거|
 |---|---|---|
 |TypeScript strict|PASS|npm run typecheck|
-|단위·통합·보안·오프라인 계약|**191 PASS**|tests/core.test.ts,contracts.test.ts,ai-contract.test.ts|
+|단위·통합·보안·오프라인 계약|**194 PASS**|tests/core.test.ts,contracts.test.ts,ai-contract.test.ts|
 |일주 독립 산술 대조|120/120 PASS|Gregorian JDN 별도 공식;120개 서로 다른 날짜|
 |알려진 양음력 날짜|3/3 PASS|라이브러리 합성 픽스처;공식 데이터 전 범위 검증 아님|
 |절입/자시/시각 미상/윤달 오류|로컬 케이스 PASS|core.test.ts|
@@ -68,3 +68,5 @@
 ![관리자](mobile-chromium-admin.png)
 
 WebKit·데스크톱 스크린샷과 각 환경에서 내려받은 한글 PDF도 같은 docs 폴더에 있다. 원문에 실제 고객 데이터나 비밀값은 없다. source GitHub 저장소는 사용자 지정 `dood66625-ux/gumseotaehu`, 운영 사이트가 아니다.
+
+입력 간소화 최신 검증:단위·통합194개/E2E21개. [변경 및 검사](input-simplification.md)를 참조한다. 과거 릴리스의191개는 그 시점 결과다.

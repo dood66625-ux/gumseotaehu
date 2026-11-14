@@ -45,6 +45,7 @@ async function createPaid(page: Page, email: string, close = false) {
         privacy: true,
         withdrawal: true,
         confirmedBirth: true,
+        buyerAdult: true,
       },
     })
   ).json();
@@ -120,12 +121,10 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
 }, info) => {
   const email = `journey-${info.project.name}@example.invalid`;
   await page.goto("/start");
-  await page.getByLabel("이용자·구매자 연령").selectOption("19+");
   await page.getByLabel("어떻게 불러드릴까요?").fill("가온");
   await page.getByLabel("생년월일").fill("1995-05-15");
   await page.getByLabel("출생시간", { exact: true }).fill("10:30");
   await page.getByLabel("전통 대운 계산 구분").selectOption("female");
-  await page.getByLabel("출생 국가·시간대 확인").selectOption("KR");
   await page.getByRole("checkbox").nth(1).check();
   await page.getByRole("checkbox").nth(2).check();
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
@@ -254,6 +253,7 @@ test("API rejects CSRF, amount tampering, fake callback, minor payment and admin
           privacy: true,
           withdrawal: true,
           confirmedBirth: true,
+          buyerAdult: true,
         },
       })
     ).json();
@@ -276,6 +276,43 @@ test("API rejects CSRF, amount tampering, fake callback, minor payment and admin
     ).status(),
   ).toBe(400);
   expect((await page.request.get("/api/reports/" + o.id)).status()).toBe(403);
+  const { age: removedAge, place: removedCountry, ...minimal } = birth;
+  const minimalReading = await (await post(page, "readings", minimal)).json();
+  const inputView = await (
+    await page.request.get("/api/readings/" + minimalReading.id)
+  ).json();
+  expect(inputView.input.place).toBe("KR");
+  expect(inputView.input.age).toBe("unconfirmed");
+  expect(
+    (
+      await post(page, "orders", {
+        readingId: minimalReading.id,
+        consent: {
+          terms: true,
+          privacy: true,
+          withdrawal: true,
+          confirmedBirth: true,
+        },
+      })
+    ).status(),
+  ).toBe(400);
+  const younger = await (
+    await post(page, "readings", { ...minimal, date: "2010-05-15" })
+  ).json();
+  expect(
+    (
+      await post(page, "orders", {
+        readingId: younger.id,
+        consent: {
+          terms: true,
+          privacy: true,
+          withdrawal: true,
+          confirmedBirth: true,
+          buyerAdult: true,
+        },
+      })
+    ).status(),
+  ).toBe(403);
   const minor = await (
     await post(page, "readings", { ...birth, age: "14-18" })
   ).json();
@@ -289,6 +326,7 @@ test("API rejects CSRF, amount tampering, fake callback, minor payment and admin
           privacy: true,
           withdrawal: true,
           confirmedBirth: true,
+          buyerAdult: true,
         },
       })
     ).status(),
@@ -304,16 +342,21 @@ test("API rejects CSRF, amount tampering, fake callback, minor payment and admin
   ).toBe(403);
 });
 
-test("time unknown and under14 are handled visibly; input has no browser PII persistence", async ({
+test("simplified input keeps 14+ consent and Korea default without age/country selectors", async ({
   page,
 }) => {
   await page.goto("/start");
-  await page.getByLabel("이용자·구매자 연령").selectOption("under14");
+  await expect(page.getByLabel("이용자·구매자 연령")).toHaveCount(0);
+  await expect(page.getByLabel("출생 국가·시간대 확인")).toHaveCount(0);
+  await expect(page.getByLabel("생년월일")).toBeVisible();
   await expect(
-    page.getByText("만 14세 미만은 이용 및 개인정보 입력이 제한됩니다."),
+    page.getByText(
+      "한국 표준시(Asia/Seoul) 기준으로 계산합니다. 해외 출생은 현재 지원하지 않습니다.",
+    ),
   ).toBeVisible();
-  await expect(page.getByLabel("생년월일")).toHaveCount(0);
-  await page.getByLabel("이용자·구매자 연령").selectOption("19+");
+  await expect(
+    page.getByRole("checkbox", { name: /만 14세 이상/ }),
+  ).toBeVisible();
   await page.getByLabel("출생시간을 모릅니다").check();
   await expect(page.getByLabel("출생시간", { exact: true })).toBeDisabled();
   const axe = await new AxeBuilder({ page }).analyze();
@@ -347,6 +390,7 @@ test("concurrent confirmation requests settle once", async ({ page }, info) => {
         privacy: true,
         withdrawal: true,
         confirmedBirth: true,
+        buyerAdult: true,
       },
     })
   ).json();
