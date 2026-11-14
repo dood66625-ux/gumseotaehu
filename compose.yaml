@@ -1,20 +1,34 @@
-# Local-only recipe; not executed/validated in this environment.
+# Local-only mock environment. Bind loopback; never publish as a customer service.
 services:
   web:
     build:
       context: .
       target: web
+    init: true
+    restart: unless-stopped
     env_file: .env.local
     environment:
       DATABASE_PATH: /data/geumseo.sqlite
+      APP_MODE: local
+      EXTERNAL_EFFECTS: disabled
     ports: ["127.0.0.1:3000:3000"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
     volumes: ["./var:/data"]
   worker:
     build:
       context: .
       target: worker
+    init: true
+    restart: unless-stopped
     env_file: .env.local
     environment:
       DATABASE_PATH: /data/geumseo.sqlite
+      APP_MODE: local
+      EXTERNAL_EFFECTS: disabled
     volumes: ["./var:/data"]
     user: "1000:1000"
