@@ -3,6 +3,11 @@ import { blockedTransport, type Transport } from "./contracts";
 const payment = z.object({
   paymentKey: z.string(),
   orderId: z.string(),
+  mId: z.string().optional(),
+  currency: z.string().optional(),
+  type: z.string().optional(),
+  balanceAmount: z.number().int().optional(),
+  approvedAt: z.string().nullable().optional(),
   totalAmount: z.number().int(),
   status: z.enum([
     "DONE",

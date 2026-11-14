@@ -14,6 +14,15 @@ export function operationalHealth() {
       one("SELECT updated FROM worker_heartbeat WHERE name='reports'")
         ?.updated ?? null;
   const counts = {
+    tossUncertain: one(
+      "SELECT count(*) n FROM toss_attempts WHERE state IN ('confirming','uncertain')",
+    )!.n as number,
+    tossReview: one(
+      "SELECT count(*) n FROM toss_attempts WHERE state='review'",
+    )!.n as number,
+    undeliverablePaid: one(
+      "SELECT count(*) n FROM orders WHERE payment_status='paid' AND fulfillment='failed'",
+    )!.n as number,
     failedJobs: one("SELECT count(*) n FROM jobs WHERE state='failed'")!
       .n as number,
     refundErrors: one("SELECT count(*) n FROM refunds WHERE status='error'")!

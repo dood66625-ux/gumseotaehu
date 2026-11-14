@@ -30,3 +30,7 @@ CREATE TABLE IF NOT EXISTS email_changes(id TEXT PRIMARY KEY,order_id TEXT NOT N
 INSERT OR IGNORE INTO schema_migrations VALUES(3,unixepoch()*1000);
 CREATE TABLE IF NOT EXISTS session_auth(session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,verified_at INTEGER NOT NULL);
 INSERT OR IGNORE INTO schema_migrations VALUES(4,unixepoch()*1000);
+CREATE TABLE IF NOT EXISTS toss_attempts(order_id TEXT PRIMARY KEY REFERENCES orders(id),payment_key TEXT NOT NULL UNIQUE,merchant_id TEXT NOT NULL,state TEXT NOT NULL CHECK(state IN ('confirming','uncertain','verified','refunded','review')),generation INTEGER NOT NULL DEFAULT 0,lease_until INTEGER NOT NULL DEFAULT 0,needs_check INTEGER NOT NULL DEFAULT 0,approved_at INTEGER,refund_reason_enc TEXT NOT NULL,refund_dispatched INTEGER NOT NULL DEFAULT 0,last_error TEXT,last_status TEXT,checked_at INTEGER,failures INTEGER NOT NULL DEFAULT 0,next_check INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL,updated INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS toss_notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,event_key TEXT NOT NULL UNIQUE,order_id TEXT NOT NULL REFERENCES orders(id),received INTEGER NOT NULL,processed INTEGER);
+CREATE INDEX IF NOT EXISTS toss_recovery_due ON toss_attempts(needs_check,state,lease_until);
+INSERT OR IGNORE INTO schema_migrations VALUES(5,unixepoch()*1000);

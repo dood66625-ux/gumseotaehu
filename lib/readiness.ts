@@ -8,6 +8,7 @@ export function launchReadiness() {
     completedLocal: [
       "server-price-and-payment-state-checks",
       "durable-job-and-refund-reconciliation",
+      "offline-toss-order-integration-and-notification-recovery",
       "single-operator-session-rotation-and-recent-mfa",
       "verified-two-address-email-change-mock",
       "encrypted-backup-and-signed-deletion-replay",
@@ -28,7 +29,7 @@ export function launchReadiness() {
         id: "toss",
         kind: "implementation-and-provider",
         detail:
-          "Browser SDK, server order integration and real sandbox approval/lookup/cancel/webhook verification remain incomplete. Test transport is not wired into runtime.",
+          "DB-backed Toss order/approval/refund integration is tested offline. Browser SDK, actual route/worker registration, webhook verification and real sandbox tests remain incomplete; no test transport is active in runtime.",
       },
       {
         id: "ai",

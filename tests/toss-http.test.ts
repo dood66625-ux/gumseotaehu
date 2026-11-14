@@ -39,6 +39,19 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
     );
     expect(send).not.toHaveBeenCalled();
   });
+  it.each(["/v1/payments/../cancel", "/v1/payments/%2e%2e/cancel"])(
+    "rejects canonical path traversal %s before sending",
+    async (path) => {
+      const send = vi.fn<typeof fetch>();
+      await expect(
+        createTossTestTransport({ enabled: true, fetch: send })({
+          ...request,
+          path,
+        }),
+      ).rejects.toThrow("ENDPOINT");
+      expect(send).not.toHaveBeenCalled();
+    },
+  );
   it("confirms using the fixed host, no redirects and server amount", async () => {
     const send = vi.fn<typeof fetch>().mockResolvedValue(Response.json(paid));
     const t = new TossTestContract(
@@ -52,6 +65,7 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
       "https://api.tosspayments.com/v1/payments/confirm",
     );
     expect(send.mock.calls[0][1]?.redirect).toBe("error");
+    expect(send.mock.calls[0][1]?.cache).toBe("no-store");
     expect(JSON.parse(send.mock.calls[0][1]?.body as string).amount).toBe(
       33000,
     );
@@ -142,6 +156,14 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
       }),
     ).rejects.toThrow("TIMEOUT_RECONCILIATION_REQUIRED");
     expect(send).toHaveBeenCalledTimes(1);
+  });
+  it("bounds provider response bytes before JSON parsing", async () => {
+    const send = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response("x".repeat(300000)));
+    await expect(
+      createTossTestTransport({ enabled: true, fetch: send })(request),
+    ).rejects.toThrow("TOSS_RESPONSE_TOO_LARGE");
   });
   it("retains server payment verification after successful HTTP", async () => {
     const send = vi

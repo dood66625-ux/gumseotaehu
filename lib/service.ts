@@ -299,6 +299,10 @@ export function mockAuthenticate(
   scenario = "success",
 ) {
   const o = ownOrder(s, oid);
+  if (o.content_deleted)
+    throw new Fault("삭제된 주문은 결제할 수 없습니다.", 409);
+  if (one("SELECT order_id FROM toss_attempts WHERE order_id=?", oid))
+    throw new Fault("테스트 PG 주문은 전용 승인 경로로 확인해야 합니다.", 409);
   if (o.payment_status !== "pending") return o.payment_key;
   if (scenario === "decline")
     throw new Fault("모의 결제가 거절되었습니다. 청구되지 않았습니다.");
@@ -325,6 +329,8 @@ export function confirmPayment(
   failAfterPg = false,
 ) {
   const o = ownOrder(s, oid);
+  if (one("SELECT order_id FROM toss_attempts WHERE order_id=?", oid))
+    throw new Fault("테스트 PG 주문은 전용 승인 경로로 확인해야 합니다.", 409);
   if (amount !== 33000 || amount !== o.amount)
     throw new Fault("주문금액 검증에 실패했습니다.");
   const pg = one(
@@ -341,24 +347,33 @@ function finalizePayment(oid: string, key: string) {
   tx(() => {
     const o = one("SELECT * FROM orders WHERE id=?", oid);
     if (!o || o.payment_status !== "pending") return;
-    const now = Date.now(),
+    const verified = one(
+      "SELECT approved_at FROM toss_attempts WHERE order_id=? AND payment_key=? AND state='verified'",
+      oid,
+      key,
+    );
+    const now = verified?.approved_at ?? Date.now(),
       expiry = new Date(now);
     expiry.setUTCFullYear(expiry.getUTCFullYear() + 1);
+    const deliverable = !o.content_deleted && expiry.getTime() > Date.now();
     run(
-      "UPDATE orders SET payment_status='paid',fulfillment='queued',payment_key=?,paid_at=?,expires=? WHERE id=?",
+      "UPDATE orders SET payment_status='paid',fulfillment=?,payment_key=?,paid_at=?,expires=? WHERE id=?",
+      deliverable ? "queued" : "failed",
       key,
       now,
       expiry.getTime(),
       oid,
     );
-    run(
-      "INSERT OR IGNORE INTO jobs(id,order_id,version,state,scheduled) VALUES(?,?,?,?,?)",
-      id(),
-      oid,
-      o.version,
-      "queued",
-      now,
-    );
+    if (deliverable)
+      run(
+        "INSERT OR IGNORE INTO jobs(id,order_id,version,state,scheduled) VALUES(?,?,?,?,?)",
+        id(),
+        oid,
+        o.version,
+        "queued",
+        now,
+      );
+    else audit("system", "verified_payment_requires_fulfillment_review", oid);
     event("payment_confirmed", oid);
     audit("system", "payment_verified", oid);
     enqueueMail(o.email_hash, {
@@ -688,6 +703,8 @@ export function refund(
   pgFailure = false,
 ) {
   requireRecentAdmin(s, ["operations", "finance"]);
+  if (one("SELECT order_id FROM toss_attempts WHERE order_id=?", oid))
+    throw new Fault("테스트 PG 주문은 전용 취소 경로로 처리해야 합니다.", 409);
   if (reason.trim().length < 5)
     throw new Fault("환불 검토 사유를 5자 이상 기록해 주세요.");
   const o = one("SELECT * FROM orders WHERE id=?", oid);

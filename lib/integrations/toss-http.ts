@@ -24,6 +24,11 @@ export function createTossTestTransport(options: {
     ))
       throw Error("TOSS_ENDPOINT_NOT_ALLOWED");
     if (
+      new URL("https://api.tosspayments.com" + request.path).pathname !==
+      request.path
+    )
+      throw Error("TOSS_ENDPOINT_NOT_ALLOWED");
+    if (
       !Number.isInteger(request.timeoutMs) ||
       request.timeoutMs < 1 ||
       request.timeoutMs > 30000
@@ -42,13 +47,32 @@ export function createTossTestTransport(options: {
               ? undefined
               : JSON.stringify(request.body),
           redirect: "error",
+          cache: "no-store",
           signal: controller.signal,
         },
       );
       // Never expose provider bodies, credentials, or personal details in errors.
       if (!response.ok) throw Error("TOSS_HTTP_" + response.status);
+      if (!response.body) throw Error("TOSS_INVALID_RESPONSE");
+      const reader = response.body.getReader(),
+        chunks: Uint8Array[] = [];
+      let size = 0;
       try {
-        return await response.json();
+        while (true) {
+          const next = await reader.read();
+          if (next.done) break;
+          size += next.value.byteLength;
+          if (size > 256 * 1024) {
+            await reader.cancel();
+            throw Error("TOSS_RESPONSE_TOO_LARGE");
+          }
+          chunks.push(next.value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+      try {
+        return JSON.parse(Buffer.concat(chunks).toString("utf8"));
       } catch {
         throw Error("TOSS_INVALID_RESPONSE");
       }
@@ -57,7 +81,9 @@ export function createTossTestTransport(options: {
         throw Error("TOSS_TIMEOUT_RECONCILIATION_REQUIRED");
       if (
         error instanceof Error &&
-        /^TOSS_(HTTP_\d{3}|INVALID_RESPONSE)$/.test(error.message)
+        /^TOSS_(HTTP_\d{3}|INVALID_RESPONSE|RESPONSE_TOO_LARGE)$/.test(
+          error.message,
+        )
       )
         throw error;
       throw Error("TOSS_NETWORK_RECONCILIATION_REQUIRED");

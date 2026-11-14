@@ -13,6 +13,7 @@ const fields: Record<string, string[]> = {
   tickets: ["payload"],
   refunds: ["reason_enc"],
   email_changes: ["new_email_enc"],
+  toss_attempts: ["refund_reason_enc"],
 };
 /** New offline copy only. AUTH_SECRET/HMAC identities and live files are never changed. */
 export async function rotateDataKey(

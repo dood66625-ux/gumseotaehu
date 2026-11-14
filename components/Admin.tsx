@@ -192,6 +192,11 @@ export default function Admin() {
             승인 대사 대기 {data.health.counts.pendingApprovals}건 · 제공 완료
             원문 누락 {data.health.counts.missingReports}건
           </p>
+          <p>
+            제공 실패 주문 {data.health.counts.undeliverablePaid}건 · 테스트 PG
+            확인 대기 {data.health.counts.tossUncertain}건 · 별도 검토{" "}
+            {data.health.counts.tossReview}건
+          </p>
           <p className="hint">
             제공한 원문이 누락되면 재생성보다 검증된 백업 복구를 우선합니다.
             새로 생성한 문서를 기존 원문과 같다고 표시하지 않습니다.
