@@ -22,7 +22,8 @@
     "build:preview": "tsx scripts/build-public-preview.tsx",
     "preview:serve": "node scripts/serve-public-preview.mjs",
     "test:preview": "node scripts/test-public-preview.mjs",
-    "toss:check": "node scripts/toss-config-check.mjs"
+    "toss:check": "node scripts/toss-config-check.mjs",
+    "restore": "tsx scripts/restore.ts"
   },
   "keywords": [],
   "author": "",

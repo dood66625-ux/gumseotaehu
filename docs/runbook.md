@@ -14,7 +14,17 @@ Node24, npm ci/setup/build/start + 별도 worker. 동일 cwd와 var 볼륨, 같�
 - 개인정보 삭제: 인증 고객 privacy 문의→운영자 본인확인/주문 대조→삭제 업무. 원문 전 버전 파기·재생성 차단, 거래 보존 분리.
 
 ## 백업·복구
-`npm run backup`은 Node SQLite backup API로 WAL 포함 일관 스냅샷을 var/backups에 만든다. 암호화 키 없이는 payload 복구 불가. 운영 디스크/백업 파일 자체 암호화·접근권한·보존기간은 별도 구축한다. 중단 복구 시험: web/worker 종료→현재DB 별도 보관→백업 복사→기존 DATA_KEY/AUTH_SECRET로 기동→주문/보고서 동일 확인. 자동 테스트에서 일관 백업을 새 연결로 열고 결제 상태·복호화 본문 동일성을 확인한다. 이는 실인프라 DR 훈련을 대체하지 않는다.
+`npm run backup`은 SQLite backup API로 WAL을 포함한 일관 스냅샷을 만든 후 AES-256-GCM으로 파일 전체를 암호화하여 `var/backups/*.gsb`로 저장한다. 파일 권한은 0600, 임시 디렉터리는 0700이다. 임시 평문 스냅샷은 작업 종료 시 삭제한다. 삭제는 저장매체의 보안 소거를 보장하지 않으므로 디스크 암호화가 별도로 필요하다.
+
+```sh
+npm run backup
+# source archive and NEW offline destination; never point at the live database
+npm run restore -- var/backups/<archive>.gsb var/recovery/check.sqlite
+```
+
+복구는 같은 DATA_KEY가 필요하다. 잘못된 키/변조된 파일, 기존 목적지 또는 WAL/SHM/journal 파일이 있으면 거부한다. 복호화 후 SQLite integrity_check 및 foreign_key_check를 통과한 새 파일만 제공한다. 실행 중인 DB를 교체하거나 서버/워커를 시작하지 않는다. 현재 파일 크기 상한은 64MiB이며 더 큰 DB에는 스트리밍/대용량 백업 구현이 필요하다.
+
+장애 복구 시 먼저 서버/워커를 중지하고 원본 DB와 키를 별도로 보존한다. 새 파일로 복구·검증한 후 담당자가 DB 경로 변경과 재기동을 수행한다. DATA_KEY 외에 기존 AUTH_SECRET 등 인증 키도 별도로 보관한다. 자동 테스트에서 실제 앱의 가상 결제 주문·암호화 보고서를 백업/복원하여 paid 상태와 복호화 원문 일치를 확인한다. 운영 디스크 암호화, 보존기한/삭제 전파, 외부 오프사이트 백업과 실인프라 재해복구 훈련은 별도 구축해야 한다. 기존 평문 .sqlite 백업은 자동 변환·삭제하지 않는다.
 
 키 교체는 기존 데이터 전체 decrypt→새 키 encrypt 재암호화·HMAC 인덱스 재산출·기존 세션 폐기와 검증이 필요하다. 현재 자동 키 회전은 미구현이며 단순 env 키 변경을 하지 않는다.
 

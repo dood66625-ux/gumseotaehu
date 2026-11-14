@@ -552,9 +552,16 @@ describe("admin refunds, correction and support", () => {
   it("SQLite backup restores encrypted report and payment state", async () => {
     const { s, oid } = paid();
     svc.workOnce();
-    const { backup, DatabaseSync } = await import("node:sqlite"),
-      target = "./var/test-backup.sqlite";
-    await backup(db(), target);
+    const { DatabaseSync } = await import("node:sqlite");
+    const { createEncryptedBackup, restoreEncryptedBackup } =
+      await import("../lib/backup");
+    const target = "./var/test-backup.sqlite",
+      archive = "./var/test-backup.gsb";
+    rmSync(target, { force: true });
+    rmSync(archive, { force: true });
+    const { config } = await import("../lib/config");
+    await createEncryptedBackup(db(), archive, config().key);
+    restoreEncryptedBackup(archive, target, config().key);
     const copy = new DatabaseSync(target);
     expect(
       copy.prepare("SELECT payment_status FROM orders WHERE id=?").get(oid),
@@ -565,6 +572,7 @@ describe("admin refunds, correction and support", () => {
     expect(open(row.payload)).toEqual(svc.getReport(s, oid).report);
     copy.close();
     rmSync(target, { force: true });
+    rmSync(archive, { force: true });
   });
   it("privacy deletion wipes all versions and cannot be recreated by worker", () => {
     const { s, oid } = paid();

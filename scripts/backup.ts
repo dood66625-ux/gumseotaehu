@@ -1,11 +1,11 @@
-import { backup } from "node:sqlite";
-import { mkdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { db } from "../lib/db";
-mkdirSync("var/backups", { recursive: true, mode: 0o700 });
-const path = "var/backups/geumseo-" + Date.now() + ".sqlite";
-await backup(db(), path);
+import { config } from "../lib/config";
+import { createEncryptedBackup } from "../lib/backup";
+const path = "var/backups/geumseo-" + Date.now() + "-" + randomUUID() + ".gsb";
+await createEncryptedBackup(db(), path, config().key);
 console.log(
-  "Consistent local backup created:",
+  "Encrypted consistent backup created:",
   path,
-  "Keep encryption keys separately; no external upload.",
+  "Keep DATA_KEY separately; no external upload.",
 );
