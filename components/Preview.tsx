@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Journey from "./Journey";
 import { useLoad, Loading, ErrorBox } from "./client";
-import { chapterTitles } from "@/lib/interpretation";
+import { chapterTitles } from "@/lib/report-titles";
 export default function Preview({ id }: { id: string }) {
   const { data: r, error } = useLoad<any>("readings/" + id);
   if (error) return <ErrorBox error={error} />;

@@ -163,6 +163,7 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.screenshot({
     path: "docs/" + info.project.name + "-report.png",
     fullPage: true,
+    scale: "css",
   });
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PDF 다운로드" }).click();

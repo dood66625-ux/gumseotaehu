@@ -192,6 +192,34 @@ export function calculate(raw: unknown) {
       text: `${target}년의 입춘 기준 세운은 ${annual}입니다.`,
     },
   ];
+  claims.push(
+    {
+      id: "TEN_GODS",
+      text:
+        pillars
+          .map(
+            (p, i) =>
+              `${["연주", "월주", "일주", "시주"][i]} ${p ? `${p} 천간은 일간 기준 ${tenGod(day, p[0])}` : "미산출"}`,
+          )
+          .join(" · ") + "입니다. 일주 천간의 비견은 자기 자신을 가리킵니다.",
+    },
+    {
+      id: "RELATIONS",
+      text: relations.length
+        ? `지지 쌍에서 ${relations.map((r) => `${r.pair} ${r.type}`).join(" · ")}이 계산됩니다. 합화 성립이나 사건 발생을 판단한 것은 아닙니다.`
+        : "산출된 지지 쌍에 육합·충 조합이 없습니다. 다른 합·형·해까지 없다는 뜻은 아닙니다.",
+    },
+    {
+      id: "CYCLES",
+      text: cycles.length
+        ? `대운은 ${luck!.isForward() ? "순행" : "역행"}, 첫 구간은 ${cycles[0].startYear}~${cycles[0].endYear}년 ${cycles[0].pillar}입니다. 나이는 전통식 계산 표기입니다.`
+        : "입력정보 부족으로 대운 시작·순역과 구간은 산출하지 않습니다.",
+    },
+    {
+      id: "MONTHS",
+      text: `${target}년 월별 간지는 양력 매월 15일 대표 시점의 기록입니다. 절입 시각에 바뀌는 명리월 전체 구간을 뜻하지 않습니다.`,
+    },
+  );
   return {
     pillars,
     day,
@@ -222,7 +250,7 @@ export function calculate(raw: unknown) {
     ].filter(Boolean) as string[],
     meta: {
       engine: "lunar-javascript@1.7.8",
-      rules: "geumseo-0.1",
+      rules: "geumseo-0.2",
       timezone: "KST-modern-0.1",
       ziHourPolicy: "midnight-sect2",
       solarTerms: "library-CST-plus1h-unverified",

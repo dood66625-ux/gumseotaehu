@@ -23,7 +23,8 @@
     "preview:serve": "node scripts/serve-public-preview.mjs",
     "test:preview": "node scripts/test-public-preview.mjs",
     "toss:check": "node scripts/toss-config-check.mjs",
-    "restore": "tsx scripts/restore.ts"
+    "restore": "tsx scripts/restore.ts",
+    "audit:content": "tsx scripts/audit-content.ts"
   },
   "keywords": [],
   "author": "",

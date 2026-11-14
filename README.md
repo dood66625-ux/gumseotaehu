@@ -1,6 +1,6 @@
 # 금서태후 (禁書太后)
 
-**[금서태후 Royal v2 · 가상 정보로 둘러보기](https://dood66625-ux.github.io/gumseotaehu/?v=royal-7)**
+**[금서태후 Royal v2 · 가상 정보로 둘러보기](https://dood66625-ux.github.io/gumseotaehu/?v=royal-8)**
 
 GitHub Pages는 계정 소유자가 활성화했습니다. 공개 주소는 고정된 합성 데이터로 체험하는 별도 정적 버전이며 실제 운영 서버와 관리자 기능은 공개하지 않습니다.
 

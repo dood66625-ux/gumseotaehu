@@ -10,7 +10,7 @@ const generated = z.object({
       z.object({
         title: z.enum(chapterTitles as [string, ...string[]]),
         claimIds: z.array(z.string()).min(1).max(5),
-        text: z.string().min(100).max(5000),
+        text: z.string().min(100).max(3000),
       }),
     )
     .length(9),
@@ -23,7 +23,7 @@ export function buildAiRequest(chart: Chart, model: string) {
     store: false,
     max_output_tokens: 9000,
     instructions:
-      "금서태후는 창작 캐릭터다. 품위 있고 따뜻한 한국어 옛말투를 사용한다. 제공된 facts만 근거로 9개 장을 순서대로 작성한다. 계산을 고치거나 새로운 간지·일간·오행 수치를 만들어 내지 않는다. 사망·중병·임신·외도 예언, 공포·열등감 자극, 성공·투자수익 보장을 하지 않는다. 신강·용신은 판단하지 않는다. 시간 미상/제외 항목은 제외 사실을 밝힌다. 자유로운 선택을 존중하고 미래를 확정하지 않는다.",
+      "금서태후는 창작 캐릭터다. 품위 있고 따뜻한 한국어 옛말투를 사용한다. 제공된 facts만 근거로 9개 장을 순서대로 작성한다. 계산을 고치거나 새로운 간지·일간·오행 수치를 만들어 내지 않는다. 사망·중병·임신·외도 예언, 공포·열등감 자극, 성공·투자수익 보장을 하지 않는다. 신강·용신은 판단하지 않는다. 시간 미상/제외 항목은 제외 사실을 밝힌다. uncertainty 문장은 notes에 원문 그대로 모두 유지한다. 자유로운 선택을 존중하고 미래를 확정하지 않는다.",
     input: [
       {
         role: "user",

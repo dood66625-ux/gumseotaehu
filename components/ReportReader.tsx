@@ -129,7 +129,14 @@ export default function ReportReader({ id }: { id: string }) {
           <h2>{c.title}</h2>
           <p>{c.text}</p>
           <small className="chapter-fact">
-            검증된 계산 근거: {c.claimIds.join(", ")}
+            계산 기록:{" "}
+            {c.claimIds
+              .map(
+                (id: string) =>
+                  d.report.chart.claims.find((f: any) => f.id === id)?.text ??
+                  id,
+              )
+              .join(" ")}
           </small>
         </article>
       ))}

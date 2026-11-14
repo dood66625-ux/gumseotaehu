@@ -2,6 +2,7 @@ import PDFDocument from "pdfkit";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import type { getReport } from "./service";
+import { factText } from "./interpretation";
 export async function reportPdf(
   data: ReturnType<typeof getReport>,
 ): Promise<Buffer> {
@@ -74,12 +75,10 @@ export async function reportPdf(
         align: "center",
         width: W - 116,
       });
-    doc
-      .fontSize(12)
-      .text(`${data.name} 님을 위한 아홉 장의 이야기`, 58, 511, {
-        align: "center",
-        width: W - 116,
-      });
+    doc.fontSize(12).text(`${data.name} 님을 위한 아홉 장의 이야기`, 58, 511, {
+      align: "center",
+      width: W - 116,
+    });
     const date = (v: number) =>
       new Date(v).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
     doc
@@ -114,16 +113,21 @@ export async function reportPdf(
       .fillColor(gold)
       .text("CONTENTS · 아홉 장의 기록");
     doc.moveDown(0.8);
-    data.report.chapters.forEach((c, i) =>
+    const tocPage = doc.bufferedPageRange().count - 1;
+    const tocRows: number[] = [];
+    const starts: number[] = [];
+    data.report.chapters.forEach((c, i) => {
+      tocRows.push(doc.y);
       doc
         .fontSize(10)
         .fillColor(ink)
         .text(`${String(i + 1).padStart(2, "0")}     ${c.title}`, {
           lineGap: 9,
-        }),
-    );
+        });
+    });
     data.report.chapters.forEach((c, i) => {
       doc.addPage();
+      starts.push(doc.bufferedPageRange().count);
       doc
         .fontSize(9)
         .fillColor(gold)
@@ -141,7 +145,11 @@ export async function reportPdf(
         .moveDown(1.4)
         .fontSize(8)
         .fillColor(gold)
-        .text("계산 근거  " + c.claimIds.join(" · "));
+        .text(
+          "계산 기록  " +
+            c.claimIds.map((id) => factText(data.report.chart, id)).join(" "),
+          { lineGap: 5 },
+        );
     });
     doc.addPage();
     doc.fontSize(9).fillColor(gold).text("METHOD & NOTES");
@@ -158,6 +166,17 @@ export async function reportPdf(
         "금서태후는 창작 캐릭터이며 초상은 AI 생성 이미지입니다. 이 예시 운명서는 실제 AI 해석이 아닌 규칙 기반 콘텐츠입니다. 미래의 사실을 확정하거나 의료·법률·투자 조언을 대신하지 않습니다.",
         { lineGap: 6 },
       );
+    doc.switchToPage(tocPage);
+    starts.forEach((page, i) => {
+      doc
+        .fontSize(10)
+        .fillColor(gold)
+        .text(String(page), W - 102, tocRows[i], {
+          width: 44,
+          align: "right",
+          lineBreak: false,
+        });
+    });
     const pages = doc.bufferedPageRange();
     for (let i = 0; i < pages.count; i++) {
       doc.switchToPage(i);
