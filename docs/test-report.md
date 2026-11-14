@@ -16,17 +16,17 @@
 |검사|결과|증거|
 |---|---|---|
 |TypeScript strict|PASS|npm run typecheck|
-|단위·통합·보안·오프라인 계약|**194 PASS**|tests/core.test.ts,contracts.test.ts,ai-contract.test.ts|
+|단위·통합·보안·오프라인 계약|**265 PASS**|tests/*.test.ts; 백업/콘텐츠/절입 경계 추가 포함|
 |일주 독립 산술 대조|120/120 PASS|Gregorian JDN 별도 공식;120개 서로 다른 날짜|
-|알려진 양음력 날짜|3/3 PASS|라이브러리 합성 픽스처;공식 데이터 전 범위 검증 아님|
+|양음력 날짜 대조|기존 3개 + KASI 2024 초하루 12개 PASS|참고자료 일부 대조; 전 범위 검증 아님|
 |절입/자시/시각 미상/윤달 오류|로컬 케이스 PASS|core.test.ts|
-|모바일/데스크톱 E2E|**21 PASS**,55.6초|Chromium Pixel7,WebKit iPhone13 에뮬레이션,Desktop Chromium|
+|모바일/데스크톱 E2E|**24 PASS**|Chromium Pixel7,WebKit iPhone13 에뮬레이션,Desktop Chromium|
 |PDF 한글 추출/폰트 내장|PASS|PDF /FontFile2,/ToUnicode 및 pdftotext로 표제/장 제목 추출 확인|
 |일관 백업 복구|PASS|SQLite backup을 새 연결로 열고 결제/복호화 본문 동일 검증|
 |의존성 스캔|취약점0|dependency-audit.json;시점 한정|
 |Lighthouse 모바일3회|Royal v2 성능99/접근성100/Best Practices100|lighthouse-1~3.json,performance-budget.md|
 |실 iOS/Android/인앱브라우저|BLOCKED|기기·실 PG 앱 전환 검증 미수행|
-|Docker compose 기동|BLOCKED/미실행|이식용 레시피만 제공,실환경 검증 필요|
+|Docker compose 기동|BLOCKED|설정 검사 통과, 컨테이너 npm 통신 실패로 clean build/기동 미검증|
 
 처음 E2E에서 접근성2건과 WebKit 라이브러리 누락이 발견되었다. 로고 accessible name/안내 landmark를 고치고, 공식 Debian 패키지를 작업 폴더에 추출해 실제 WebKit 실행을 확인한 후 다시 검사했다. 성능도 처음 LCP2.57~2.66초를 측정하고 구조 변경 후벡터버전0.91~1.01초,최종실사풍Royal v2약1.97초로 목표를 충족했다. 최초 실패를 최종 성공으로 숨기지 않으며 최종 원본 결과를 별도로 보관한다.
 
@@ -70,3 +70,5 @@
 WebKit·데스크톱 스크린샷과 각 환경에서 내려받은 한글 PDF도 같은 docs 폴더에 있다. 원문에 실제 고객 데이터나 비밀값은 없다. source GitHub 저장소는 사용자 지정 `dood66625-ux/gumseotaehu`, 운영 사이트가 아니다.
 
 입력 간소화 최신 검증:단위·통합194개/E2E21개. [변경 및 검사](input-simplification.md)를 참조한다. 과거 릴리스의191개는 그 시점 결과다.
+
+최신 계산 경계 보강: 단위/통합 265개, E2E 24개 및 프로덕션 빌드 통과. [출처·대조 범위·남은 한계](astrology-boundary-validation.md). 앞선 194개/21개 표기는 당시 릴리스 기록이다.

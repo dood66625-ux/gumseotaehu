@@ -104,6 +104,18 @@ describe("input and calculation boundaries", () => {
     expect(c.direction).toBeNull();
     expect(c.notes.join("")).toContain("미상");
   });
+  it("does not save readings or conversion events for ambiguous term inputs", () => {
+    const s = verified();
+    for (const time of [null, "16:13"]) {
+      expect(() =>
+        svc.makeReading(s, { ...birth, date: "1995-02-04", time }),
+      ).toThrow("절기가");
+    }
+    expect(one("SELECT count(*) n FROM readings")?.n).toBe(0);
+    expect(
+      one("SELECT count(*) n FROM events WHERE event='preview_ready'")?.n,
+    ).toBe(0);
+  });
   it("does not infer calculation sex", () =>
     expect(calculate({ ...birth, sex: "unspecified" }).cycles).toEqual([]));
   it("calculates hidden stems, relations and ten gods", () => {

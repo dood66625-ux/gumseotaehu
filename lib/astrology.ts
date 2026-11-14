@@ -62,6 +62,32 @@ export function tenGod(day: string, other: string) {
     ["편인", "정인"],
   ][d][a % 2 === b % 2 ? 0 : 1];
 }
+// Library terms are CST; only year/month use the clock converted from modern KST.
+function termChart(
+  y: number,
+  m: number,
+  d: number,
+  h: number,
+  minute: number,
+  second = 0,
+) {
+  const clock = new Date(Date.UTC(y, m - 1, d, h - 1, minute, second));
+  const chart = Solar.fromYmdHms(
+    clock.getUTCFullYear(),
+    clock.getUTCMonth() + 1,
+    clock.getUTCDate(),
+    clock.getUTCHours(),
+    clock.getUTCMinutes(),
+    clock.getUTCSeconds(),
+  )
+    .getLunar()
+    .getEightChar();
+  chart.setSect(2);
+  return chart;
+}
+function sameTermPeriod(a: any, b: any) {
+  return a.getYear() === b.getYear() && a.getMonth() === b.getMonth();
+}
 export function calculate(raw: unknown) {
   const b = birthSchema.parse(raw);
   if (b.age === "under14") throw Error("만 14세 미만은 이용할 수 없습니다.");
@@ -104,19 +130,30 @@ export function calculate(raw: unknown) {
   const local = Solar.fromYmdHms(sy, sm, sd, h, min, 0),
     eight = local.getLunar().getEightChar();
   eight.setSect(2);
-  // Library solar terms use China standard time: compare +1 hour for KST year/month only.
-  const chinaClock = new Date(Date.UTC(sy, sm - 1, sd, h - 1, min));
-  const corrected = Solar.fromYmdHms(
-    chinaClock.getUTCFullYear(),
-    chinaClock.getUTCMonth() + 1,
-    chinaClock.getUTCDate(),
-    chinaClock.getUTCHours(),
-    chinaClock.getUTCMinutes(),
-    0,
-  )
-    .getLunar()
-    .getEightChar();
-  corrected.setSect(2);
+  if (!b.time) {
+    // Check the whole unknown interval, with a one-minute term-model margin.
+    if (
+      !sameTermPeriod(
+        termChart(sy, sm, sd, 0, -1),
+        termChart(sy, sm, sd, 24, 1),
+      )
+    )
+      throw Error(
+        "출생일에 절기가 바뀌어 출생시간 없이 연주·월주를 정할 수 없습니다. 출생시간을 확인해 주세요.",
+      );
+  } else {
+    // HH:mm input represents a full minute; near a term, seconds/model rounding matter.
+    if (
+      !sameTermPeriod(
+        termChart(sy, sm, sd, h, min - 1),
+        termChart(sy, sm, sd, h, min + 1, 59),
+      )
+    )
+      throw Error(
+        "절기가 바뀌는 시각과 매우 가까운 출생시간입니다. 현재 계산으로 확정할 수 없어 전문가 확인이 필요합니다.",
+      );
+  }
+  const corrected = termChart(sy, sm, sd, h, min);
   const pillars = [
     corrected.getYear(),
     corrected.getMonth(),
@@ -250,10 +287,10 @@ export function calculate(raw: unknown) {
     ].filter(Boolean) as string[],
     meta: {
       engine: "lunar-javascript@1.7.8",
-      rules: "geumseo-0.2",
+      rules: "geumseo-0.3",
       timezone: "KST-modern-0.1",
       ziHourPolicy: "midnight-sect2",
-      solarTerms: "library-CST-plus1h-unverified",
+      solarTerms: "library-CST-plus1h-guarded-unverified",
       quality: b.time ? "known" : "unknown",
     },
   };

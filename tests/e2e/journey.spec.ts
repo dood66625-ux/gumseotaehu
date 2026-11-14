@@ -423,3 +423,28 @@ test("concurrent confirmation requests settle once", async ({ page }, info) => {
   expect(first.id).toBe(second.id);
   expect(first.report).toEqual(second.report);
 });
+
+test("ambiguous solar-term input returns a recoverable error before reading or purchase", async ({
+  page,
+}) => {
+  await post(page, "session");
+  for (const time of [null, "16:13"]) {
+    const response = await post(page, "readings", {
+      ...birth,
+      date: "1995-02-04",
+      time,
+    });
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error).toContain("절기가");
+    expect(body.id).toBeUndefined();
+  }
+  const valid = await post(page, "readings", {
+    ...birth,
+    date: "1995-02-04",
+    time: "18:00",
+  });
+  expect(valid.status()).toBe(201);
+  const saved = await valid.json();
+  expect(saved.id).toBeTruthy();
+});
