@@ -55,20 +55,20 @@ const data = {
 writeFileSync(resolve(out, "sample-report.pdf"), await reportPdf(data.report));
 const route = (s: string) => {
   const paths: Record<string, string> = {
-    "/": base + "/?v=royal-4",
-    "/start": base + "/?v=royal-4&screen=start",
-    "/recover": base + "/?v=royal-4&screen=recover",
-    "/help": base + "/?v=royal-4&screen=help",
-    "/admin": base + "/?v=royal-4&screen=admin",
-    "/checkout/fail": base + "/?v=royal-4&screen=fail",
-    "/legal/terms": base + "/?v=royal-4&screen=terms",
-    "/legal/privacy": base + "/?v=royal-4&screen=privacy",
-    "/legal/refund": base + "/?v=royal-4&screen=refund",
-    "/legal/business": base + "/?v=royal-4&screen=business",
-    "/reading/preview?id=": base + "/?v=royal-4&screen=preview&id=",
-    "/checkout?id=": base + "/?v=royal-4&screen=checkout&id=",
-    "/checkout/success?orderId=": base + "/?v=royal-4&screen=success&orderId=",
-    "/report/": base + "/?v=royal-4&screen=report&id=",
+    "/": base + "/?v=royal-5",
+    "/start": base + "/?v=royal-5&screen=start",
+    "/recover": base + "/?v=royal-5&screen=recover",
+    "/help": base + "/?v=royal-5&screen=help",
+    "/admin": base + "/?v=royal-5&screen=admin",
+    "/checkout/fail": base + "/?v=royal-5&screen=fail",
+    "/legal/terms": base + "/?v=royal-5&screen=terms",
+    "/legal/privacy": base + "/?v=royal-5&screen=privacy",
+    "/legal/refund": base + "/?v=royal-5&screen=refund",
+    "/legal/business": base + "/?v=royal-5&screen=business",
+    "/reading/preview?id=": base + "/?v=royal-5&screen=preview&id=",
+    "/checkout?id=": base + "/?v=royal-5&screen=checkout&id=",
+    "/checkout/success?orderId=": base + "/?v=royal-5&screen=success&orderId=",
+    "/report/": base + "/?v=royal-5&screen=report&id=",
     "/empress.webp": base + "/empress.webp",
     "/empress-royal-v2.webp": base + "/empress-royal-v2.webp",
     "/empress-mobile-v2.webp": base + "/empress-mobile-v2.webp",
@@ -82,7 +82,7 @@ await build({
   bundle: true,
   minify: true,
   jsx: "automatic",
-  outfile: resolve(out, "royal-v4.js"),
+  outfile: resolve(out, "royal-v5.js"),
   define: { "process.env.NODE_ENV": '"production"' },
   plugins: [
     {
@@ -158,7 +158,7 @@ let home = renderToStaticMarkup(
 const serialized = JSON.stringify(data).replaceAll("<", "\\u003c");
 writeFileSync(
   resolve(out, "index.html"),
-  `<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>금서태후 · 그대의 운명을 펼치다</title><link rel="stylesheet" href="${base}/royal-v2.css"><link rel="icon" href="${base}/icon.svg"><script>if(new URLSearchParams(location.search).has('screen'))document.documentElement.dataset.view='inner';</script><style>#app>.loading{display:none}html[data-view=inner] #home{display:none}html[data-view=inner] #app>.loading{display:block}</style></head><body><div id="home">${home}</div><div id="app"><div class="loading" role="status"><span>禁</span>그대의 금서를 펼치고 있습니다.</div></div><script id="preview-data" type="application/json">${serialized}</script><script type="module">if(new URLSearchParams(location.search).has('screen'))import('${base}/royal-v4.js');</script><script defer src="${base}/intro-v2.js"></script></body></html>`,
+  `<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>금서태후 · 그대의 운명을 펼치다</title><link rel="stylesheet" href="${base}/royal-v2.css"><link rel="icon" href="${base}/icon.svg"><script>if(new URLSearchParams(location.search).has('screen'))document.documentElement.dataset.view='inner';</script><style>#app>.loading{display:none}html[data-view=inner] #home{display:none}html[data-view=inner] #app>.loading{display:block}</style></head><body><div id="home">${home}</div><div id="app"><div class="loading" role="status"><span>禁</span>그대의 금서를 펼치고 있습니다.</div></div><script id="preview-data" type="application/json">${serialized}</script><script type="module">if(new URLSearchParams(location.search).has('screen'))import('${base}/royal-v5.js');</script><script defer src="${base}/intro-v2.js"></script></body></html>`,
 );
 
 for (const file of [

@@ -49,6 +49,8 @@ export default function Shell({ children }: { children: ReactNode }) {
         <p className="fine">
           운영 예정 사업자: {business.name} · 사업자등록번호{" "}
           {business.registrationNumber}
+          <br />
+          연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>
         </p>
         <p className="fine">
           금서태후는 창작 캐릭터이며, 초상은 AI로 제작한 창작 이미지입니다.

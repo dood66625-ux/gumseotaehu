@@ -7,7 +7,7 @@ export const business = {
   representative: null,
   address: null,
   phone: null,
-  email: null,
+  email: "mjreview3@gmail.com",
   commerceRegistration: null,
   hostingProvider: null,
   supportMode: "web-request",
