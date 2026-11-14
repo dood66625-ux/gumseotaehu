@@ -11,7 +11,7 @@ const browser = await chromium.launch(),
   page = await context.newPage();
 const go = (screen) => {
   const url = new URL(base);
-  url.searchParams.set("v", "royal-6");
+  url.searchParams.set("v", "royal-7");
   if (screen) url.searchParams.set("screen", screen);
   return page.goto(url.toString());
 };

@@ -5,7 +5,7 @@ export const business = {
   source: "owner-provided",
   registryVerified: false,
   representative: "유승학",
-  address: null,
+  address: "경기도 고양시 일산서구 일현로 26, 701호",
   phone: null,
   email: "mjreview3@gmail.com",
   commerceRegistration: null,
