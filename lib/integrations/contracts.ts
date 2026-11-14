@@ -1,4 +1,4 @@
-/** Transport injection is for contract tests. No network transport is shipped. */
+/** Transport injection defaults to blocked. Optional Toss test HTTP transport is not wired into runtime. */
 export type HttpRequest = {
   method: "GET" | "POST";
   path: string;
