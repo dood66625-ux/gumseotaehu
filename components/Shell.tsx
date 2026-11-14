@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { business } from "@/lib/business";
 export default function Shell({ children }: { children: ReactNode }) {
   return (
     <>
@@ -21,7 +22,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <a href="/recover" className="recover-link">
             <span aria-hidden="true">書</span> 내 운명서 찾기
           </a>
-          <a href="/help">고객센터</a>
+          <a href="/help">이용 안내</a>
         </nav>
       </header>
       <main id="main">{children}</main>
@@ -42,9 +43,13 @@ export default function Shell({ children }: { children: ReactNode }) {
           <a href="/legal/privacy">개인정보 처리방침</a>
           <a href="/legal/refund">환불·정정 정책</a>
           <a href="/legal/business">사업자 정보</a>
-          <a href="/help">문의</a>
+          <a href="/help">구매·환불 요청</a>
           <a href="/admin">관리자</a>
         </div>
+        <p className="fine">
+          운영 예정 사업자: {business.name} · 사업자등록번호{" "}
+          {business.registrationNumber}
+        </p>
         <p className="fine">
           금서태후는 창작 캐릭터이며, 초상은 AI로 제작한 창작 이미지입니다.
           <br />

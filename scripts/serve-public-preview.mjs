@@ -7,6 +7,7 @@ const types = {
   "royal-v2.css": "text/css",
   "royal-v2.js": "text/javascript",
   "royal-v3.js": "text/javascript",
+  "royal-v4.js": "text/javascript",
   "imperial-serif-v2.woff": "font/woff",
   "imperial-serif-v2.woff2": "font/woff2",
   "empress-royal-v2.webp": "image/webp",

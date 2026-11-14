@@ -11,7 +11,7 @@ const browser = await chromium.launch(),
   page = await context.newPage();
 const go = (screen) => {
   const url = new URL(base);
-  url.searchParams.set("v", "royal-3");
+  url.searchParams.set("v", "royal-4");
   if (screen) url.searchParams.set("screen", screen);
   return page.goto(url.toString());
 };
@@ -72,6 +72,12 @@ try {
     .getByRole("article")
     .getByText("가상 미리보기 문의입니다. 실제 상담 접수가 아닙니다.")
     .waitFor();
+  await go("business");
+  await page
+    .getByRole("definition")
+    .filter({ hasText: "컬러픽쳐스" })
+    .waitFor();
+  await page.getByText("567-15-01262", { exact: true }).waitFor();
   await go("admin");
   await page.getByRole("heading", { name: "관리자 접근 제한" }).waitFor();
   if (errors.length || apiRequests.length)

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BusinessInfo from "@/components/BusinessInfo";
 import { notFound } from "next/navigation";
 const policies: Record<
   string,
@@ -84,11 +85,11 @@ const policies: Record<
     ],
   },
   business: {
-    title: "사업자 정보 · 출시 전 입력 필요",
+    title: "사업자 정보 · 고지 준비 중",
     sections: [
       {
         title: "공개 운영 중이 아닙니다",
-        text: "사업자명, 대표자, 사업자등록번호, 통신판매업 신고번호(해당 시), 주소, 고객지원 전화·이메일, 개인정보보호 책임자, 호스팅서비스 제공자 정보는 아직 제공되지 않았습니다. 허위 정보를 표시하지 않습니다. OWNER_ACTION_REQUIRED.md 항목을 확정하기 전 실제 고객 판매와 공개 배포는 금지합니다.",
+        text: "상호와 사업자등록번호는 운영자가 제공했습니다. 대표자, 통신판매업 신고번호(해당 시), 주소, 연락 전화·이메일, 개인정보보호 책임자, 호스팅서비스 제공자 정보는 추가 확인이 필요합니다. 허위 정보를 표시하지 않습니다. OWNER_ACTION_REQUIRED.md 항목을 확정하기 전 실제 고객 판매와 공개 배포는 금지합니다.",
       },
       {
         title: "현재 프로젝트 상태",
@@ -105,7 +106,8 @@ export default async function Page({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const p = policies[(await params).slug];
+  const slug = (await params).slug;
+  const p = policies[slug];
   if (!p) notFound();
   return (
     <div className="page legal">
@@ -115,6 +117,7 @@ export default async function Page({
         실제 사업자 기준의 전문가 검토 전 초안입니다. 법률·세무 자문 또는 법적
         준수 완료를 의미하지 않습니다.
       </p>
+      {slug === "business" && <BusinessInfo />}
       {p.sections.map((s) => (
         <section key={s.title}>
           <h2>{s.title}</h2>

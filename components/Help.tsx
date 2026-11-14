@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, EmailAuth, ErrorBox } from "./client";
+import SupportGuide from "./SupportGuide";
 export default function Help() {
   const [verified, setVerified] = useState(false),
     [orders, setOrders] = useState<any[]>([]),
@@ -44,15 +45,17 @@ export default function Help() {
   }
   return (
     <>
+      <SupportGuide />
       {!verified ? (
         <EmailAuth onVerified={load} />
       ) : (
         <>
           <form className="card" onSubmit={submit}>
-            <h2>문의·환불·정정 접수</h2>
+            <h2>구매·환불·개인정보 요청</h2>
             <p className="hint">
               환불은 사유와 법적 요건을 확인해 처리합니다. 카드번호·신분증 원본
-              등은 입력하지 마세요. 실제 상담 채널은 운영자 설정 후 개통됩니다.
+              등은 입력하지 마세요. 현재는 체험판이며 실제 접수 채널은 운영 설정
+              후 개통됩니다.
             </p>
             <div className="field">
               <label htmlFor="help-order">관련 주문</label>
@@ -77,7 +80,7 @@ export default function Help() {
                 <option value="guardian">
                   법정대리인의 미성년자 계약 취소
                 </option>
-                <option value="other">기타 문의</option>
+                <option value="other">그 밖의 구매·권리 요청</option>
               </select>
             </div>
             <div className="field">

@@ -8,6 +8,7 @@ import PaymentStatus from "../../components/PaymentStatus";
 import ReportReader from "../../components/ReportReader";
 import Recover from "../../components/Recover";
 import Help from "../../components/Help";
+import BusinessInfo from "../../components/BusinessInfo";
 const snapshot = JSON.parse(
   document.getElementById("preview-data")!.textContent!,
 );
@@ -192,9 +193,14 @@ if (screen !== "home") {
         <h1>가상 운명서 다시 찾기</h1>
         <Recover />
       </>
+    ) : screen === "business" ? (
+      <>
+        <h1>사업자 정보</h1>
+        <BusinessInfo />
+      </>
     ) : screen === "help" ? (
       <>
-        <h1>고객센터 화면 체험</h1>
+        <h1>구매·열람 이용 안내</h1>
         <p className="notice">
           문의 접수도 브라우저 안의 가상 체험입니다. 실제 상담은 접수되지
           않습니다.
