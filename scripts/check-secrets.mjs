@@ -6,6 +6,8 @@ const names = [
   "AUTH_SECRET",
   "ADMIN_PASSWORD",
   "ADMIN_TOTP_SECRET",
+  "TOSS_TEST_CLIENT_KEY",
+  "TOSS_TEST_SECRET_KEY",
 ];
 const files = execFileSync("git", ["ls-files", "-z"])
   .toString()
