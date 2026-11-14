@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "flow": "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → synthetic inquiry; admin restricted",
+  "externalApiRequests": 0,
+  "realPersonalInputEnabled": false,
+  "origin": "https://dood66625-ux.github.io/gumseotaehu/"
+}

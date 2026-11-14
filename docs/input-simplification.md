@@ -9,3 +9,5 @@
 ![간소화된 모바일 입력](simplified-mobile-input.png)
 
 [다음 운영자 준비 순서](owner-next-steps.md)
+
+실제 공개 주소 https://dood66625-ux.github.io/gumseotaehu/?v=royal-3 에서도 입력/선택 제거→체험인증/결제→운명서/PDF→재열람/문의 흐름을 확인했다. 합성 데이터만 사용하며 실제 API 전송은0이다. `simplified-live-test.json` 참조.
