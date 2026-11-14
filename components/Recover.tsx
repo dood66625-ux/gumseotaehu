@@ -1,4 +1,5 @@
 "use client";
+import EmailChange from "./EmailChange";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, EmailAuth, ErrorBox } from "./client";
@@ -72,6 +73,9 @@ export default function Recover() {
                   문의·환불
                 </Link>
               </div>
+              {!o.deleted && o.payment === "paid" && (
+                <EmailChange orderId={o.id} />
+              )}
             </article>
           ))}
           <button

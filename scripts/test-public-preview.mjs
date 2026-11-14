@@ -11,7 +11,7 @@ const browser = await chromium.launch(),
   page = await context.newPage();
 const go = (screen) => {
   const url = new URL(base);
-  url.searchParams.set("v", "royal-8");
+  url.searchParams.set("v", "royal-9");
   if (screen) url.searchParams.set("screen", screen);
   return page.goto(url.toString());
 };
@@ -72,6 +72,28 @@ try {
     .getByRole("article")
     .getByText("가상 미리보기 문의입니다. 실제 상담 접수가 아닙니다.")
     .waitFor();
+  await go("recover");
+  await page.getByText("구매 이메일 변경", { exact: true }).click();
+  const changedEmail = page.getByLabel("새 구매 이메일");
+  if (
+    (await changedEmail.inputValue()) !== "preview-corrected@example.invalid" ||
+    (await changedEmail.getAttribute("readonly")) === null
+  )
+    throw Error("New email not locked to synthetic fixture");
+  await page.getByRole("button", { name: "새 이메일 확인 요청" }).click();
+  await page.getByRole("button", { name: "변경용 체험 인증번호 확인" }).click();
+  await page.getByLabel("이메일 변경 인증번호").fill("123456");
+  await page.getByRole("button", { name: "이메일 변경 확정" }).click();
+  await page.getByRole("link", { name: "새 이메일로 인증하기" }).click();
+  if (
+    (await page.getByLabel("이메일 주소").inputValue()) !==
+    "preview-corrected@example.invalid"
+  )
+    throw Error("Changed synthetic email missing");
+  await page.getByRole("button", { name: "인증번호 요청" }).click();
+  await page.getByLabel("인증번호 6자리").fill("123456");
+  await page.getByRole("button", { name: "이메일 인증 완료" }).click();
+  await page.getByRole("link", { name: "같은 운명서 다시 읽기" }).waitFor();
   await go("business");
   await page
     .getByRole("definition")
@@ -84,7 +106,7 @@ try {
     throw Error(JSON.stringify({ errors, apiRequests }));
   const result = {
     passed: true,
-    flow: "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → synthetic inquiry; admin restricted",
+    flow: "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → synthetic inquiry → locked two-address email change; admin restricted",
     externalApiRequests: apiRequests.length,
     realPersonalInputEnabled: false,
     origin: base,

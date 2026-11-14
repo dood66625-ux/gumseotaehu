@@ -20,3 +20,13 @@ CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY,applied
 INSERT OR IGNORE INTO schema_migrations VALUES(1,unixepoch()*1000);
 
 CREATE TABLE IF NOT EXISTS reading_history(order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,reading_id TEXT NOT NULL REFERENCES readings(id),version INTEGER NOT NULL,PRIMARY KEY(order_id,version));
+
+CREATE TABLE IF NOT EXISTS admin_auth(session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,verified_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS admin_totp_replay(operator_key TEXT PRIMARY KEY,last_step INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS deletion_tombstones(order_id TEXT PRIMARY KEY,deleted_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS worker_heartbeat(name TEXT PRIMARY KEY,updated INTEGER NOT NULL);
+INSERT OR IGNORE INTO schema_migrations VALUES(2,unixepoch()*1000);
+CREATE TABLE IF NOT EXISTS email_changes(id TEXT PRIMARY KEY,order_id TEXT NOT NULL REFERENCES orders(id),old_hash TEXT NOT NULL,new_hash TEXT NOT NULL,new_email_enc TEXT NOT NULL,session_id TEXT NOT NULL,code_hash TEXT NOT NULL,expires INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'pending');
+INSERT OR IGNORE INTO schema_migrations VALUES(3,unixepoch()*1000);
+CREATE TABLE IF NOT EXISTS session_auth(session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,verified_at INTEGER NOT NULL);
+INSERT OR IGNORE INTO schema_migrations VALUES(4,unixepoch()*1000);

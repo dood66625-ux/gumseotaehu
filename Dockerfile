@@ -8,6 +8,7 @@ RUN npm run build
 
 FROM build AS worker
 ENV APP_MODE=local EXTERNAL_EFFECTS=disabled DATABASE_PATH=/data/geumseo.sqlite
+USER node
 CMD ["npm","run","worker"]
 
 FROM node:24-bookworm-slim AS web

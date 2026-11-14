@@ -1,3 +1,9 @@
+import {
+  operationalHealth,
+  workerHeartbeat,
+  repairMissingJobs,
+} from "./operations";
+import { requireRecentAdmin } from "./admin-auth";
 import { randomBytes, randomInt } from "node:crypto";
 import { z } from "zod";
 import { all, one, run, tx } from "./db";
@@ -40,7 +46,13 @@ export function sessionFor(token: string) {
   );
 }
 export function requireEmail(s: Session) {
-  if (!s.email_hash) throw new Fault("이메일 인증이 필요합니다.", 401);
+  const current = one(
+    "SELECT email_hash FROM sessions WHERE id=? AND expires>?",
+    s.id,
+    Date.now(),
+  );
+  if (!s.email_hash || current?.email_hash !== s.email_hash)
+    throw new Fault("이메일 인증이 필요합니다.", 401);
 }
 export function readingFor(
   s: Session,
@@ -139,7 +151,12 @@ export function localOtp(s: Session, cid: string) {
     .find((m) => m.challengeId === cid);
   return mail;
 }
-export function verifyOtp(s: Session, cid: string, code: string) {
+export function verifyOtp(
+  s: Session,
+  cid: string,
+  code: string,
+  rotate = false,
+) {
   limit("otp-verify:" + s.id, 15, 900000);
   const ok = tx(() => {
     const c = one(
@@ -152,7 +169,49 @@ export function verifyOtp(s: Session, cid: string, code: string) {
     run("UPDATE challenges SET attempts=attempts+1 WHERE id=?", cid);
     if (hash(cid + code) !== c.code_hash) return false;
     run("UPDATE challenges SET consumed=1 WHERE id=?", cid);
-    run("UPDATE sessions SET email_hash=? WHERE id=?", c.email_hash, s.id);
+    run(
+      "UPDATE sessions SET email_hash=?,role='customer' WHERE id=?",
+      c.email_hash,
+      s.id,
+    );
+    run("DELETE FROM admin_auth WHERE session_id=?", s.id);
+    run(
+      "INSERT INTO session_auth VALUES(?,?) ON CONFLICT(session_id) DO UPDATE SET verified_at=excluded.verified_at",
+      s.id,
+      Date.now(),
+    );
+    if (rotate) {
+      const next = newSession();
+      run(
+        "UPDATE sessions SET email_hash=? WHERE id=?",
+        c.email_hash,
+        next.session.id,
+      );
+      run(
+        "UPDATE readings SET session_id=? WHERE session_id=?",
+        next.session.id,
+        s.id,
+      );
+      run(
+        "UPDATE challenges SET session_id=? WHERE session_id=?",
+        next.session.id,
+        s.id,
+      );
+      run(
+        "UPDATE session_auth SET session_id=? WHERE session_id=?",
+        next.session.id,
+        s.id,
+      );
+      run(
+        "UPDATE email_changes SET session_id=? WHERE session_id=? AND old_hash=?",
+        next.session.id,
+        s.id,
+        c.email_hash,
+      );
+      run("UPDATE email_changes SET state='canceled' WHERE session_id=?", s.id);
+      run("DELETE FROM sessions WHERE id=?", s.id);
+      return next.token;
+    }
     return true;
   });
   if (!ok)
@@ -160,6 +219,7 @@ export function verifyOtp(s: Session, cid: string, code: string) {
       "인증번호가 틀렸거나 만료되었습니다. 새 번호를 요청해 주세요.",
       400,
     );
+  return typeof ok === "string" ? ok : undefined;
 }
 export function createOrder(s: Session, rid: string, consent: unknown) {
   requireEmail(s);
@@ -314,13 +374,29 @@ export function reconcile() {
     "SELECT o.id,p.payment_key FROM orders o JOIN pg_ledger p ON p.order_id=o.id WHERE o.payment_status='pending' AND p.status='DONE' AND o.amount=p.amount",
   );
   for (const p of pending) finalizePayment(p.id, p.payment_key);
+  tx(() => {
+    for (const o of repairMissingJobs()) {
+      run(
+        "INSERT OR IGNORE INTO jobs(id,order_id,version,state,scheduled) VALUES(?,?,?,?,?)",
+        id(),
+        o.id,
+        o.version,
+        "queued",
+        Date.now(),
+      );
+      run("UPDATE orders SET fulfillment='queued' WHERE id=?", o.id);
+      audit("system", "missing_job_repaired", o.id);
+    }
+  });
 }
 export function workOnce(failGeneration = false) {
+  workerHeartbeat();
   reconcile();
   const job: Record<string, any> | null = tx(() => {
     const now = Date.now();
     const j = one(
-      "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id WHERE o.payment_status='paid' AND o.content_deleted=0 AND o.expires>0 AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
+      "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id WHERE o.payment_status='paid' AND o.content_deleted=0 AND o.expires>? AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
+      now,
       now,
       now,
     );
@@ -519,64 +595,84 @@ export function adminRequired(
   s: Session,
   roles = ["operations", "finance", "support"],
 ) {
-  if (!roles.includes(s.role))
+  const current = one("SELECT role,expires FROM sessions WHERE id=?", s.id);
+  if (
+    !current ||
+    current.expires <= Date.now() ||
+    !roles.includes(current.role)
+  )
     throw new Fault("관리자 권한이 필요합니다.", 403);
 }
-export function adminOverview(s: Session) {
+export function adminOverview(s: Session, query = "") {
   adminRequired(s);
-  const orders = all("SELECT * FROM orders ORDER BY created DESC").map((o) => ({
+  if (!/^[a-fA-F0-9-]{0,36}$/.test(query))
+    throw new Fault("주문번호의 앞부분을 입력해 주세요.");
+  const orders = all(
+    "SELECT * FROM orders WHERE id LIKE ? ORDER BY created DESC LIMIT 200",
+    query + "%",
+  ).map((o) => ({
     ...orderView(o),
     email: `${o.email_hash.slice(0, 8)}…`,
     corrections: o.corrections,
   }));
   return {
     orders,
-    tickets: all("SELECT * FROM tickets ORDER BY created DESC").map((t) => ({
-      id: t.id,
-      orderId: t.order_id,
-      category: t.category,
-      status: t.status,
-      created: t.created,
-      due: t.due,
-      ...open(t.payload),
-    })),
+    tickets: all("SELECT * FROM tickets ORDER BY created DESC LIMIT 100").map(
+      (t) => ({
+        id: t.id,
+        orderId: t.order_id,
+        category: t.category,
+        status: t.status,
+        created: t.created,
+        due: t.due,
+        ...open(t.payload),
+      }),
+    ),
     jobs: all(
-      "SELECT id,order_id,state,attempts,error,scheduled FROM jobs ORDER BY scheduled DESC",
+      "SELECT id,order_id,state,attempts,error,scheduled FROM jobs ORDER BY scheduled DESC LIMIT 100",
     ),
     refunds: all(
-      "SELECT id,order_id,amount,status,created,resolved FROM refunds ORDER BY created DESC",
+      "SELECT id,order_id,amount,status,created,resolved FROM refunds ORDER BY created DESC LIMIT 100",
     ),
     audit: all("SELECT * FROM audit ORDER BY id DESC LIMIT 100"),
     events: all("SELECT event,count(*) AS count FROM events GROUP BY event"),
     metrics: {
-      gross:
-        orders.filter(
-          (o) =>
-            o.payment === "paid" ||
-            o.payment === "refund_pending" ||
-            o.payment === "refunded",
-        ).length * 33000,
-      refunds: orders.filter((o) => o.payment === "refunded").length * 33000,
+      gross: one(
+        "SELECT COALESCE(SUM(amount),0) AS amount FROM orders WHERE payment_status IN ('paid','refund_pending','refunded')",
+      )!.amount,
+      refunds: one(
+        "SELECT COALESCE(SUM(amount),0) AS amount FROM orders WHERE payment_status='refunded'",
+      )!.amount,
       aiCostKrw: 0,
       pgCostKrw: 0,
       mode: "local mock; 실제 매출 아님",
     },
+    health: operationalHealth(),
     mailCount: one("SELECT count(*) AS n FROM outbox")!.n,
   };
 }
 export function adminRetry(s: Session, oid: string) {
-  adminRequired(s, ["operations"]);
+  requireRecentAdmin(s, ["operations"]);
   tx(() => {
     const o = one("SELECT * FROM orders WHERE id=?", oid);
     if (
       !o ||
       o.content_deleted ||
       o.payment_status !== "paid" ||
+      o.expires <= Date.now() ||
       o.fulfillment === "ready"
     )
       throw new Fault("재처리 대상 주문이 아닙니다.");
     run(
-      "UPDATE jobs SET state='queued',attempts=0,scheduled=?,error=NULL WHERE order_id=? AND version=?",
+      "INSERT OR IGNORE INTO jobs(id,order_id,version,state,scheduled) VALUES(?,?,?,?,?)",
+      id(),
+      oid,
+      o.version,
+      "queued",
+      Date.now(),
+    );
+    run(
+      "UPDATE jobs SET state='queued',attempts=0,scheduled=?,error=NULL,lease_until=NULL WHERE order_id=? AND version=?",
       Date.now(),
       oid,
       o.version,
@@ -591,7 +687,7 @@ export function refund(
   reason: string,
   pgFailure = false,
 ) {
-  adminRequired(s, ["operations", "finance"]);
+  requireRecentAdmin(s, ["operations", "finance"]);
   if (reason.trim().length < 5)
     throw new Fault("환불 검토 사유를 5자 이상 기록해 주세요.");
   const o = one("SELECT * FROM orders WHERE id=?", oid);
@@ -616,6 +712,19 @@ export function refund(
     run("UPDATE refunds SET status='error' WHERE order_id=?", oid);
     throw new Fault("PG 모의 취소 실패: 환불 대기 상태를 유지합니다.", 503);
   }
+  const ledger = one("SELECT * FROM pg_ledger WHERE order_id=?", oid);
+  if (
+    !ledger ||
+    ledger.amount !== o.amount ||
+    ledger.payment_key !== o.payment_key ||
+    !["DONE", "CANCELED"].includes(ledger.status)
+  ) {
+    run("UPDATE refunds SET status='error' WHERE order_id=?", oid);
+    throw new Fault(
+      "환불 결제 원장 대조에 실패했습니다. 관리자 확인이 필요합니다.",
+      503,
+    );
+  }
   const cancel = id();
   run(
     "UPDATE pg_ledger SET status='CANCELED',cancel_id=COALESCE(cancel_id,?) WHERE order_id=?",
@@ -633,6 +742,15 @@ function finalizeRefund(oid: string) {
     if (!pg) return;
     const o = one("SELECT * FROM orders WHERE id=?", oid)!;
     if (o.payment_status === "refunded") return;
+    const refund = one("SELECT amount FROM refunds WHERE order_id=?", oid);
+    if (
+      !refund ||
+      refund.amount !== o.amount ||
+      pg.amount !== o.amount ||
+      pg.payment_key !== o.payment_key ||
+      !pg.cancel_id
+    )
+      return;
     run("UPDATE orders SET payment_status='refunded' WHERE id=?", oid);
     run(
       "UPDATE refunds SET status='completed',cancel_id=?,resolved=? WHERE order_id=?",
@@ -665,7 +783,7 @@ export function correctBirth(
   raw: unknown,
   reason: string,
 ) {
-  adminRequired(s, ["operations"]);
+  requireRecentAdmin(s, ["operations"]);
   if (reason.trim().length < 5)
     throw new Fault("본인확인·정정 사유를 기록해 주세요.");
   const o = one("SELECT * FROM orders WHERE id=?", oid);
@@ -673,6 +791,7 @@ export function correctBirth(
     !o ||
     o.payment_status !== "paid" ||
     o.content_deleted ||
+    o.expires <= Date.now() ||
     o.corrections >= 1 ||
     Date.now() - o.paid_at > 7 * 86400000
   )
@@ -687,6 +806,8 @@ export function correctBirth(
     );
   const c = calculate(b);
   assertSubjectAge(c.solarDate);
+  if (ageAtKstDate(c.solarDate) < 19)
+    throw new Fault("정정으로 미성년 구매 제한을 우회할 수 없습니다.", 403);
   const old = one("SELECT * FROM readings WHERE id=?", o.reading_id)!;
   tx(() => {
     const rid = id(),
@@ -759,7 +880,7 @@ export function deleteContent(
   ticketId: string,
   reason: string,
 ) {
-  adminRequired(s, ["operations"]);
+  requireRecentAdmin(s, ["operations"]);
   if (reason.trim().length < 5)
     throw new Fault("삭제 검토 근거를 기록해 주세요.");
   const t = one(
@@ -799,6 +920,7 @@ function wipeContent(oid: string) {
     );
   run("UPDATE jobs SET state='canceled' WHERE order_id=?", oid);
   run("UPDATE orders SET content_deleted=1 WHERE id=?", oid);
+  run("INSERT OR IGNORE INTO deletion_tombstones VALUES(?,?)", oid, Date.now());
 }
 export function purgeExpired() {
   const now = Date.now();
@@ -811,6 +933,7 @@ export function purgeExpired() {
     }
     run("DELETE FROM sessions WHERE expires<?", now);
     run("DELETE FROM challenges WHERE expires<?", now - 86400000);
+    run("DELETE FROM email_changes WHERE expires<?", now - 86400000);
     run("DELETE FROM outbox WHERE created<?", now - 7 * 86400000);
     run("DELETE FROM rate_limits WHERE reset<?", now);
     run(

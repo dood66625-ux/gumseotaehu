@@ -1,3 +1,12 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { rotateDataKey } from "../lib/key-rotation";
+import { decryptJson } from "../lib/crypto";
+import {
+  requestEmailChange,
+  localEmailChangeCode,
+  confirmEmailChange,
+} from "../lib/email-change";
 import { beforeAll, beforeEach, afterAll, describe, it, expect } from "vitest";
 import { rmSync, readFileSync } from "node:fs";
 import { calculate, tenGod, type Birth } from "../lib/astrology";
@@ -6,6 +15,14 @@ import { db, all, one, run, closeDb } from "../lib/db";
 import { hash, open, seal, totp, verifyTotp } from "../lib/security";
 import { generate, preview, validateReport } from "../lib/interpretation";
 import * as svc from "../lib/service";
+import {
+  loginAdmin,
+  requireRecentAdmin,
+  revokeAdminSessions,
+} from "../lib/admin-auth";
+import { operationalHealth } from "../lib/operations";
+import { createEncryptedBackup, restoreEncryptedBackup } from "../lib/backup";
+import { encodeDeletions, decodeDeletions } from "../lib/deletion-manifest";
 import { reportPdf } from "../lib/pdf";
 const path = "./var/core-test.sqlite";
 process.env.APP_MODE = "local";
@@ -33,7 +50,7 @@ beforeAll(() => {
 });
 beforeEach(() => {
   db().exec(
-    "DELETE FROM refunds;DELETE FROM reports;DELETE FROM jobs;DELETE FROM orders;DELETE FROM readings;DELETE FROM pg_ledger;DELETE FROM tickets;DELETE FROM outbox;DELETE FROM challenges;DELETE FROM sessions;DELETE FROM events;DELETE FROM audit;DELETE FROM rate_limits;",
+    "DELETE FROM session_auth;DELETE FROM email_changes;DELETE FROM admin_auth;DELETE FROM admin_totp_replay;DELETE FROM deletion_tombstones;DELETE FROM worker_heartbeat;DELETE FROM refunds;DELETE FROM reports;DELETE FROM jobs;DELETE FROM orders;DELETE FROM readings;DELETE FROM pg_ledger;DELETE FROM tickets;DELETE FROM outbox;DELETE FROM challenges;DELETE FROM sessions;DELETE FROM events;DELETE FROM audit;DELETE FROM rate_limits;",
   );
 });
 afterAll(() => {
@@ -68,6 +85,7 @@ function paid() {
 function admin() {
   const s = verified("admin@example.invalid");
   run("UPDATE sessions SET role='operations' WHERE id=?", s.id);
+  run("INSERT INTO admin_auth VALUES(?,?)", s.id, Date.now());
   return one<svc.Session>("SELECT * FROM sessions WHERE id=?", s.id)!;
 }
 describe("input and calculation boundaries", () => {
@@ -644,4 +662,382 @@ describe("admin refunds, correction and support", () => {
     ).toBe(oid);
     expect(one("SELECT count(*) n FROM orders")?.n).toBe(1);
   });
+});
+
+describe("security and operational hardening", () => {
+  it("rotates administrator session and preserves owned reading links", () => {
+    const old = svc.newSession();
+    const rid = svc.makeReading(old.session, birth);
+    const token = loginAdmin(
+      old.session,
+      process.env.ADMIN_PASSWORD,
+      totp(process.env.ADMIN_TOTP_SECRET!),
+    );
+    expect(svc.sessionFor(old.token)).toBeUndefined();
+    const elevated = svc.sessionFor(token)!;
+    expect(elevated.role).toBe("operations");
+    expect(svc.readingFor(elevated, rid).input).toEqual(birth);
+    expect(() => requireRecentAdmin(elevated)).not.toThrow();
+  });
+  it("rejects global TOTP reuse without elevating the second session", () => {
+    const a = svc.newSession(),
+      b = svc.newSession(),
+      code = totp(process.env.ADMIN_TOTP_SECRET!);
+    loginAdmin(a.session, process.env.ADMIN_PASSWORD, code);
+    expect(() =>
+      loginAdmin(b.session, process.env.ADMIN_PASSWORD, code),
+    ).toThrow("사용된");
+    expect(svc.sessionFor(b.token)?.role).toBe("customer");
+  });
+  it("failed password does not consume a valid second factor", () => {
+    const s = svc.newSession(),
+      code = totp(process.env.ADMIN_TOTP_SECRET!);
+    expect(() => loginAdmin(s.session, "wrong-password", code)).toThrow(
+      "인증에 실패",
+    );
+    expect(() =>
+      loginAdmin(s.session, process.env.ADMIN_PASSWORD, code),
+    ).not.toThrow();
+  });
+  it("requires recent MFA for financial operations and checks live role revocation", () => {
+    const a = admin(),
+      { oid } = paid();
+    run(
+      "UPDATE admin_auth SET verified_at=? WHERE session_id=?",
+      Date.now() - 11 * 60000,
+      a.id,
+    );
+    expect(() => svc.refund(a, oid, "기간 경과 인증 시험")).toThrow("다시");
+    run(
+      "UPDATE admin_auth SET verified_at=? WHERE session_id=?",
+      Date.now(),
+      a.id,
+    );
+    run("UPDATE sessions SET role='support' WHERE id=?", a.id);
+    expect(() => svc.refund(a, oid, "권한 회수 시험")).toThrow("권한");
+    expect(
+      svc.ownOrder(verified("tester@example.invalid"), oid).payment_status,
+    ).toBe("paid");
+  });
+  it("revokes all administrator sessions without ending customer sessions", () => {
+    const a = admin(),
+      customer = svc.newSession();
+    revokeAdminSessions(a);
+    expect(one("SELECT * FROM sessions WHERE id=?", a.id)).toBeUndefined();
+    expect(svc.sessionFor(customer.token)).toBeDefined();
+  });
+  it("repairs a missing paid generation job once without charging or duplicating reports", () => {
+    const { s, oid } = paid();
+    run("DELETE FROM jobs WHERE order_id=?", oid);
+    svc.reconcile();
+    svc.reconcile();
+    expect(one("SELECT count(*) n FROM jobs WHERE order_id=?", oid)?.n).toBe(1);
+    svc.workOnce();
+    expect(svc.getReport(s, oid).report.chapters).toHaveLength(9);
+    expect(
+      one("SELECT count(*) n FROM pg_ledger WHERE order_id=?", oid)?.n,
+    ).toBe(1);
+  });
+  it("manual retry can restore missing jobs but refuses expired paid orders", () => {
+    const { oid } = paid(),
+      a = admin();
+    run("DELETE FROM jobs WHERE order_id=?", oid);
+    svc.adminRetry(a, oid);
+    expect(one("SELECT state FROM jobs WHERE order_id=?", oid)?.state).toBe(
+      "queued",
+    );
+    run("UPDATE orders SET expires=0 WHERE id=?", oid);
+    expect(() => svc.adminRetry(a, oid)).toThrow("재처리 대상");
+    expect(svc.workOnce()).toBe(false);
+  });
+  it("does not silently regenerate an already-delivered missing report", () => {
+    const { oid } = paid();
+    svc.workOnce();
+    run("DELETE FROM reports WHERE order_id=?", oid);
+    svc.reconcile();
+    expect(svc.workOnce()).toBe(false);
+    expect(operationalHealth().counts.missingReports).toBe(1);
+  });
+  it("refuses mismatched refund ledger and leaves money state pending", () => {
+    const { s, oid } = paid(),
+      a = admin();
+    run("UPDATE pg_ledger SET amount=1 WHERE order_id=?", oid);
+    expect(() => svc.refund(a, oid, "금액 대조 실패 시험")).toThrow(
+      "원장 대조",
+    );
+    expect(svc.ownOrder(s, oid).payment_status).toBe("refund_pending");
+    run(
+      "UPDATE pg_ledger SET status='CANCELED',cancel_id='synthetic-cancel' WHERE order_id=?",
+      oid,
+    );
+    svc.reconcileRefunds();
+    expect(svc.ownOrder(s, oid).payment_status).toBe("refund_pending");
+  });
+  it("rejects minor birth correction even when age declaration says adult", () => {
+    const { oid } = paid();
+    expect(() =>
+      svc.correctBirth(
+        admin(),
+        oid,
+        { ...birth, date: "2010-05-15" },
+        "잘못된 연령 정정 시험",
+      ),
+    ).toThrow("미성년");
+  });
+  it("applies later privacy deletions before publishing an older restored backup", async () => {
+    const { s, oid } = paid();
+    svc.workOnce();
+    const archive = "var/privacy-before-delete.gsb",
+      target = "var/privacy-restored.sqlite";
+    rmSync(archive, { force: true });
+    for (const suffix of ["", "-wal", "-shm"])
+      rmSync(target + suffix, { force: true });
+    await createEncryptedBackup(db(), archive, config().key);
+    const ticketId = svc.ticket(s, {
+      orderId: oid,
+      category: "privacy",
+      message: "가상 개인정보 삭제 요청",
+    });
+    svc.deleteContent(admin(), oid, ticketId, "대상 및 본인 확인 완료");
+    const rows = all(
+      "SELECT order_id AS orderId,deleted_at AS deletedAt FROM deletion_tombstones",
+    ) as { orderId: string; deletedAt: number }[];
+    const manifest = encodeDeletions(rows, config().key);
+    restoreEncryptedBackup(
+      archive,
+      target,
+      config().key,
+      decodeDeletions(manifest, config().key),
+    );
+    const { DatabaseSync } = await import("node:sqlite"),
+      restored = new DatabaseSync(target, { readOnly: true });
+    try {
+      expect(
+        restored
+          .prepare("SELECT content_deleted FROM orders WHERE id=?")
+          .get(oid)?.content_deleted,
+      ).toBe(1);
+      expect(
+        restored
+          .prepare("SELECT count(*) n FROM reports WHERE order_id=?")
+          .get(oid)?.n,
+      ).toBe(0);
+      const row = restored
+        .prepare(
+          "SELECT input_enc FROM readings WHERE id=(SELECT reading_id FROM orders WHERE id=?)",
+        )
+        .get(oid)!;
+      expect(open(row.input_enc as string)).toBeNull();
+      expect(
+        restored
+          .prepare("SELECT payment_status FROM orders WHERE id=?")
+          .get(oid)?.payment_status,
+      ).toBe("paid");
+    } finally {
+      restored.close();
+      rmSync(archive, { force: true });
+      for (const suffix of ["", "-wal", "-shm"])
+        rmSync(target + suffix, { force: true });
+    }
+  });
+  it("authenticates the deletion list without revealing raw customer details", () => {
+    const encoded = encodeDeletions(
+      [{ orderId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", deletedAt: 1 }],
+      config().key,
+    );
+    const changed = JSON.parse(encoded);
+    changed.signature = "0".repeat(64);
+    expect(() =>
+      decodeDeletions(JSON.stringify(changed), config().key),
+    ).toThrow("AUTHENTICATION");
+    expect(() => decodeDeletions(encoded, Buffer.alloc(32, 7))).toThrow(
+      "AUTHENTICATION",
+    );
+  });
+});
+
+describe("verified purchase email change, local delivery only", () => {
+  it("moves only the verified order and preserves the exact stored report", () => {
+    const { s, oid } = paid();
+    svc.workOnce();
+    const old = svc.getReport(s, oid).report;
+    const tid = svc.ticket(s, {
+      orderId: oid,
+      category: "email",
+      message: "가상 주소 정정 요청",
+    });
+    const change = requestEmailChange(s, oid, "corrected@example.invalid");
+    const code = localEmailChangeCode(s, change).code;
+    confirmEmailChange(s, change, code);
+    expect(one("SELECT * FROM sessions WHERE id=?", s.id)).toBeUndefined();
+    expect(() => svc.getReport(s, oid)).toThrow();
+    const next = verified("corrected@example.invalid");
+    expect(svc.getReport(next, oid).report).toEqual(old);
+    expect(svc.getTickets(next).some((t) => t.id === tid)).toBe(true);
+    expect(
+      one("SELECT state FROM email_changes WHERE id=?", change)?.state,
+    ).toBe("completed");
+  });
+  it("does not use invalidated OTP requests as proof of recent old-email authentication", () => {
+    const { s, oid } = paid();
+    run(
+      "UPDATE session_auth SET verified_at=? WHERE session_id=?",
+      Date.now() - 11 * 60000,
+      s.id,
+    );
+    svc.requestOtp(s, "tester@example.invalid");
+    svc.requestOtp(s, "tester@example.invalid");
+    expect(() =>
+      requestEmailChange(s, oid, "corrected@example.invalid"),
+    ).toThrow("다시 인증");
+  });
+  it("does not reveal codes or change another customer's order", () => {
+    const { s, oid } = paid(),
+      other = verified("other@example.invalid");
+    const cid = requestEmailChange(s, oid, "corrected@example.invalid");
+    expect(() => localEmailChangeCode(other, cid)).toThrow();
+    expect(() =>
+      requestEmailChange(other, oid, "corrected@example.invalid"),
+    ).toThrow();
+    expect(() => confirmEmailChange(other, cid, "123456")).toThrow();
+    expect(svc.ownOrder(s, oid).email_hash).toBe(s.email_hash);
+  });
+  it("counts bad codes, blocks exhausted challenges and keeps original access", () => {
+    const { s, oid } = paid();
+    const cid = requestEmailChange(s, oid, "corrected@example.invalid");
+    const code = localEmailChangeCode(s, cid).code,
+      bad = code === "000000" ? "111111" : "000000";
+    for (let n = 0; n < 5; n++)
+      expect(() => confirmEmailChange(s, cid, bad)).toThrow();
+    expect(() => confirmEmailChange(s, cid, code)).toThrow();
+    expect(
+      one("SELECT attempts FROM email_changes WHERE id=?", cid)?.attempts,
+    ).toBe(5);
+    expect(svc.ownOrder(s, oid).email_hash).toBe(s.email_hash);
+  });
+  it("invalidates replaced and expired change challenges", () => {
+    const { s, oid } = paid();
+    const first = requestEmailChange(s, oid, "first@example.invalid");
+    const code = localEmailChangeCode(s, first).code;
+    const second = requestEmailChange(s, oid, "second@example.invalid");
+    expect(() => confirmEmailChange(s, first, code)).toThrow();
+    const secondCode = localEmailChangeCode(s, second).code;
+    run("UPDATE email_changes SET expires=0 WHERE id=?", second);
+    expect(() => confirmEmailChange(s, second, secondCode)).toThrow();
+  });
+});
+
+describe("offline DATA_KEY rotation", () => {
+  it("re-encrypts a new copy, preserves report/payment and revokes copied sessions", async () => {
+    const { s, oid } = paid();
+    svc.workOnce();
+    const original = svc.getReport(s, oid).report;
+    const target = "var/rotated-test.sqlite",
+      newKey = Buffer.alloc(32, 9);
+    for (const suffix of ["", "-wal", "-shm"])
+      rmSync(target + suffix, { force: true });
+    await rotateDataKey(path, target, config().key, newKey, []);
+    const { DatabaseSync } = await import("node:sqlite"),
+      copy = new DatabaseSync(target, { readOnly: true });
+    try {
+      const report = copy
+        .prepare("SELECT payload FROM reports WHERE order_id=?")
+        .get(oid)!;
+      expect(decryptJson(report.payload as string, newKey)).toEqual(original);
+      expect(() =>
+        decryptJson(report.payload as string, config().key),
+      ).toThrow();
+      expect(
+        copy.prepare("SELECT payment_status FROM orders WHERE id=?").get(oid)
+          ?.payment_status,
+      ).toBe("paid");
+      expect(copy.prepare("SELECT count(*) n FROM sessions").get()?.n).toBe(0);
+      expect(svc.getReport(s, oid).report).toEqual(original);
+    } finally {
+      copy.close();
+      for (const suffix of ["", "-wal", "-shm"])
+        rmSync(target + suffix, { force: true });
+    }
+  });
+  it("rejects a no-op key change before reading or overwriting any database", async () => {
+    await expect(
+      rotateDataKey(
+        "missing.sqlite",
+        "var/unused-rotation.sqlite",
+        config().key,
+        config().key,
+        [],
+      ),
+    ).rejects.toThrow("KEYS_INVALID");
+  });
+});
+
+describe("old-key backup recovery after a key rotation", () => {
+  it("verifies the latest manifest using current key and re-encrypts the old archive before publishing", async () => {
+    const { oid, s } = paid();
+    svc.workOnce();
+    const original = svc.getReport(s, oid).report;
+    const root = mkdtempSync("var/old-key-recovery-test-");
+    try {
+      const archive = root + "/before.gsb",
+        target = root + "/recovered.sqlite",
+        manifest = root + "/current.json",
+        oldFile = root + "/old.key",
+        next = Buffer.alloc(32, 8);
+      await createEncryptedBackup(db(), archive, config().key);
+      writeFileSync(oldFile, config().key.toString("hex"), { mode: 0o600 });
+      writeFileSync(manifest, encodeDeletions([], next), { mode: 0o600 });
+      const output = execFileSync(
+        process.execPath,
+        [
+          "--import",
+          "tsx",
+          "scripts/restore.ts",
+          archive,
+          target,
+          "--deletions",
+          manifest,
+          "--archive-key-file",
+          oldFile,
+        ],
+        {
+          env: { ...process.env, DATA_KEY: next.toString("hex") },
+          encoding: "utf8",
+        },
+      );
+      expect(output).not.toContain(next.toString("hex"));
+      const { DatabaseSync } = await import("node:sqlite"),
+        copy = new DatabaseSync(target, { readOnly: true });
+      try {
+        expect(
+          decryptJson(
+            copy
+              .prepare("SELECT payload FROM reports WHERE order_id=?")
+              .get(oid)!.payload as string,
+            next,
+          ),
+        ).toEqual(original);
+      } finally {
+        copy.close();
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+it("rotates customer sessions atomically on successful email authentication", () => {
+  const original = svc.newSession(),
+    rid = svc.makeReading(original.session, birth);
+  const challenge = svc.requestOtp(
+      original.session,
+      "rotation@example.invalid",
+    ),
+    code = svc.localOtp(original.session, challenge).code;
+  const token = svc.verifyOtp(original.session, challenge, code, true)!;
+  expect(svc.sessionFor(original.token)).toBeUndefined();
+  const current = svc.sessionFor(token)!;
+  expect(current.email_hash).toBe(hash("rotation@example.invalid"));
+  expect(svc.readingFor(current, rid).input).toEqual(birth);
+  expect(() => svc.verifyOtp(current, challenge, code, true)).toThrow();
 });

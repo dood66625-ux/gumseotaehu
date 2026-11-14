@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { DatabaseSync } from "node:sqlite";
 import { config } from "../../lib/config";
 import { totp } from "../../lib/security";
 config();
@@ -33,6 +34,28 @@ async function auth(page: Page, email: string) {
       })
     ).ok(),
   ).toBeTruthy();
+}
+async function freshAdminCode() {
+  const latest = () => {
+    const database = new DatabaseSync("var/e2e.sqlite", { readOnly: true });
+    try {
+      return Number(
+        database
+          .prepare(
+            "SELECT COALESCE(MAX(last_step),0) AS step FROM admin_totp_replay",
+          )
+          .get()?.step ?? 0,
+      );
+    } finally {
+      database.close();
+    }
+  };
+  const used = latest();
+  await expect
+    .poll(() => Math.floor(Date.now() / 30000) + 1, { timeout: 35000 })
+    .toBeGreaterThan(used);
+  const step = Math.max(Math.floor(Date.now() / 30000), used + 1);
+  return totp(process.env.ADMIN_TOTP_SECRET!, step * 30000);
 }
 async function createPaid(page: Page, email: string, close = false) {
   await auth(page, email);
@@ -119,6 +142,7 @@ test("landing remains usable without API; responsive, reduced motion and accessi
 test("complete mobile UI journey: birth, preview, verified checkout, report, PDF, recovery, inquiry, admin refund", async ({
   page,
 }, info) => {
+  test.setTimeout(75000);
   const email = `journey-${info.project.name}@example.invalid`;
   await page.goto("/start");
   await page.getByLabel("어떻게 불러드릴까요?").fill("가온");
@@ -191,9 +215,7 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await expect(page.getByText("모의 결제 환불을 요청합니다.")).toBeVisible();
   await page.goto("/admin");
   await page.getByLabel("운영자 비밀번호").fill(process.env.ADMIN_PASSWORD!);
-  await page
-    .getByLabel("1회용 인증코드")
-    .fill(totp(process.env.ADMIN_TOTP_SECRET!));
+  await page.getByLabel("1회용 인증코드").fill(await freshAdminCode());
   await page.getByRole("button", { name: "관리자 로그인" }).click();
   await expect(page.getByRole("heading", { name: "운영 현황" })).toBeVisible();
   await page.getByLabel("주문번호", { exact: true }).fill(oid);
@@ -447,4 +469,79 @@ test("ambiguous solar-term input returns a recoverable error before reading or p
   expect(valid.status()).toBe(201);
   const saved = await valid.json();
   expect(saved.id).toBeTruthy();
+});
+
+test("purchase email change verifies both addresses and retains the exact report", async ({
+  page,
+}, info) => {
+  const oldEmail = `change-${info.project.name}@example.invalid`,
+    newEmail = `changed-${info.project.name}@example.invalid`;
+  const oid = await createPaid(page, oldEmail);
+  const before = await (await page.request.get("/api/reports/" + oid)).json();
+  await page.goto("/recover");
+  await page.getByText("구매 이메일 변경", { exact: true }).click();
+  await page.getByLabel("새 구매 이메일").fill(newEmail);
+  await page.getByRole("button", { name: "새 이메일 확인 요청" }).click();
+  await page.getByRole("button", { name: "변경용 체험 인증번호 확인" }).click();
+  await page
+    .getByLabel("이메일 변경 인증번호")
+    .fill((await page.getByTestId("change-otp").textContent())!);
+  await page.getByRole("button", { name: "이메일 변경 확정" }).click();
+  await expect(page.getByRole("status")).toContainText("이메일이 변경");
+  expect((await page.request.get("/api/reports/" + oid)).status()).toBe(401);
+  await auth(page, newEmail);
+  const after = await (await page.request.get("/api/reports/" + oid)).json();
+  expect(after.report).toEqual(before.report);
+  await post(page, "logout");
+  await auth(page, oldEmail);
+  expect((await page.request.get("/api/reports/" + oid)).status()).toBe(404);
+});
+test("admin login rotates session, rejects TOTP replay and revokes elevated sessions", async ({
+  page,
+  playwright,
+}) => {
+  test.setTimeout(75000);
+  await post(page, "session");
+  const oldCookie = (await page.context().cookies()).find(
+    (c) => c.name === "gs_session",
+  )!;
+  const code = await freshAdminCode();
+  expect(
+    (
+      await post(page, "admin/login", {
+        password: process.env.ADMIN_PASSWORD,
+        code,
+      })
+    ).status(),
+  ).toBe(200);
+  const newCookie = (await page.context().cookies()).find(
+    (c) => c.name === "gs_session",
+  )!;
+  expect(newCookie.value).not.toBe(oldCookie.value);
+  const other = await playwright.request.newContext({ baseURL: origin });
+  try {
+    expect(
+      (
+        await other.get("/api/admin", {
+          headers: { cookie: "gs_session=" + oldCookie.value },
+        })
+      ).status(),
+    ).toBe(401);
+    await other.post("/api/session", { headers: { origin }, data: {} });
+    expect(
+      (
+        await other.post("/api/admin/login", {
+          headers: { origin },
+          data: { password: process.env.ADMIN_PASSWORD, code },
+        })
+      ).status(),
+    ).toBe(401);
+    expect(
+      (await page.request.get("/api/admin?query=not-a-valid-order")).status(),
+    ).toBe(400);
+    expect((await post(page, "admin/revoke-sessions")).status()).toBe(200);
+    expect((await page.request.get("/api/admin")).status()).toBe(401);
+  } finally {
+    await other.dispose();
+  }
 });

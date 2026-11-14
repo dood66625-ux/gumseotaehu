@@ -26,6 +26,7 @@ const response = (v: any, status = 200) =>
     status,
     headers: { "Content-Type": "application/json" },
   });
+(window as any).__GEUMSEO_PREVIEW_EMAIL = read().purchaseEmail;
 window.fetch = async (input: any, init: any = {}) => {
   const path = typeof input === "string" ? input : new URL(input.url).pathname;
   if (!path.startsWith("/api/")) return nativeFetch(input, init);
@@ -139,6 +140,21 @@ window.fetch = async (input: any, init: any = {}) => {
     return response({
       message: "가상 재발송 체험을 완료했습니다. 실제 이메일 발송은 없습니다.",
     });
+  if (p.startsWith("email-change/")) {
+    if (!s.authenticated || !s.paid)
+      return response({ error: "가상 구매 인증이 필요합니다." }, 401);
+    if (p === "email-change/request")
+      return response({ changeId: "33333333-3333-4333-8333-333333333333" });
+    if (p === "email-change/local-code") return response({ code: "123456" });
+    if (p === "email-change/confirm") {
+      if (b.code !== "123456")
+        return response({ error: "가상 인증번호를 확인하세요." }, 400);
+      s.purchaseEmail = "preview-corrected@example.invalid";
+      s.authenticated = false;
+      save(s);
+      return response({ ok: true });
+    }
+  }
   if (p === "tickets") {
     if (!s.authenticated)
       return response({ error: "가상 이메일 인증이 필요합니다." }, 401);

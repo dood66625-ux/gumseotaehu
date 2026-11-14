@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
-import { all, one, run } from "@/lib/db";
-import {
-  audit,
-  equal,
-  Fault,
-  hash,
-  limit,
-  open,
-  verifyTotp,
-} from "@/lib/security";
+import { all, run } from "@/lib/db";
+import { audit, Fault, limit } from "@/lib/security";
 import * as svc from "@/lib/service";
+import {
+  loginAdmin,
+  requireRecentAdmin,
+  revokeAdminSessions,
+} from "@/lib/admin-auth";
+import {
+  requestEmailChange,
+  localEmailChangeCode,
+  confirmEmailChange,
+} from "@/lib/email-change";
+import { readJsonObject } from "@/lib/http-body";
 import { reportPdf } from "@/lib/pdf";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,11 +96,16 @@ async function handler(
       if (p.startsWith("local-mail/"))
         return json(svc.localOtp(s, p.split("/")[1]));
       if (p === "tickets") return json(svc.getTickets(s));
-      if (p === "admin") return json(svc.adminOverview(s));
+      if (p === "admin")
+        return json(
+          svc.adminOverview(s, req.nextUrl.searchParams.get("query") ?? ""),
+        );
       if (p === "admin/export") {
-        svc.adminRequired(s, ["operations", "finance"]);
-        audit(s.id, "export_masked_orders", "all");
-        const rows = svc.adminOverview(s).orders;
+        requireRecentAdmin(s, ["operations", "finance"]);
+        audit(s.id, "export_masked_orders", "recent-5000");
+        const rows = all(
+          "SELECT id,amount,payment_status AS payment,fulfillment FROM orders ORDER BY created DESC LIMIT 5000",
+        );
         return new NextResponse(
           "order_id,amount_krw,payment,fulfillment\n" +
             rows
@@ -120,17 +128,7 @@ async function handler(
       throw new Fault("요청 출처를 확인할 수 없습니다.", 403);
     if (!req.headers.get("content-type")?.startsWith("application/json"))
       throw new Fault("JSON 요청이 필요합니다.", 415);
-    if (Number(req.headers.get("content-length") || 0) > 16384)
-      throw new Fault("요청이 너무 큽니다.", 413);
-    const text = await req.text();
-    if (Buffer.byteLength(text) > 16384)
-      throw new Fault("요청이 너무 큽니다.", 413);
-    let b: any;
-    try {
-      b = JSON.parse(text);
-    } catch {
-      throw new Fault("올바른 JSON이 아닙니다.");
-    }
+    const b = await readJsonObject(req);
     if (p === "session") {
       const old = req.cookies.get("gs_session")?.value;
       if (old && svc.sessionFor(old)) return json({ ok: true });
@@ -156,15 +154,16 @@ async function handler(
           "주소가 올바르다면 인증 안내가 준비됩니다. 로컬에서는 시험 수신함을 확인하세요.",
       });
     if (p === "auth/verify") {
-      svc.verifyOtp(
+      const token = svc.verifyOtp(
         s,
         z.string().uuid().parse(b.challengeId),
         z
           .string()
           .regex(/^\d{6}$/)
           .parse(b.code),
+        true,
       );
-      return json({ ok: true });
+      return setCookie(json({ ok: true }), token!);
     }
     if (p === "orders")
       return json(
@@ -216,33 +215,46 @@ async function handler(
           "로컬 발송함에 재열람 안내를 저장했습니다. 실제 발송은 하지 않았습니다.",
       });
     }
+    if (p === "email-change/request")
+      return json({
+        changeId: requestEmailChange(
+          s,
+          z.string().uuid().parse(b.orderId),
+          b.email,
+        ),
+      });
+    if (p === "email-change/local-code")
+      return json(localEmailChangeCode(s, z.string().uuid().parse(b.changeId)));
+    if (p === "email-change/confirm") {
+      confirmEmailChange(
+        s,
+        z.string().uuid().parse(b.changeId),
+        z
+          .string()
+          .regex(/^\d{6}$/)
+          .parse(b.code),
+      );
+      const response = json({
+        ok: true,
+        message: "이메일이 변경되었습니다. 새 주소로 다시 인증해 주세요.",
+      });
+      response.cookies.delete("gs_session");
+      return response;
+    }
     if (p === "tickets") return json({ id: svc.ticket(s, b) }, 201);
     if (p === "admin/login") {
-      limit("admin-login-global", 15, 900000);
-      limit("admin-login:" + s.id, 5, 900000);
-      if (
-        !equal(
-          z.string().max(200).parse(b.password),
-          process.env.ADMIN_PASSWORD!,
-        ) ||
-        !verifyTotp(
-          z
-            .string()
-            .regex(/^\d{6}$/)
-            .parse(b.code),
-        )
-      )
-        throw new Fault("관리자 인증에 실패했습니다.", 401);
-      run(
-        "UPDATE sessions SET role='operations',expires=? WHERE id=?",
-        Date.now() + 1800000,
-        s.id,
-      );
-      audit(s.id, "admin_mfa_login", "local-operator");
-      return json({ ok: true });
+      const token = loginAdmin(s, b.password, b.code);
+      return setCookie(json({ ok: true }), token);
     }
+
     if (p.startsWith("admin/")) {
       svc.adminRequired(s);
+      if (p === "admin/revoke-sessions") {
+        revokeAdminSessions(s);
+        const response = json({ ok: true });
+        response.cookies.delete("gs_session");
+        return response;
+      }
       const oid = b.orderId ? z.string().uuid().parse(b.orderId) : "";
       if (p === "admin/retry") {
         svc.adminRetry(s, oid);

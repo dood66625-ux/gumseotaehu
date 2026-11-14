@@ -16,11 +16,11 @@
 |검사|결과|증거|
 |---|---|---|
 |TypeScript strict|PASS|npm run typecheck|
-|단위·통합·보안·오프라인 계약|**265 PASS**|tests/*.test.ts; 백업/콘텐츠/절입 경계 추가 포함|
+|단위·통합·보안·오프라인 계약|**295 PASS**|tests/*.test.ts; 백업/콘텐츠/절입 경계 추가 포함|
 |일주 독립 산술 대조|120/120 PASS|Gregorian JDN 별도 공식;120개 서로 다른 날짜|
 |양음력 날짜 대조|기존 3개 + KASI 2024 초하루 12개 PASS|참고자료 일부 대조; 전 범위 검증 아님|
 |절입/자시/시각 미상/윤달 오류|로컬 케이스 PASS|core.test.ts|
-|모바일/데스크톱 E2E|**24 PASS**|Chromium Pixel7,WebKit iPhone13 에뮬레이션,Desktop Chromium|
+|모바일/데스크톱 E2E|**30 PASS**|Chromium Pixel7,WebKit iPhone13 에뮬레이션,Desktop Chromium|
 |PDF 한글 추출/폰트 내장|PASS|PDF /FontFile2,/ToUnicode 및 pdftotext로 표제/장 제목 추출 확인|
 |일관 백업 복구|PASS|SQLite backup을 새 연결로 열고 결제/복호화 본문 동일 검증|
 |의존성 스캔|취약점0|dependency-audit.json;시점 한정|
@@ -43,7 +43,7 @@
 |7|AI중단·재시도·알림/환불|PASS:합성 실패4회+audit/local안내+재처리/환불. 실 AI BLOCKED|
 |8|메일 실패에도 이메일 인증 재열람|PASS:local outbox삭제후 동일원문 복구. 실제 메일 BLOCKED|
 |9|한글 PDF/웹원문 동일·독립제공|PASS:실PDF내장·추출/본문 동일. 실모바일 저장 UX 추가검증|
-|10|이메일 정정·타인 보고서 비노출|부분 PASS:접근통제/문의. BLOCKED:증빙+새주소소유검증의 이메일 변경 자동 기능|
+|10|이메일 정정·타인 보고서 비노출|로컬 PASS:기존 주소 최근 인증+새 주소 OTP+세션 폐기+동일원문 재열람. 실제 메일/수동 증빙 검증 BLOCKED|
 |11|14~18세 서버 차단|PASS:guardianConsent위조로도 불가. 실 성인확인 BLOCKED|
 |12|법정대리인 계약취소|PASS:guardian CS분류/답변/운영 검토. 법률·실PG검증 BLOCKED|
 |13|환불 중복/PG실패 상태|PASS:원장고유취소/실패pending유지. 실PG BLOCKED|
@@ -72,3 +72,5 @@ WebKit·데스크톱 스크린샷과 각 환경에서 내려받은 한글 PDF도
 입력 간소화 최신 검증:단위·통합194개/E2E21개. [변경 및 검사](input-simplification.md)를 참조한다. 과거 릴리스의191개는 그 시점 결과다.
 
 최신 계산 경계 보강: 단위/통합 265개, E2E 24개 및 프로덕션 빌드 통과. [출처·대조 범위·남은 한계](astrology-boundary-validation.md). 앞선 194개/21개 표기는 당시 릴리스 기록이다.
+
+최신 운영 보강: 단위·통합 295개/E2E 30개, 타입 검사·프로덕션 빌드·고정 가상 정보의 이메일 변경을 포함한 공개 체험판 테스트 통과. 관리자/고객 세션 교체·TOTP 재사용/최근 인증·작업 복구·환불 대조·서명 삭제 이력·DATA_KEY 교체/과거 키 백업 복구를 포함한다. [범위·한계](hardening-release.md). 과거 265/24개 표기는 당시 기록이다.

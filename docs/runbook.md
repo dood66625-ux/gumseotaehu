@@ -19,14 +19,30 @@ Node24, npm ci/setup/build/start + 별도 worker. 동일 cwd와 var 볼륨, 같�
 ```sh
 npm run backup
 # source archive and NEW offline destination; never point at the live database
-npm run restore -- var/backups/<archive>.gsb var/recovery/check.sqlite
+npm run privacy:export -- var/privacy/latest-<id>.json
+npm run restore -- var/backups/<archive>.gsb var/recovery/check.sqlite --deletions var/privacy/latest-<id>.json
 ```
 
 복구는 같은 DATA_KEY가 필요하다. 잘못된 키/변조된 파일, 기존 목적지 또는 WAL/SHM/journal 파일이 있으면 거부한다. 복호화 후 SQLite integrity_check 및 foreign_key_check를 통과한 새 파일만 제공한다. 실행 중인 DB를 교체하거나 서버/워커를 시작하지 않는다. 현재 파일 크기 상한은 64MiB이며 더 큰 DB에는 스트리밍/대용량 백업 구현이 필요하다.
 
 장애 복구 시 먼저 서버/워커를 중지하고 원본 DB와 키를 별도로 보존한다. 새 파일로 복구·검증한 후 담당자가 DB 경로 변경과 재기동을 수행한다. DATA_KEY 외에 기존 AUTH_SECRET 등 인증 키도 별도로 보관한다. 자동 테스트에서 실제 앱의 가상 결제 주문·암호화 보고서를 백업/복원하여 paid 상태와 복호화 원문 일치를 확인한다. 운영 디스크 암호화, 보존기한/삭제 전파, 외부 오프사이트 백업과 실인프라 재해복구 훈련은 별도 구축해야 한다. 기존 평문 .sqlite 백업은 자동 변환·삭제하지 않는다.
 
-키 교체는 기존 데이터 전체 decrypt→새 키 encrypt 재암호화·HMAC 인덱스 재산출·기존 세션 폐기와 검증이 필요하다. 현재 자동 키 회전은 미구현이며 단순 env 키 변경을 하지 않는다.
+DATA_KEY 교체는 오프라인 새 사본 생성으로 지원한다. 서버/워커를 중지한 후 최신 삭제 목록을 내보내고, Git 제외된 비공개 새 키 파일을 생성한다.
+
+```sh
+npm run key:generate -- rotation-local
+npm run key:rotate -- var/recovery/rekey.sqlite --new-key-file var/keys/rotation-local.key --deletions var/privacy/latest-<id>.json --offline
+```
+
+원본 DB/.env.local은 바꾸지 않으며 새 사본의 모든 암호화 JSON 필드를 재암호화하고 세션/인증 요청을 폐기한다. 주문과 보고서 원문을 새 키로 확인한 후 담당자가 키와 DB 경로를 함께 전환해야 한다. AUTH_SECRET은 유지하므로 이메일 HMAC/식별자는 보존한다. AUTH_SECRET 변경·관리자 비밀번호/MFA 자격증명 회전은 이 명령의 범위가 아니다. 이전 암호화 백업에는 이전 DATA_KEY가 필요하므로 키를 별도로 보관한다. 새 삭제 목록도 새 키로 서명하여 사본 옆에 제공한다. 이 기능은 키 관리 서비스나 실 인프라 복구 훈련의 대체가 아니다.
+
+이전 DATA_KEY의 백업을 현재 키 환경으로 복구하려면 아래 선택 인자를 사용한다. 최신 삭제 목록의 서명은 현재 DATA_KEY로 확인하며, 과거 키는 백업/필드 복호화에만 쓰고 새 사본은 현재 키로 다시 암호화한다.
+
+```sh
+npm run restore -- var/backups/<old-archive>.gsb var/recovery/current-key.sqlite --deletions var/privacy/latest-<id>.json --archive-key-file var/keys/old-data.key
+```
+
+삭제 복구 주의: 복구 CLI는 최신 서명 삭제 목록을 필수로 요구한다. 목록의 서명만 검증하며 '가장 최신인지'를 자동 증명하지는 못한다. 담당자가 원본 DB의 최신 목록을 별도로 안전하게 보관해야 하며, 오래된 목록/빈 목록을 사용하면 과거 삭제가 누락될 수 있다. 오프사이트 삭제 이력 동기화·법적 보류·백업 기한 파기는 출시 전 추가 구현 항목이다.
 
 ## 브라우저 의존성
 보통 `npx playwright install --with-deps chromium webkit`. 현재 클라우드는 root/sudo/시스템 패키지 도구가 없어서 공식 Debian trixie 패키지를 work 아래 추출하고 WebKit용 실행 wrapper가 로컬 라이브러리 경로를 추가한다. `WEBKIT_EXECUTABLE`로 wrapper를 지정할 수 있다. 현재 증거는 실제 WebKit 엔진 실행이며 실제 iPhone Safari 검증이 아니다. 런타임 dependency validation을 생략한 경우 실제 launch·렌더링·E2E 성공 증거로 확인한다. 일반 개발자는 해당 우회 없이 표준 설치를 권장한다.

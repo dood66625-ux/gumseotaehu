@@ -7,10 +7,12 @@ export default function Admin() {
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
     [oid, setOid] = useState(""),
-    [action, setAction] = useState("resend");
+    [action, setAction] = useState("resend"),
+    [query, setQuery] = useState(""),
+    [correctCalendar, setCorrectCalendar] = useState("solar");
   async function load() {
     try {
-      setData(await api("admin"));
+      setData(await api("admin?query=" + encodeURIComponent(query)));
     } catch {
       setData(null);
     }
@@ -42,7 +44,22 @@ export default function Admin() {
     const f = new FormData(e.currentTarget);
     try {
       const body: any = { orderId: oid, reason: f.get("reason") };
-      if (action === "correct") body.input = JSON.parse(String(f.get("input")));
+      if (action === "correct")
+        body.input = {
+          name: f.get("correctionName"),
+          date: f.get("correctionDate"),
+          calendar: correctCalendar,
+          leap: correctCalendar === "lunar" && f.get("correctionLeap") === "on",
+          time:
+            f.get("correctionUnknown") === "on"
+              ? null
+              : f.get("correctionTime"),
+          sex: f.get("correctionSex"),
+          place: "KR",
+          age: "19+",
+          self: true,
+          consent: true,
+        };
       if (action === "delete") body.ticketId = f.get("ticketId");
       if (action === "refund") body.testFailure = f.get("failure") === "on";
       await api("admin/" + action, body);
@@ -50,6 +67,7 @@ export default function Admin() {
       await load();
     } catch (e) {
       setError((e as Error).message);
+      if ((e as Error).message.includes("로그인을 다시")) setData(null);
     } finally {
       setBusy(false);
     }
@@ -128,7 +146,7 @@ export default function Admin() {
           새로고침
         </button>
         <a className="button secondary" href="/api/admin/export">
-          비식별 주문 CSV
+          최근 5,000건 가림 처리 주문 CSV
         </a>
         <button
           className="button secondary"
@@ -140,15 +158,62 @@ export default function Admin() {
           로그아웃
         </button>
       </div>
+      <div className="actions">
+        <button className="button secondary" onClick={() => setData(null)}>
+          관리자 인증 갱신
+        </button>
+        <button
+          className="button secondary"
+          onClick={async () => {
+            try {
+              await api("admin/revoke-sessions", {});
+              setData(null);
+              setMessage("관리자 세션을 모두 종료했습니다.");
+            } catch (e) {
+              setError((e as Error).message);
+            }
+          }}
+        >
+          관리자 세션 전체 종료
+        </button>
+      </div>
+      {data.health && (
+        <section className="card">
+          <h2>장애·복구 확인</h2>
+          <p>
+            작업자: {data.health.workerHealthy ? "정상 확인" : "연결 확인 필요"}
+          </p>
+          <p>
+            생성 실패 {data.health.counts.failedJobs}건 · 환불 오류{" "}
+            {data.health.counts.refundErrors}건 · 검토 기한 경과 문의{" "}
+            {data.health.counts.overdueTickets}건
+          </p>
+          <p>
+            승인 대사 대기 {data.health.counts.pendingApprovals}건 · 제공 완료
+            원문 누락 {data.health.counts.missingReports}건
+          </p>
+          <p className="hint">
+            제공한 원문이 누락되면 재생성보다 검증된 백업 복구를 우선합니다.
+            새로 생성한 문서를 기존 원문과 같다고 표시하지 않습니다.
+          </p>
+        </section>
+      )}
       <h2>주문·결제·보고서</h2>
+      <p className="hint">
+        최근 200건을 표시합니다. 이전 주문은 주문번호 앞부분으로 검색하세요.
+      </p>
       <div className="field">
         <label htmlFor="order-search">주문번호 검색</label>
         <input
           id="order-search"
           placeholder="주문번호 일부"
-          onChange={(e) => setMessage("search:" + e.target.value)}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
       </div>
+      <button className="button secondary" onClick={load}>
+        주문 검색
+      </button>
       <div className="table-wrap">
         <table>
           <thead>
@@ -163,31 +228,25 @@ export default function Admin() {
             </tr>
           </thead>
           <tbody>
-            {data.orders
-              .filter(
-                (o: any) =>
-                  !message.startsWith("search:") ||
-                  o.id.includes(message.slice(7)),
-              )
-              .map((o: any) => (
-                <tr key={o.id}>
-                  <td>{o.id}</td>
-                  <td>{o.email}</td>
-                  <td>{o.amount.toLocaleString()}원</td>
-                  <td>{o.payment}</td>
-                  <td>{o.fulfillment}</td>
-                  <td>
-                    {o.expires
-                      ? new Date(o.expires).toLocaleDateString("ko-KR")
-                      : "—"}
-                  </td>
-                  <td>
-                    <button className="small" onClick={() => setOid(o.id)}>
-                      업무 선택
-                    </button>
-                  </td>
-                </tr>
-              ))}
+            {data.orders.map((o: any) => (
+              <tr key={o.id}>
+                <td>{o.id}</td>
+                <td>{o.email}</td>
+                <td>{o.amount.toLocaleString()}원</td>
+                <td>{o.payment}</td>
+                <td>{o.fulfillment}</td>
+                <td>
+                  {o.expires
+                    ? new Date(o.expires).toLocaleDateString("ko-KR")
+                    : "—"}
+                </td>
+                <td>
+                  <button className="small" onClick={() => setOid(o.id)}>
+                    업무 선택
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -246,24 +305,70 @@ export default function Admin() {
           </label>
         )}
         {action === "correct" && (
-          <div className="field">
-            <label htmlFor="correct-json">
-              정정 출생정보 JSON (본인 확인 완료 후)
+          <fieldset className="card">
+            <legend>본인 확인 후 출생정보 정정</legend>
+            <div className="field">
+              <label htmlFor="correction-name">정정할 별명</label>
+              <input
+                id="correction-name"
+                name="correctionName"
+                maxLength={24}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="correction-date">정정할 생년월일</label>
+              <input
+                id="correction-date"
+                name="correctionDate"
+                placeholder="YYYY-MM-DD"
+                pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="correction-calendar">정정 달력 기준</label>
+              <select
+                id="correction-calendar"
+                value={correctCalendar}
+                onChange={(e) => setCorrectCalendar(e.target.value)}
+              >
+                <option value="solar">양력</option>
+                <option value="lunar">음력</option>
+              </select>
+            </div>
+            {correctCalendar === "lunar" && (
+              <label className="check">
+                <input name="correctionLeap" type="checkbox" />
+                윤달
+              </label>
+            )}
+            <div className="field">
+              <label htmlFor="correction-time">정정할 출생시간</label>
+              <input
+                id="correction-time"
+                name="correctionTime"
+                type="time"
+                defaultValue="12:00"
+              />
+            </div>
+            <label className="check">
+              <input type="checkbox" name="correctionUnknown" />
+              출생시간 미상
             </label>
-            <textarea
-              id="correct-json"
-              name="input"
-              rows={10}
-              required
-              defaultValue={
-                '{"name":"테스트","date":"1995-05-15","calendar":"solar","leap":false,"time":"10:30","sex":"female","place":"KR","age":"19+","self":true,"consent":true}'
-              }
-            />
+            <div className="field">
+              <label htmlFor="correction-sex">정정 대운 계산 구분</label>
+              <select id="correction-sex" name="correctionSex">
+                <option value="unspecified">선택하지 않음</option>
+                <option value="female">여성</option>
+                <option value="male">남성</option>
+              </select>
+            </div>
             <p className="hint">
-              원본 계산과 보고서는 버전 이력을 유지하며 새 스냅샷으로
-              재발급합니다. 7일 이내 1회 혜택 정책안입니다.
+              대상자 본인·성인 여부와 원본 주문을 확인한 후 적용합니다. 7일 이내
+              1회 혜택 정책안이며, 법정 권리는 별도로 검토합니다.
             </p>
-          </div>
+          </fieldset>
         )}
         {action === "delete" && (
           <div className="field">

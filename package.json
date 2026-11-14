@@ -24,7 +24,11 @@
     "test:preview": "node scripts/test-public-preview.mjs",
     "toss:check": "node scripts/toss-config-check.mjs",
     "restore": "tsx scripts/restore.ts",
-    "audit:content": "tsx scripts/audit-content.ts"
+    "audit:content": "tsx scripts/audit-content.ts",
+    "privacy:export": "tsx scripts/privacy-export.ts",
+    "readiness": "tsx scripts/readiness.ts",
+    "key:generate": "tsx scripts/key-generate.ts",
+    "key:rotate": "tsx scripts/key-rotate.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,3 +1,4 @@
+import { applyDeletions, type Deletions } from "./deletion-manifest";
 import { backup, DatabaseSync } from "node:sqlite";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import {
@@ -68,6 +69,7 @@ export function restoreEncryptedBackup(
   source: string,
   destination: string,
   key: Buffer,
+  deletions: Deletions = [],
 ) {
   checkKey(key);
   const target = resolve(destination);
@@ -99,6 +101,14 @@ export function restoreEncryptedBackup(
   try {
     const candidate = join(temp, "restored.sqlite");
     writeFileSync(candidate, plain, { flag: "wx", mode: 0o600 });
+    if (deletions.length) {
+      const restored = new DatabaseSync(candidate);
+      try {
+        applyDeletions(restored, deletions, key);
+      } finally {
+        restored.close();
+      }
+    }
     inspect(candidate);
     // Hard-link creation fails if a target appeared during validation.
     linkSync(candidate, target);

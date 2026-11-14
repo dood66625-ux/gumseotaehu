@@ -1,7 +1,5 @@
+import { encryptJson, decryptJson } from "./crypto";
 import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
   createHmac,
   timingSafeEqual,
   randomUUID,
@@ -13,18 +11,10 @@ export const id = () => randomUUID();
 export const hash = (v: string) =>
   createHmac("sha256", config().secret).update(v).digest("hex");
 export function seal(v: unknown) {
-  const iv = randomBytes(12),
-    c = createCipheriv("aes-256-gcm", config().key, iv);
-  const data = Buffer.concat([c.update(JSON.stringify(v), "utf8"), c.final()]);
-  return Buffer.concat([iv, c.getAuthTag(), data]).toString("base64");
+  return encryptJson(v, config().key);
 }
 export function open<T = any>(s: string): T {
-  const b = Buffer.from(s, "base64"),
-    d = createDecipheriv("aes-256-gcm", config().key, b.subarray(0, 12));
-  d.setAuthTag(b.subarray(12, 28));
-  return JSON.parse(
-    Buffer.concat([d.update(b.subarray(28)), d.final()]).toString("utf8"),
-  );
+  return decryptJson<T>(s, config().key);
 }
 export function equal(a: string, b: string) {
   const x = createHash("sha256").update(a).digest(),

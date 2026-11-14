@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "flow": "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → synthetic inquiry; admin restricted",
+  "flow": "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → synthetic inquiry → locked two-address email change; admin restricted",
   "externalApiRequests": 0,
   "realPersonalInputEnabled": false,
   "origin": "http://127.0.0.1:3200/gumseotaehu/"

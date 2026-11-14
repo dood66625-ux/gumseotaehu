@@ -1,0 +1,101 @@
+import { business } from "./business";
+/** No credentials are returned and no external provider is contacted. */
+export function launchReadiness() {
+  return {
+    mode: "local-mock",
+    launchReady: false,
+    externalEffectsEnabled: false,
+    completedLocal: [
+      "server-price-and-payment-state-checks",
+      "durable-job-and-refund-reconciliation",
+      "single-operator-session-rotation-and-recent-mfa",
+      "verified-two-address-email-change-mock",
+      "encrypted-backup-and-signed-deletion-replay",
+      "offline-data-key-rotation-with-session-revocation",
+      "astrology-boundary-guards-and-reference-subset",
+    ],
+    business: {
+      nameProvided: !!business.name,
+      registrationProvided: !!business.registrationNumber,
+      representativeProvided: !!business.representative,
+      addressProvided: !!business.address,
+      emailProvided: !!business.email,
+      phoneProvided: !!business.phone,
+      registryVerified: business.registryVerified,
+    },
+    blockers: [
+      {
+        id: "toss",
+        kind: "implementation-and-provider",
+        detail:
+          "Browser SDK, server order integration and real sandbox approval/lookup/cancel/webhook verification remain incomplete. Test transport is not wired into runtime.",
+      },
+      {
+        id: "ai",
+        kind: "implementation-and-provider",
+        detail:
+          "Provider/model/budget and real report-generation adapter, usage limits and quality evaluation remain incomplete; rule mock cannot be sold.",
+      },
+      {
+        id: "mail",
+        kind: "implementation-and-provider",
+        detail:
+          "Real delivery/authentication, domain SPF/DKIM/DMARC, bounce/retry handling and removal of local OTP endpoints required.",
+      },
+      {
+        id: "hosting",
+        kind: "infrastructure",
+        detail:
+          "Private staging, persistent storage/DB, TLS, monitoring, offsite backup and recovery tests required. Docker clean build remains unverified after registry networking failure.",
+      },
+      {
+        id: "identity",
+        kind: "implementation-and-review",
+        detail:
+          "Adult self-declaration is not verified identity. Minor paid access remains disabled; legal/PG review required.",
+      },
+      {
+        id: "calendar",
+        kind: "expert-review",
+        detail:
+          "Full Korean lunar/calendar/terms and luck-cycle validation remains incomplete beyond reference subsets.",
+      },
+      {
+        id: "privacy",
+        kind: "implementation-and-review",
+        detail:
+          "Approved transaction retention/legal holds, automated backup deletion propagation and managed AUTH_SECRET/credential rotation remain incomplete; offline DATA_KEY rotation is implemented. Latest deletion manifest freshness needs operator verification.",
+      },
+      {
+        id: "admin",
+        kind: "implementation",
+        detail:
+          "Multi-user role lifecycle, managed MFA enrollment/recovery and credential rotation remain incomplete; only one local operator is supported.",
+      },
+      {
+        id: "traffic",
+        kind: "implementation-and-infrastructure",
+        detail:
+          "Trusted reverse proxy/WAF/distributed limits, advertising consent/attribution and real-user Web Vitals remain incomplete.",
+      },
+      {
+        id: "legal",
+        kind: "owner-and-expert",
+        detail:
+          "Required seller contact/disclosures, applicable registrations, contracts/refund/privacy/AI notices and tax treatment need approval.",
+      },
+      {
+        id: "devices",
+        kind: "manual-verification",
+        detail:
+          "Real iOS/Android/in-app browsers, payment app return and mail/PDF flows require device checks.",
+      },
+      {
+        id: "approval",
+        kind: "owner-approval",
+        detail:
+          "Live payment, real mail, customer-data transfer and public operating deployment each remain unapproved.",
+      },
+    ],
+  } as const;
+}
