@@ -47,7 +47,9 @@ export default function Shell({ children }: { children: ReactNode }) {
           <a href="/admin">관리자</a>
         </div>
         <p className="fine">
-          운영 예정 사업자: {business.name} · 사업자등록번호{" "}
+          운영 예정 사업자: {business.name} · 대표자 {business.representative}
+          <br />
+          사업자등록번호{" "}
           {business.registrationNumber}
           <br />
           연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>

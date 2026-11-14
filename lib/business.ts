@@ -4,7 +4,7 @@ export const business = {
   registrationNumber: "567-15-01262",
   source: "owner-provided",
   registryVerified: false,
-  representative: null,
+  representative: "유승학",
   address: null,
   phone: null,
   email: "mjreview3@gmail.com",

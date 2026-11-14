@@ -8,6 +8,10 @@ export default function BusinessInfo() {
           <dd>{business.name}</dd>
         </div>
         <div>
+          <dt>대표자</dt>
+          <dd>{business.representative}</dd>
+        </div>
+        <div>
           <dt>사업자등록번호</dt>
           <dd>{business.registrationNumber}</dd>
         </div>
@@ -21,7 +25,7 @@ export default function BusinessInfo() {
       <section className="card">
         <h2>출시 전 추가 고지</h2>
         <p className="hint">
-          대표자명, 사업장 주소, 연락 전화번호, 통신판매업 신고 정보(해당 시),
+          사업장 주소, 연락 전화번호, 통신판매업 신고 정보(해당 시),
           호스팅 제공자 등은 확인 후 등록합니다. 실제 판매는 필요한 고지와 운영
           검토가 끝난 뒤 시작합니다.
         </p>
