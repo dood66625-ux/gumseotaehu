@@ -1,3 +1,4 @@
+import { snapshotMailRecipient, snapshotTicketContact } from "./mail-records";
 import {
   operationalHealth,
   workerHeartbeat,
@@ -96,18 +97,26 @@ export function makeReading(s: Session, raw: unknown) {
   return rid;
 }
 const emailSchema = z.string().trim().toLowerCase().email().max(254);
-export function enqueueMail(emailHash: string, payload: unknown) {
-  const mid = id();
-  run(
-    "INSERT INTO outbox VALUES(?,?,?,?,?)",
-    mid,
-    emailHash,
-    seal(payload),
-    Date.now(),
-    "local_only",
-  );
-  return mid;
+export function enqueueMail(
+  emailHash: string,
+  payload: unknown,
+  recipient?: string,
+) {
+  return tx(() => {
+    const mid = id();
+    run(
+      "INSERT INTO outbox VALUES(?,?,?,?,?)",
+      mid,
+      emailHash,
+      seal(payload),
+      Date.now(),
+      "local_only",
+    );
+    snapshotMailRecipient(mid, emailHash, payload, recipient);
+    return mid;
+  });
 }
+
 export function requestOtp(s: Session, email: unknown) {
   const e = emailSchema.parse(email);
   limit("otp-session:" + s.id, 5, 900000);
@@ -576,20 +585,23 @@ export function ticket(s: Session, raw: unknown) {
     .parse(raw);
   if (t.orderId) ownOrder(s, t.orderId);
   limit("help:" + s.id, 10);
-  const tid = id(),
-    now = Date.now();
-  run(
-    "INSERT INTO tickets(id,email_hash,order_id,category,payload,created,due) VALUES(?,?,?,?,?,?,?)",
-    tid,
-    s.email_hash,
-    t.orderId || null,
-    t.category,
-    seal({ message: t.message }),
-    now,
-    now + 3 * 86400000,
-  );
-  event(t.category === "refund" ? "refund_requested" : "support_ticket", tid);
-  return tid;
+  return tx(() => {
+    const tid = id(),
+      now = Date.now();
+    run(
+      "INSERT INTO tickets(id,email_hash,order_id,category,payload,created,due) VALUES(?,?,?,?,?,?,?)",
+      tid,
+      s.email_hash,
+      t.orderId || null,
+      t.category,
+      seal({ message: t.message }),
+      now,
+      now + 3 * 86400000,
+    );
+    snapshotTicketContact(tid, s.email_hash!);
+    event(t.category === "refund" ? "refund_requested" : "support_ticket", tid);
+    return tid;
+  });
 }
 export function getTickets(s: Session) {
   requireEmail(s);
@@ -663,6 +675,9 @@ export function adminOverview(s: Session, query = "") {
       mode: "local mock; 실제 매출 아님",
     },
     health: operationalHealth(),
+    mailDeliveries: all(
+      "SELECT outbox_id,template,state,attempts,failures,scheduled,last_error FROM mail_queue ORDER BY updated DESC LIMIT 50",
+    ),
     mailCount: one("SELECT count(*) AS n FROM outbox")!.n,
   };
 }
@@ -951,6 +966,10 @@ export function purgeExpired() {
     run("DELETE FROM sessions WHERE expires<?", now);
     run("DELETE FROM challenges WHERE expires<?", now - 86400000);
     run("DELETE FROM email_changes WHERE expires<?", now - 86400000);
+    run(
+      "DELETE FROM outbox WHERE id IN (SELECT outbox_id FROM mail_queue WHERE template IN ('otp','email_change_otp')) AND created<?",
+      now - 86400000,
+    );
     run("DELETE FROM outbox WHERE created<?", now - 7 * 86400000);
     run("DELETE FROM rate_limits WHERE reset<?", now);
     run(

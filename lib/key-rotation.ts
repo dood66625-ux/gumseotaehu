@@ -10,6 +10,8 @@ const fields: Record<string, string[]> = {
   challenges: ["email_enc"],
   reports: ["payload"],
   outbox: ["payload"],
+  mail_queue: ["recipient_enc", "message_enc"],
+  ticket_contacts: ["email_enc"],
   tickets: ["payload"],
   refunds: ["reason_enc"],
   email_changes: ["new_email_enc"],

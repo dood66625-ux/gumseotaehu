@@ -197,6 +197,19 @@ export default function Admin() {
             확인 대기 {data.health.counts.tossUncertain}건 · 별도 검토{" "}
             {data.health.counts.tossReview}건
           </p>
+          <p>
+            메일 대기 {data.health.counts.mailQueued}건 · 확인 필요{" "}
+            {data.health.counts.mailUncertain}건 · 반송/수신거부{" "}
+            {data.health.counts.mailBounced}건
+          </p>
+          <p>
+            공급자 접수 {data.health.counts.mailAccepted}건 · 수신 서버 전달
+            확인 {data.health.counts.mailDelivered}건
+          </p>
+          <p className="hint">
+            메일 접수·전달 확인은 고객의 열람이나 PDF 저장을 뜻하지 않습니다.
+            현재는 실제 발송이 비활성화된 로컬 검증판입니다.
+          </p>
           <p className="hint">
             제공한 원문이 누락되면 재생성보다 검증된 백업 복구를 우선합니다.
             새로 생성한 문서를 기존 원문과 같다고 표시하지 않습니다.
@@ -427,8 +440,17 @@ export default function Admin() {
           </p>
         ))}
         <p className="hint">
-          로컬 메일 기록 {data.mailCount}건 · 외부 발송 0건
+          로컬 메일 기록 {data.mailCount}건 · 실제 발송 비활성
         </p>
+        <details>
+          <summary>최근 메일 처리 기록 · 최대 50건</summary>
+          {data.mailDeliveries?.map((m: any) => (
+            <p className="fine" key={m.outbox_id}>
+              {m.outbox_id} · {m.template} · {m.state} · 시도 {m.attempts} ·{" "}
+              {m.last_error ?? "오류 없음"}
+            </p>
+          ))}
+        </details>
         <details>
           <summary>감사로그 최근 100건</summary>
           {data.audit.map((a: any) => (

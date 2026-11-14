@@ -14,6 +14,21 @@ export function operationalHealth() {
       one("SELECT updated FROM worker_heartbeat WHERE name='reports'")
         ?.updated ?? null;
   const counts = {
+    mailQueued: one(
+      "SELECT count(*) n FROM mail_queue WHERE state IN ('queued','retrying')",
+    )!.n as number,
+    mailUncertain: one(
+      "SELECT count(*) n FROM mail_queue WHERE state IN ('sending','uncertain','review','blocked')",
+    )!.n as number,
+    mailAccepted: one(
+      "SELECT count(*) n FROM mail_queue WHERE state='accepted'",
+    )!.n as number,
+    mailDelivered: one(
+      "SELECT count(*) n FROM mail_queue WHERE state='delivered'",
+    )!.n as number,
+    mailBounced: one(
+      "SELECT count(*) n FROM mail_queue WHERE state IN ('bounced','complained')",
+    )!.n as number,
     tossUncertain: one(
       "SELECT count(*) n FROM toss_attempts WHERE state IN ('confirming','uncertain')",
     )!.n as number,

@@ -101,13 +101,34 @@ export function restoreEncryptedBackup(
   try {
     const candidate = join(temp, "restored.sqlite");
     writeFileSync(candidate, plain, { flag: "wx", mode: 0o600 });
-    if (deletions.length) {
-      const restored = new DatabaseSync(candidate);
+    const restored = new DatabaseSync(candidate);
+    try {
+      if (deletions.length) applyDeletions(restored, deletions, key);
+      restored.exec("PRAGMA foreign_keys=ON; BEGIN IMMEDIATE;");
       try {
-        applyDeletions(restored, deletions, key);
-      } finally {
-        restored.close();
+        const has = (table: string) =>
+          !!restored
+            .prepare(
+              "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+            )
+            .get(table);
+        if (has("sessions")) restored.exec("DELETE FROM sessions");
+        if (has("challenges")) restored.exec("DELETE FROM challenges");
+        if (has("email_changes"))
+          restored.exec(
+            "UPDATE email_changes SET state='canceled' WHERE state='pending'",
+          );
+        if (has("mail_queue"))
+          restored.exec(
+            "UPDATE mail_queue SET state=CASE WHEN state IN ('accepted','delivered','bounced','complained') THEN state ELSE 'review' END,recovery_hold=1,needs_check=0,lease_until=0,last_error='RESTORED_REQUIRES_RECONCILIATION'",
+          );
+        restored.exec("COMMIT;");
+      } catch (error) {
+        restored.exec("ROLLBACK;");
+        throw error;
       }
+    } finally {
+      restored.close();
     }
     inspect(candidate);
     // Hard-link creation fails if a target appeared during validation.

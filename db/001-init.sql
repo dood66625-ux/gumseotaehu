@@ -34,3 +34,11 @@ CREATE TABLE IF NOT EXISTS toss_attempts(order_id TEXT PRIMARY KEY REFERENCES or
 CREATE TABLE IF NOT EXISTS toss_notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,event_key TEXT NOT NULL UNIQUE,order_id TEXT NOT NULL REFERENCES orders(id),received INTEGER NOT NULL,processed INTEGER);
 CREATE INDEX IF NOT EXISTS toss_recovery_due ON toss_attempts(needs_check,state,lease_until);
 INSERT OR IGNORE INTO schema_migrations VALUES(5,unixepoch()*1000);
+CREATE TABLE IF NOT EXISTS ticket_contacts(ticket_id TEXT PRIMARY KEY REFERENCES tickets(id) ON DELETE CASCADE,email_enc TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS mail_queue(outbox_id TEXT PRIMARY KEY REFERENCES outbox(id) ON DELETE CASCADE,recipient_enc TEXT NOT NULL,message_enc TEXT NOT NULL,template TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'local_only',profile_digest TEXT,provider_id TEXT,generation INTEGER NOT NULL DEFAULT 0,lease_until INTEGER NOT NULL DEFAULT 0,attempts INTEGER NOT NULL DEFAULT 0,failures INTEGER NOT NULL DEFAULT 0,recovery_hold INTEGER NOT NULL DEFAULT 0,scheduled INTEGER NOT NULL DEFAULT 0,first_dispatched INTEGER,deadline INTEGER,needs_check INTEGER NOT NULL DEFAULT 0,last_error TEXT,updated INTEGER NOT NULL,UNIQUE(profile_digest,provider_id));
+CREATE TABLE IF NOT EXISTS mail_notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,event_key TEXT NOT NULL UNIQUE,outbox_id TEXT NOT NULL REFERENCES outbox(id) ON DELETE CASCADE,received INTEGER NOT NULL,processed INTEGER);
+CREATE INDEX IF NOT EXISTS mail_queue_due ON mail_queue(state,scheduled,lease_until);
+CREATE INDEX IF NOT EXISTS challenges_email ON challenges(email_hash);
+CREATE INDEX IF NOT EXISTS tickets_email ON tickets(email_hash);
+INSERT OR IGNORE INTO schema_migrations VALUES(6,unixepoch()*1000);
+CREATE TABLE IF NOT EXISTS mail_suppressions(email_hash TEXT PRIMARY KEY,reason TEXT NOT NULL,created INTEGER NOT NULL);

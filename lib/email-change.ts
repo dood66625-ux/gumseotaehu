@@ -123,6 +123,12 @@ export function confirmEmailChange(s: Session, changeId: string, code: string) {
       order.id,
     );
     run(
+      "UPDATE ticket_contacts SET email_enc=? WHERE ticket_id IN (SELECT id FROM tickets WHERE order_id=? AND email_hash=?)",
+      c.new_email_enc,
+      order.id,
+      c.old_hash,
+    );
+    run(
       "UPDATE tickets SET email_hash=? WHERE order_id=? AND email_hash=?",
       c.new_hash,
       order.id,

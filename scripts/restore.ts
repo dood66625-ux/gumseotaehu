@@ -45,5 +45,5 @@ else {
   }
 }
 console.log(
-  "New offline database verified under current DATA_KEY with supplied deletion manifest. Original unchanged. No server started. Manifest freshness requires operator verification.",
+  "New offline database verified under current DATA_KEY with supplied deletion manifest. Restored auth revoked and mail held for reconciliation. Original unchanged. No server started. Manifest freshness requires operator verification.",
 );

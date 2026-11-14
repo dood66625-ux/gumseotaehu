@@ -35,15 +35,28 @@ export function all<T = Record<string, any>>(
     .prepare(sql)
     .all(...args) as T[];
 }
+let transactionDepth = 0;
 export function tx<T>(fn: () => T): T {
-  db().exec("BEGIN IMMEDIATE");
+  if (fn.constructor.name === "AsyncFunction")
+    throw Error("ASYNC_TRANSACTION_NOT_SUPPORTED");
+  const nested = transactionDepth > 0,
+    name = "geumseo_" + transactionDepth;
+  db().exec(nested ? "SAVEPOINT " + name : "BEGIN IMMEDIATE");
+  transactionDepth++;
   try {
     const result = fn();
-    db().exec("COMMIT");
+    if (result && typeof (result as any).then === "function")
+      throw Error("ASYNC_TRANSACTION_NOT_SUPPORTED");
+    db().exec(nested ? "RELEASE SAVEPOINT " + name : "COMMIT");
     return result;
-  } catch (e) {
-    db().exec("ROLLBACK");
-    throw e;
+  } catch (error) {
+    if (nested) {
+      db().exec("ROLLBACK TO SAVEPOINT " + name);
+      db().exec("RELEASE SAVEPOINT " + name);
+    } else db().exec("ROLLBACK");
+    throw error;
+  } finally {
+    transactionDepth--;
   }
 }
 export function closeDb() {

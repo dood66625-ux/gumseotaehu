@@ -9,6 +9,7 @@ export function launchReadiness() {
       "server-price-and-payment-state-checks",
       "durable-job-and-refund-reconciliation",
       "offline-toss-order-integration-and-notification-recovery",
+      "offline-mail-queue-idempotency-bounce-and-restore-quarantine",
       "single-operator-session-rotation-and-recent-mfa",
       "verified-two-address-email-change-mock",
       "encrypted-backup-and-signed-deletion-replay",
@@ -41,7 +42,7 @@ export function launchReadiness() {
         id: "mail",
         kind: "implementation-and-provider",
         detail:
-          "Real delivery/authentication, domain SPF/DKIM/DMARC, bounce/retry handling and removal of local OTP endpoints required.",
+          "Provider-neutral delivery/retry/bounce core is tested offline. Actual mail provider adapter, verified sender domain/SPF/DKIM/DMARC, real authentication and removal of local OTP endpoints remain required.",
       },
       {
         id: "hosting",
