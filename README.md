@@ -94,3 +94,5 @@ npm run backup
 ## 실제 AI 연결 보강
 
 OpenAI 키는 비공개 설정에만 저장했다. 고정 가상 정보 전용 Responses HTTP 어댑터·전체 3회 호출 제한·비동기 보고서 저장의 임대/주문 재검증을 추가했다. 실제 생성 시도 1회는 HTTP 429로 막혀 중단했으며, 성공한 AI 운명서가 제공된 상태는 아니다. 앱/일반 worker/공개 체험판은 mock을 유지한다. [구현·실행 결과·한도 확인 후 재개](docs/openai-integration.md). `npm run check:secrets`는 OpenAI 키도 소스와 브라우저 자산에서 검사한다.
+
+토스의 서명 원문 수신·발송 시각/중복 검사와 승인 누락 복구 연결을 추가했다. `/api/toss/webhook`는 기본 503이며 실제 결제나 외부 조회를 활성화하지 않는다. [새 테스트 수신 경로와 실제 상점 검증의 구분](docs/toss-signed-webhook.md).

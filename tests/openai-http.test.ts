@@ -220,6 +220,7 @@ it("persisted call reservations survive failure, restart and competing handles, 
 });
 it.each([
   ["insufficient_quota", "AI_QUOTA_EXHAUSTED"],
+  ["credit_balance_exhausted", "AI_QUOTA_EXHAUSTED"],
   ["billing_hard_limit_reached", "AI_QUOTA_EXHAUSTED"],
   ["rate_limit_exceeded", "AI_RATE_LIMITED"],
 ])(

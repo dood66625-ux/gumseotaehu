@@ -9,6 +9,7 @@ const names = [
   "ADMIN_TOTP_SECRET",
   "TOSS_TEST_CLIENT_KEY",
   "TOSS_TEST_SECRET_KEY",
+  "TOSS_TEST_WEBHOOK_SECURITY_KEY",
 ];
 const tracked = execFileSync("git", ["ls-files", "-z"])
   .toString()

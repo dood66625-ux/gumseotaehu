@@ -545,3 +545,27 @@ test("admin login rotates session, rejects TOTP replay and revokes elevated sess
     await other.dispose();
   }
 });
+
+test("test PG webhook stays disabled and cannot be used as a browser payment callback", async ({
+  request,
+}) => {
+  const response = await request.post("/api/toss/webhook", {
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "https://untrusted.example.invalid",
+    },
+    data: {
+      eventType: "PAYMENT_STATUS_CHANGED",
+      data: {
+        orderId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        status: "DONE",
+        totalAmount: 33000,
+      },
+    },
+  });
+  expect(response.status()).toBe(503);
+  expect(await response.json()).toEqual({
+    error: "TOSS_TEST_WEBHOOK_DISABLED",
+  });
+  expect(response.headers()["cache-control"]).toContain("no-store");
+});

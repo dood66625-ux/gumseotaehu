@@ -11,6 +11,7 @@ export function launchReadiness() {
       "async-report-publication-with-lease-and-order-revalidation",
       "durable-job-and-refund-reconciliation",
       "offline-toss-order-integration-and-notification-recovery",
+      "disabled-by-default-signed-test-webhook-receipt",
       "offline-mail-queue-idempotency-bounce-and-restore-quarantine",
       "single-operator-session-rotation-and-recent-mfa",
       "verified-two-address-email-change-mock",
@@ -32,7 +33,7 @@ export function launchReadiness() {
         id: "toss",
         kind: "implementation-and-provider",
         detail:
-          "DB-backed Toss order/approval/refund integration is tested offline. Browser SDK, actual route/worker registration, webhook verification and real sandbox tests remain incomplete; no test transport is active in runtime.",
+          "DB-backed Toss order/approval/refund and signed raw-body notification receipt are tested offline. The test-only receiver is disabled by default and never calls providers. Browser SDK/callback registration, recovery worker, actual merchant/security-key/signature verification and real sandbox tests remain incomplete.",
       },
       {
         id: "ai",

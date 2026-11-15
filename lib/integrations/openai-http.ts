@@ -148,9 +148,11 @@ export function createSyntheticOpenAiTransport(options: {
             : response.status === 403
               ? "AI_ACCESS_DENIED"
               : response.status === 429
-                ? ["insufficient_quota", "billing_hard_limit_reached"].includes(
-                    String(providerCode),
-                  )
+                ? [
+                    "insufficient_quota",
+                    "billing_hard_limit_reached",
+                    "credit_balance_exhausted",
+                  ].includes(String(providerCode))
                   ? "AI_QUOTA_EXHAUSTED"
                   : providerCode === "rate_limit_exceeded"
                     ? "AI_RATE_LIMITED"
