@@ -1,9 +1,26 @@
-import { cpSync, mkdirSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  existsSync,
+  readdirSync,
+  lstatSync,
+  realpathSync,
+} from "node:fs";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { config } from "../lib/config";
 const cfg = config(),
   target = resolve(".next/standalone");
+// Refuse unsanitized builds (including ones created by bypassing npm's postbuild).
+if (
+  existsSync(target) &&
+  (lstatSync(target).isSymbolicLink() ||
+    realpathSync(target) !== target ||
+    readdirSync(target).some(
+      (name) => /^\.env(?:\.|$)/.test(name) || name === "var",
+    ))
+)
+  throw Error("UNSANITIZED_STANDALONE_BUILD");
 mkdirSync(target, { recursive: true });
 for (const name of ["public", "db", "assets"])
   cpSync(name, resolve(target, name), { recursive: true });

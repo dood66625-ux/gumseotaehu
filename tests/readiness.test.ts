@@ -16,6 +16,7 @@ it("reports incomplete implementation separately from missing accounts and never
   );
   const text = JSON.stringify(report);
   for (const name of [
+    "OPENAI_API_KEY",
     "DATA_KEY",
     "AUTH_SECRET",
     "ADMIN_PASSWORD",

@@ -9,16 +9,23 @@ const section = z.object({
 });
 export const reportSchema = z.object({
   provider: z.enum(["local-rule-mock", "openai"]),
-  promptVersion: z.enum(["taehou-1", "taehou-2", "taehou-3"]),
+  promptVersion: z.enum(["taehou-1", "taehou-2", "taehou-3", "taehou-ai-1"]),
   intro: z.string().min(20).max(800),
   chapters: z.array(section).length(9),
   notes: z.array(z.string().max(500)).max(20),
   chart: z.custom<Chart>(),
   year: z.number(),
+  generation: z
+    .object({
+      model: z.string().max(100),
+      pricingVersion: z.string().max(100),
+    })
+    .optional(),
   usage: z.object({
-    inputTokens: z.number(),
-    outputTokens: z.number(),
-    costKrw: z.number().nullable(),
+    inputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    costKrw: z.number().finite().nonnegative().nullable(),
+    estimatedUsdMicros: z.number().int().nonnegative().optional(),
   }),
 });
 export type Report = z.infer<typeof reportSchema>;

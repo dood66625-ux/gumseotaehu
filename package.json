@@ -28,7 +28,10 @@
     "privacy:export": "tsx scripts/privacy-export.ts",
     "readiness": "tsx scripts/readiness.ts",
     "key:generate": "tsx scripts/key-generate.ts",
-    "key:rotate": "tsx scripts/key-rotate.ts"
+    "key:rotate": "tsx scripts/key-rotate.ts",
+    "ai:synthetic": "node --use-env-proxy --import tsx scripts/ai-synthetic.ts",
+    "check:secrets": "node scripts/check-secrets.mjs --built",
+    "postbuild": "node scripts/sanitize-standalone.mjs && node scripts/check-secrets.mjs --built"
   },
   "keywords": [],
   "author": "",

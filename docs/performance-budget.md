@@ -27,3 +27,9 @@ LCP≤2.5초와 CLS≤0.1 목표를3회 모두 충족했다. 접근성/Best Prac
 실기기 iOS/Android/인스타·카카오 브라우저,지역TTFB/CDN·동시부하·운영RUM p75(LCP2.5초,INP200ms,CLS0.1)는 별도 검증해야 한다. 로컬100/99점만으로 출시 승인을 대신하지 않는다.
 
 재현: npm run build → npm run start → npm run test:performance. 측정 중 다른 브라우저/빌드 부하를 분리한다.
+
+## AI 연동 보강 후 회귀 확인
+
+2026-11-15 기준 같은 로컬 측정 조건의 분리 재검증: 모바일 Lighthouse 3회 LCP 1.961/1.965/1.963초, CLS 0.000324, TBT 15.5/0/0ms, 성능 99/99/99, 접근성·Best Practices 100. 전체 전송 186,901 B. CDP 5회 표본 75분위 LCP 0.876초, 제한된 FAQ 조작 Event Timing 40ms이며 실사용자 INP가 아니다.
+
+앞선 회귀 측정에서는 3번째 결과의 TBT 1,590ms/성능 73점이 나타났다. 대부분이 `Unattributable`/`Other`였으며 소스 원인을 특정하지 못했다. 이 결과를 `performance-ai-first-run.json`과 `lighthouse-ai-first-outlier.json`에 남겼다. 다른 작업 없이 한 차례 다시 측정했을 때 재현되지 않았다는 의미이며, 원인이 해결됐거나 실제 운영 지연이 없다는 보장은 아니다. 사용자 요청에 따라 추가 속도 튜닝보다 구매·운명서 제공 기능을 우선한다.

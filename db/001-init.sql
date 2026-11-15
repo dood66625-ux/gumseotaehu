@@ -42,3 +42,6 @@ CREATE INDEX IF NOT EXISTS challenges_email ON challenges(email_hash);
 CREATE INDEX IF NOT EXISTS tickets_email ON tickets(email_hash);
 INSERT OR IGNORE INTO schema_migrations VALUES(6,unixepoch()*1000);
 CREATE TABLE IF NOT EXISTS mail_suppressions(email_hash TEXT PRIMARY KEY,reason TEXT NOT NULL,created INTEGER NOT NULL);
+
+CREATE TABLE IF NOT EXISTS report_usage(order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,version INTEGER NOT NULL,provider TEXT NOT NULL,input_tokens INTEGER NOT NULL CHECK(input_tokens>=0),output_tokens INTEGER NOT NULL CHECK(output_tokens>=0),estimated_usd_micros INTEGER CHECK(estimated_usd_micros>=0),PRIMARY KEY(order_id,version));
+INSERT OR IGNORE INTO schema_migrations VALUES(7,unixepoch()*1000);

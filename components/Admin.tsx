@@ -137,8 +137,22 @@ export default function Admin() {
           </b>
         </div>
         <div className="metric">
-          <small>실 AI 호출 비용</small>
-          <b>0원</b>
+          <small>저장된 AI 운명서 사용량</small>
+          <b>{(data.metrics.aiSavedReports ?? 0).toLocaleString()}건</b>
+          <p>
+            입력 {(data.metrics.aiInputTokens ?? 0).toLocaleString()} · 출력{" "}
+            {(data.metrics.aiOutputTokens ?? 0).toLocaleString()} 토큰
+          </p>
+          <p>
+            USD 추정 $
+            {((data.metrics.aiEstimateUsdMicros ?? 0) / 1000000).toFixed(4)}
+          </p>
+          <small>
+            추정 미확인 {data.metrics.aiUnknownEstimates ?? 0}건 · 집계 대기{" "}
+            {data.metrics.aiUnindexedReports ?? 0}건. 현재 DB의 저장 원문
+            기준이며 실패·미응답 호출과 별도 합성 테스트 비용은 제외합니다. 실제
+            청구서는 공급자에서 확인하세요.
+          </small>
         </div>
       </div>
       <div className="actions">

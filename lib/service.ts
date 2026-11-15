@@ -16,7 +16,12 @@ import {
   ageAtKstDate,
   type Chart,
 } from "./astrology";
-import { preview, generate, type Report } from "./interpretation";
+import {
+  preview,
+  generate,
+  validateReport,
+  type Report,
+} from "./interpretation";
 export type Session = {
   id: string;
   email_hash: string | null;
@@ -413,14 +418,17 @@ export function reconcile() {
     }
   });
 }
-export function workOnce(failGeneration = false) {
+type ReportJob = Record<string, any>;
+function claimReportJob(orderId?: string): ReportJob | null {
   workerHeartbeat();
   reconcile();
-  const job: Record<string, any> | null = tx(() => {
+  return tx(() => {
     const now = Date.now();
     const j = one(
-      "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id WHERE o.payment_status='paid' AND o.content_deleted=0 AND o.expires>? AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
+      "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id WHERE o.payment_status='paid' AND o.content_deleted=0 AND o.expires>? AND (? IS NULL OR o.id=?) AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
       now,
+      orderId ?? null,
+      orderId ?? null,
       now,
       now,
     );
@@ -433,79 +441,153 @@ export function workOnce(failGeneration = false) {
     run("UPDATE orders SET fulfillment='generating' WHERE id=?", j.order_id);
     return { ...j, attempts: j.attempts + 1 };
   });
-  if (!job) return false;
-  try {
-    const o = one("SELECT * FROM orders WHERE id=?", job.order_id)!;
-    const r = one("SELECT * FROM readings WHERE id=?", o.reading_id)!;
-    const chart = open<Chart>(r.chart_enc);
-    if (failGeneration) throw Error("MOCK_AI_TIMEOUT");
-    const report = generate(chart);
-    tx(() => {
-      const lease = one("SELECT state,attempts FROM jobs WHERE id=?", job.id);
-      if (lease?.state !== "running" || lease.attempts !== job.attempts) return;
-      const current = one("SELECT * FROM orders WHERE id=?", o.id);
-      if (
-        current?.payment_status !== "paid" ||
-        current.version !== job.version ||
-        current.content_deleted ||
-        current.expires < Date.now()
-      ) {
-        run("UPDATE jobs SET state='canceled' WHERE id=?", job.id);
-        return;
-      }
+}
+function reportJobContext(job: ReportJob) {
+  const order = one("SELECT * FROM orders WHERE id=?", job.order_id)!;
+  const reading = one("SELECT * FROM readings WHERE id=?", order.reading_id)!;
+  return { order, chart: open<Chart>(reading.chart_enc) };
+}
+function publishReportJob(
+  job: ReportJob,
+  o: ReportJob,
+  chart: Chart,
+  raw: unknown,
+) {
+  const report = validateReport(raw, chart);
+  return tx(() => {
+    const lease = one(
+      "SELECT state,attempts,lease_until FROM jobs WHERE id=?",
+      job.id,
+    );
+    if (
+      lease?.state !== "running" ||
+      lease.attempts !== job.attempts ||
+      lease.lease_until <= Date.now()
+    )
+      return false;
+    const current = one("SELECT * FROM orders WHERE id=?", o.id);
+    if (
+      current?.payment_status !== "paid" ||
+      current.version !== job.version ||
+      current.content_deleted ||
+      current.expires < Date.now()
+    ) {
+      run("UPDATE jobs SET state='canceled' WHERE id=?", job.id);
+      return false;
+    }
+    const inserted = run(
+      "INSERT OR IGNORE INTO reports VALUES(?,?,?,?,?)",
+      id(),
+      o.id,
+      job.version,
+      seal(report),
+      Date.now(),
+    );
+    if (inserted.changes)
       run(
-        "INSERT OR IGNORE INTO reports VALUES(?,?,?,?,?)",
-        id(),
+        "INSERT OR IGNORE INTO report_usage VALUES(?,?,?,?,?,?)",
         o.id,
         job.version,
-        seal(report),
-        Date.now(),
+        report.provider,
+        report.usage.inputTokens,
+        report.usage.outputTokens,
+        report.usage.estimatedUsdMicros ??
+          (report.provider === "local-rule-mock" ? 0 : null),
       );
+    run(
+      "UPDATE jobs SET state='done',lease_until=NULL,error=NULL WHERE id=?",
+      job.id,
+    );
+    run("UPDATE orders SET fulfillment='ready' WHERE id=?", o.id);
+    enqueueMail(o.email_hash, {
+      template: "report_ready",
+      orderId: o.id,
+      body: "운명서가 준비되었습니다. 이메일 인증으로 1년 무료 재열람과 PDF 저장이 가능합니다.",
+    });
+    event("report_ready", o.id);
+    return true;
+  });
+}
+function failReportJob(job: ReportJob) {
+  tx(() => {
+    const lease = one(
+      "SELECT state,attempts,lease_until FROM jobs WHERE id=?",
+      job.id,
+    );
+    if (
+      lease?.state !== "running" ||
+      lease.attempts !== job.attempts ||
+      lease.lease_until <= Date.now()
+    )
+      return;
+    const current = one("SELECT * FROM orders WHERE id=?", job.order_id);
+    if (
+      !current ||
+      current.payment_status !== "paid" ||
+      current.version !== job.version ||
+      current.content_deleted ||
+      current.expires <= Date.now()
+    ) {
       run(
-        "UPDATE jobs SET state='done',lease_until=NULL,error=NULL WHERE id=?",
+        "UPDATE jobs SET state='canceled',lease_until=NULL WHERE id=?",
         job.id,
       );
-      run("UPDATE orders SET fulfillment='ready' WHERE id=?", o.id);
+      return;
+    }
+    const exhausted = job.attempts >= 4;
+    run(
+      "UPDATE jobs SET state=?,error=?,scheduled=?,lease_until=NULL WHERE id=?",
+      exhausted ? "failed" : "retrying",
+      "GENERATION_UNAVAILABLE",
+      Date.now() + Math.min(60000, 1000 * 2 ** job.attempts),
+      job.id,
+    );
+    run(
+      "UPDATE orders SET fulfillment=? WHERE id=?",
+      exhausted ? "failed" : "retrying",
+      job.order_id,
+    );
+    if (exhausted) {
+      audit("system", "generation_failed_alert", job.order_id);
+      const o = one("SELECT email_hash FROM orders WHERE id=?", job.order_id)!;
       enqueueMail(o.email_hash, {
-        template: "report_ready",
-        orderId: o.id,
-        body: "운명서가 준비되었습니다. 이메일 인증으로 1년 무료 재열람과 PDF 저장이 가능합니다.",
+        template: "generation_failed",
+        orderId: job.order_id,
+        body: "결제는 확인되었으나 작성에 실패했습니다. 고객센터에서 복구 또는 환불을 신청할 수 있습니다.",
       });
-      event("report_ready", o.id);
-    });
+    }
+  });
+}
+export function workOnce(failGeneration = false) {
+  const job = claimReportJob();
+  if (!job) return false;
+  try {
+    const { order, chart } = reportJobContext(job);
+    if (failGeneration) throw Error("MOCK_AI_TIMEOUT");
+    publishReportJob(job, order, chart, generate(chart));
   } catch {
-    tx(() => {
-      const lease = one("SELECT state,attempts FROM jobs WHERE id=?", job.id);
-      if (lease?.state !== "running" || lease.attempts !== job.attempts) return;
-      const exhausted = job.attempts >= 4;
-      run(
-        "UPDATE jobs SET state=?,error=?,scheduled=?,lease_until=NULL WHERE id=?",
-        exhausted ? "failed" : "retrying",
-        "GENERATION_UNAVAILABLE",
-        Date.now() + Math.min(60000, 1000 * 2 ** job.attempts),
-        job.id,
-      );
-      run(
-        "UPDATE orders SET fulfillment=? WHERE id=?",
-        exhausted ? "failed" : "retrying",
-        job.order_id,
-      );
-      if (exhausted) {
-        audit("system", "generation_failed_alert", job.order_id);
-        const o = one(
-          "SELECT email_hash FROM orders WHERE id=?",
-          job.order_id,
-        )!;
-        enqueueMail(o.email_hash, {
-          template: "generation_failed",
-          orderId: job.order_id,
-          body: "결제는 확인되었으나 작성에 실패했습니다. 고객센터에서 복구 또는 환불을 신청할 수 있습니다.",
-        });
-      }
-    });
+    failReportJob(job);
   }
   return true;
 }
+/** Injectable asynchronous generation. Normal routes/worker still use only workOnce's rule mock.
+ * The live synthetic harness supplies a chart-pinned transport in an isolated DB.
+ */
+export async function workOnceWithGenerator(
+  generator: (chart: Chart) => Promise<Report>,
+  orderId?: string,
+) {
+  const job = claimReportJob(orderId);
+  if (!job) return false;
+  try {
+    const { order, chart } = reportJobContext(job);
+    publishReportJob(job, order, chart, await generator(chart));
+  } catch {
+    failReportJob(job);
+  }
+  return true;
+}
+
 export function orderView(o: Record<string, any>) {
   return {
     id: o.id,
@@ -670,7 +752,24 @@ export function adminOverview(s: Session, query = "") {
       refunds: one(
         "SELECT COALESCE(SUM(amount),0) AS amount FROM orders WHERE payment_status='refunded'",
       )!.amount,
-      aiCostKrw: 0,
+      aiSavedReports: one(
+        "SELECT count(*) n FROM report_usage WHERE provider='openai'",
+      )!.n,
+      aiInputTokens: one(
+        "SELECT COALESCE(sum(input_tokens),0) n FROM report_usage WHERE provider='openai'",
+      )!.n,
+      aiOutputTokens: one(
+        "SELECT COALESCE(sum(output_tokens),0) n FROM report_usage WHERE provider='openai'",
+      )!.n,
+      aiEstimateUsdMicros: one(
+        "SELECT COALESCE(sum(estimated_usd_micros),0) n FROM report_usage WHERE provider='openai'",
+      )!.n,
+      aiUnknownEstimates: one(
+        "SELECT count(*) n FROM report_usage WHERE provider='openai' AND estimated_usd_micros IS NULL",
+      )!.n,
+      aiUnindexedReports: one(
+        "SELECT count(*) n FROM reports r LEFT JOIN report_usage u ON u.order_id=r.order_id AND u.version=r.version WHERE u.order_id IS NULL",
+      )!.n,
       pgCostKrw: 0,
       mode: "local mock; 실제 매출 아님",
     },

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { reportDisclosure } from "../lib/report-disclosure";
 import { useState } from "react";
 import { api, useLoad, ErrorBox, Loading } from "./client";
 export default function ReportReader({ id }: { id: string }) {
@@ -79,12 +80,7 @@ export default function ReportReader({ id }: { id: string }) {
       </div>
       <details className="report-disclosure">
         <summary>이 운명서의 콘텐츠·제공 안내</summary>
-        <p>
-          현재는 가상 정보와 규칙 기반 문장으로 구성한 예시 운명서이며 실제 AI
-          생성 보고서가 아닙니다. 미래의 사실을 확정하거나 전문적인
-          의료·법률·투자 조언을 대신하지 않습니다. 정식 서비스는 AI 생성 사실을
-          별도로 표시합니다.
-        </p>
+        <p>{reportDisclosure(d.report.provider).description}</p>
       </details>
       <div className="actions">
         <button className="button" onClick={pdf} disabled={busy}>

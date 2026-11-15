@@ -1,11 +1,11 @@
 {
-  "date": "2026-11-13T15:30:22.457Z",
+  "date": "2026-11-15T14:02:51.806Z",
   "environment": "Local production build; Chromium; 390x844; cold context; 150ms RTT/1.6Mbps/4x CPU. Lab samples, not field p75.",
   "lab": [
     {
-      "lcpMs": 872,
+      "lcpMs": 888,
       "cls": 0.0003241018157521746,
-      "scriptedInpMs": 32,
+      "scriptedInpMs": 40,
       "interactionCount": 3,
       "resources": [
         {
@@ -29,7 +29,37 @@
           "type": "css"
         }
       ],
-      "navigationTtfb": 153.70000000018626,
+      "navigationTtfb": 156,
+      "ctaInitiallyInViewport": true
+    },
+    {
+      "lcpMs": 876,
+      "cls": 0.0003241018157521746,
+      "scriptedInpMs": 24,
+      "interactionCount": 3,
+      "resources": [
+        {
+          "name": "/site.css",
+          "bytes": 10116,
+          "type": "link"
+        },
+        {
+          "name": "/intro.js",
+          "bytes": 693,
+          "type": "script"
+        },
+        {
+          "name": "/empress-mobile-v2.webp",
+          "bytes": 64940,
+          "type": "img"
+        },
+        {
+          "name": "/imperial-serif-v2.woff2",
+          "bytes": 103600,
+          "type": "css"
+        }
+      ],
+      "navigationTtfb": 151.29999999981374,
       "ctaInitiallyInViewport": true
     },
     {
@@ -59,43 +89,13 @@
           "type": "css"
         }
       ],
-      "navigationTtfb": 151.5,
+      "navigationTtfb": 153.6999999997206,
       "ctaInitiallyInViewport": true
     },
     {
       "lcpMs": 872,
       "cls": 0.0003241018157521746,
-      "scriptedInpMs": 40,
-      "interactionCount": 2,
-      "resources": [
-        {
-          "name": "/site.css",
-          "bytes": 10116,
-          "type": "link"
-        },
-        {
-          "name": "/intro.js",
-          "bytes": 693,
-          "type": "script"
-        },
-        {
-          "name": "/empress-mobile-v2.webp",
-          "bytes": 64940,
-          "type": "img"
-        },
-        {
-          "name": "/imperial-serif-v2.woff2",
-          "bytes": 103600,
-          "type": "css"
-        }
-      ],
-      "navigationTtfb": 152.09999999962747,
-      "ctaInitiallyInViewport": true
-    },
-    {
-      "lcpMs": 856,
-      "cls": 0.0003241018157521746,
-      "scriptedInpMs": 40,
+      "scriptedInpMs": 24,
       "interactionCount": 3,
       "resources": [
         {
@@ -119,13 +119,13 @@
           "type": "css"
         }
       ],
-      "navigationTtfb": 152.70000000018626,
+      "navigationTtfb": 152.20000000018626,
       "ctaInitiallyInViewport": true
     },
     {
-      "lcpMs": 860,
+      "lcpMs": 868,
       "cls": 0.0003241018157521746,
-      "scriptedInpMs": 16,
+      "scriptedInpMs": 56,
       "interactionCount": 3,
       "resources": [
         {
@@ -149,7 +149,7 @@
           "type": "css"
         }
       ],
-      "navigationTtfb": 151.29999999981374,
+      "navigationTtfb": 151.10000000009313,
       "ctaInitiallyInViewport": true
     }
   ],
@@ -158,35 +158,35 @@
       "performance": 0.99,
       "accessibility": 1,
       "bestPractices": 1,
-      "lcpMs": 1969.1172,
+      "lcpMs": 1960.55955,
       "cls": 0.0003241018157521746,
-      "tbtMs": 47.62760000000003,
-      "fcpMs": 762.7447999999999,
-      "transferBytes": 186791
+      "tbtMs": 15.48014999999998,
+      "fcpMs": 757.0397,
+      "transferBytes": 186901
     },
     {
       "performance": 0.99,
       "accessibility": 1,
       "bestPractices": 1,
-      "lcpMs": 1971.6579,
-      "cls": 0.0003241018157521746,
-      "tbtMs": 7,
-      "fcpMs": 764.4386,
-      "transferBytes": 186791
-    },
-    {
-      "performance": 0.99,
-      "accessibility": 1,
-      "bestPractices": 1,
-      "lcpMs": 1965.5437499999998,
+      "lcpMs": 1964.9019,
       "cls": 0.0003241018157521746,
       "tbtMs": 0,
-      "fcpMs": 760.3625,
-      "transferBytes": 186791
+      "fcpMs": 759.9346,
+      "transferBytes": 186901
+    },
+    {
+      "performance": 0.99,
+      "accessibility": 1,
+      "bestPractices": 1,
+      "lcpMs": 1962.9896999999999,
+      "cls": 0.0003241018157521746,
+      "tbtMs": 0,
+      "fcpMs": 758.6597999999999,
+      "transferBytes": 186901
     }
   ],
   "labP75": {
-    "lcpMs": 872,
+    "lcpMs": 876,
     "cls": 0.0003241018157521746,
     "scriptedInpMs": 40
   }

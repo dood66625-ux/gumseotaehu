@@ -7,6 +7,8 @@ export function launchReadiness() {
     externalEffectsEnabled: false,
     completedLocal: [
       "server-price-and-payment-state-checks",
+      "isolated-synthetic-openai-adapter-with-durable-call-budget",
+      "async-report-publication-with-lease-and-order-revalidation",
       "durable-job-and-refund-reconciliation",
       "offline-toss-order-integration-and-notification-recovery",
       "offline-mail-queue-idempotency-bounce-and-restore-quarantine",
@@ -36,7 +38,7 @@ export function launchReadiness() {
         id: "ai",
         kind: "implementation-and-provider",
         detail:
-          "Provider/model/budget and real report-generation adapter, usage limits and quality evaluation remain incomplete; rule mock cannot be sold.",
+          "Fixed-fixture OpenAI HTTP adapter, 3-call persistent test budget and async publication core are implemented. The live synthetic attempt returned HTTP 429; successful AI generation, customer-data authorization, production worker registration, production spend limits and expert quality evaluation remain incomplete. Rule mock cannot be sold.",
       },
       {
         id: "mail",

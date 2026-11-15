@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 const config: NextConfig = {
   output: "standalone",
+  outputFileTracingExcludes: { "/*": ["./var/**/*", "./.env*"] },
   serverExternalPackages: ["pdfkit", "lunar-javascript"],
   poweredByHeader: false,
   async headers() {

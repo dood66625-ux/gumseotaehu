@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { reportDisclosure } from "./report-disclosure";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import type { getReport } from "./service";
@@ -14,7 +15,7 @@ export async function reportPdf(
         info: {
           Title: "금서태후 · 종합 운명서",
           Author: "금서태후",
-          Subject: "가상 예시 운명서 · 규칙 기반 콘텐츠",
+          Subject: reportDisclosure(data.report.provider).label,
         },
       }),
       chunks: Buffer[] = [];
@@ -94,7 +95,7 @@ export async function reportPdf(
       .fontSize(8)
       .fillColor("#71624D")
       .text(
-        `가상 예시 운명서 · 규칙 기반 콘텐츠\n재열람 기한 ${date(data.order.expires)}\n주문 ${data.order.id}`,
+        `${reportDisclosure(data.report.provider).label}\n재열람 기한 ${date(data.order.expires)}\n주문 ${data.order.id}`,
         58,
         610,
         { align: "center", width: W - 116, lineGap: 6 },
@@ -163,7 +164,8 @@ export async function reportPdf(
       .fontSize(9)
       .fillColor(gold)
       .text(
-        "금서태후는 창작 캐릭터이며 초상은 AI 생성 이미지입니다. 이 예시 운명서는 실제 AI 해석이 아닌 규칙 기반 콘텐츠입니다. 미래의 사실을 확정하거나 의료·법률·투자 조언을 대신하지 않습니다.",
+        "금서태후는 창작 캐릭터이며 초상은 AI 생성 이미지입니다. " +
+          reportDisclosure(data.report.provider).description,
         { lineGap: 6 },
       );
     doc.switchToPage(tocPage);

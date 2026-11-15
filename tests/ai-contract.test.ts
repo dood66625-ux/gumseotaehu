@@ -105,3 +105,55 @@ it("propagates API quota/rate/timeout failures for durable worker retry", async 
       }),
     ).rejects.toThrow(e);
 });
+it("rejects refusal content even alongside a completed status and valid text", async () => {
+  const c = calculate(b),
+    r = generate(c);
+  await expect(
+    offlineAiContract(c, "owner-selected-model", async () => ({
+      status: "completed",
+      output_text: JSON.stringify(r),
+      output: [
+        { type: "message", content: [{ type: "refusal", refusal: "No" }] },
+      ],
+    })),
+  ).rejects.toThrow("AI_INCOMPLETE_OR_REFUSED");
+});
+it("checks unsafe intro and fabricated pillars in notes as well as chapters", async () => {
+  const c = calculate(b);
+  for (const field of ["intro", "notes"]) {
+    const r = generate(c);
+    if (field === "intro") r.intro += " 반드시 성공하리라.";
+    else r.notes.push("확인되지 않은 甲子의 흐름이 온다.");
+    if (field === "notes" && JSON.stringify(c).includes("甲子")) continue;
+    await expect(
+      offlineAiContract(c, "owner-selected-model", async () => ({
+        status: "completed",
+        output_text: JSON.stringify(r),
+      })),
+    ).rejects.toThrow();
+  }
+});
+it("rejects a nine-chapter report that omits monthly guidance", async () => {
+  const c = calculate(b),
+    r = generate(c);
+  r.chapters[7].text =
+    c.claims[2].text +
+    "\n1월에는 차분한 기록을 남기고 일상을 살펴보거라. ".repeat(8);
+  await expect(
+    offlineAiContract(c, "owner-selected-model", async () => ({
+      status: "completed",
+      output_text: JSON.stringify(r),
+    })),
+  ).rejects.toThrow("AI_MONTH_COVERAGE_MISSING");
+});
+it("requires evidence suited to each chapter, not just any valid claim ID", async () => {
+  const c = calculate(b),
+    r = generate(c);
+  r.chapters[7].claimIds = [c.claims[0].id];
+  await expect(
+    offlineAiContract(c, "owner-selected-model", async () => ({
+      status: "completed",
+      output_text: JSON.stringify(r),
+    })),
+  ).rejects.toThrow("AI_CHAPTER_EVIDENCE_MISSING");
+});
