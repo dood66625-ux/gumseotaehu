@@ -3,7 +3,32 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  focused:
+    if: github.event_name != 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TEST_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run typecheck
+      - name: Test changed modules; fall back to unit suite if base unavailable
+        shell: bash
+        run: |
+          if [[ "$TEST_BASE" =~ ^[0-9a-f]{40}$ ]] && git fetch --no-tags --depth=1 origin "$TEST_BASE"; then
+            npx vitest run --changed="$TEST_BASE" --passWithNoTests
+          else
+            npm test
+          fi
+      - run: npm run check:secrets
   check:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
