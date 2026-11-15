@@ -1,3 +1,4 @@
+import { tossTestSecretKind } from "./toss-key-profile.mjs";
 import type { Transport } from "./contracts";
 
 /** Opt-in test API only; deliberately not wired into checkout or runtime config. */
@@ -12,13 +13,19 @@ export function createTossTestTransport(options: {
     const credential = auth?.startsWith("Basic ")
       ? Buffer.from(auth.slice(6), "base64").toString("utf8")
       : "";
-    if (!/^test_sk_[A-Za-z0-9_]+:$/.test(credential))
-      throw Error("ONLY_TOSS_TEST_KEYS_ALLOWED");
+    if (!credential.endsWith(":")) throw Error("ONLY_TOSS_TEST_KEYS_ALLOWED");
+    const kind = tossTestSecretKind(credential.slice(0, -1));
+    const orderLookup = /^\/v1\/payments\/orders\/[A-Za-z0-9_%.-]+$/.test(
+      request.path,
+    );
+    if (kind === "widget" && orderLookup)
+      throw Error("WIDGET_ORDER_LOOKUP_NOT_SUPPORTED");
     // No configurable host, redirects, query strings, or arbitrary endpoints.
     if (!(
       (request.method === "POST" && request.path === "/v1/payments/confirm") ||
       (request.method === "GET" &&
-        /^\/v1\/payments\/orders\/[A-Za-z0-9_%.-]+$/.test(request.path)) ||
+        (orderLookup ||
+          /^\/v1\/payments\/[A-Za-z0-9_%.-]+$/.test(request.path))) ||
       (request.method === "POST" &&
         /^\/v1\/payments\/[A-Za-z0-9_%.-]+\/cancel$/.test(request.path))
     ))

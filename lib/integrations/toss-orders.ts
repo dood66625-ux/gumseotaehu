@@ -86,7 +86,7 @@ export class TossOrderCoordinator {
     return this.execute(claim, () =>
       claim.first
         ? this.gateway.confirm(orderId, key, order.amount)
-        : this.gateway.lookup(orderId, order.amount),
+        : this.gateway.lookup(orderId, order.amount, claim.key),
     );
   }
   private claim(orderId: string, key?: string): Claim | null {
@@ -322,7 +322,7 @@ export class TossOrderCoordinator {
     const claim = this.claim(z.string().uuid().parse(orderId));
     if (!claim) return { state: "processing" };
     return this.execute(claim, () =>
-      this.gateway.lookup(orderId, claim.amount),
+      this.gateway.lookup(orderId, claim.amount, claim.key),
     );
   }
   async refund(
@@ -395,7 +395,7 @@ export class TossOrderCoordinator {
             "디지털콘텐츠 주문 전액 취소",
             claim.amount,
           )
-        : this.gateway.lookup(orderId, claim.amount),
+        : this.gateway.lookup(orderId, claim.amount, claim.key),
     );
   }
   /** Fresh lookup first; resubmit only on an explicit request and an authenticated IN_PROGRESS payment. */
@@ -418,7 +418,7 @@ export class TossOrderCoordinator {
     if (!claim) return { state: "processing" };
     return this.execute(claim, async () => {
       const before = evidence.parse(
-        await this.gateway.lookup(orderId, order.amount),
+        await this.gateway.lookup(orderId, order.amount, claim.key),
       );
       if (
         before.orderId !== orderId ||

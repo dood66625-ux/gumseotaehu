@@ -56,3 +56,7 @@
 운영자는 고정 합성 데이터 GitHub Pages 체험판 공개/수정에 동의했다. 해당 체험판은 활성화되어 있으며 main 소스와 gh-pages 산출물을 분리해 관리한다. 이 승인은 실제 운영 사이트·관리자·결제·고객정보 공개를 포함하지 않는다. 비밀값/DB/원본 첨부 문서는 Git에서 제외한다. 키·비밀번호는 대화/스크린샷/공개 저장소로 전달하지 않는다.
 
 검증 범위·한계: docs/hardening-release.md, docs/astrology-boundary-validation.md, docs/content-quality-review.md, docs/runbook.md.
+
+
+### 토스 테스트 키 전달
+결제위젯의 같은 상점 `test_gck_` / `test_gsk_` 테스트 키 한 쌍을 준비한다. 제공된 오프라인 HTML에서 비공개 저장 동의 후 암호화한 JSON만 전달한다. 원문 키·스크린샷은 보내지 않는다. 실결제 활성화 승인은 별개이며 현재 비활성 상태를 유지한다.

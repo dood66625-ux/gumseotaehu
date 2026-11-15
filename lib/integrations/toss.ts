@@ -1,3 +1,4 @@
+import { tossTestSecretKind } from "./toss-key-profile.mjs";
 import { PRODUCT_PRICE_KRW, isSupportedOrderAmount } from "../product";
 import { z } from "zod";
 import { blockedTransport, type Transport } from "./contracts";
@@ -37,8 +38,7 @@ export class TossTestContract {
     private secret: string,
     private transport: Transport = blockedTransport,
   ) {
-    if (!secret.startsWith("test_sk_"))
-      throw Error("ONLY_TOSS_TEST_KEYS_ALLOWED");
+    tossTestSecretKind(secret);
   }
   private headers(key?: string) {
     return {
@@ -76,14 +76,31 @@ export class TossTestContract {
     if (p.status !== "DONE") throw Error("PAYMENT_NOT_SETTLED");
     return p;
   }
-  async lookup(orderId: string, amount = PRODUCT_PRICE_KRW) {
+  async lookup(
+    orderId: string,
+    amount = PRODUCT_PRICE_KRW,
+    paymentKey?: string,
+  ) {
+    if (!isSupportedOrderAmount(amount)) throw Error("PRICE_MISMATCH");
+    if (
+      paymentKey !== undefined &&
+      (!paymentKey ||
+        paymentKey.length > 200 ||
+        /[\x00-\x1f\x7f]/.test(paymentKey))
+    )
+      throw Error("PAYMENT_KEY_REQUIRED");
+    const widget = tossTestSecretKind(this.secret) === "widget";
+    if (widget && !paymentKey)
+      throw Error("WIDGET_LOOKUP_REQUIRES_BOUND_PAYMENT_KEY");
     const raw = await this.transport({
       method: "GET",
-      path: "/v1/payments/orders/" + encodeURIComponent(orderId),
+      path: paymentKey
+        ? "/v1/payments/" + encodeURIComponent(paymentKey)
+        : "/v1/payments/orders/" + encodeURIComponent(orderId),
       headers: this.headers(),
       timeoutMs: 10000,
     });
-    return this.validate(raw, orderId, amount);
+    return this.validate(raw, orderId, amount, paymentKey);
   }
   async cancel(
     orderId: string,

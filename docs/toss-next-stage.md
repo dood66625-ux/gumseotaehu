@@ -29,3 +29,12 @@ DB 주문 상태와 승인/조회/취소의 연결 및 장애 복구 코어를 �
 
 ## 주문 통합 코어 보강
 TossOrderCoordinator는 DB에 결제 확인 시도·잠금·재조회 일정·알림 중복 제거를 기록하고 검증된 원장을 기존 주문/보고서 작업/환불에 반영한다. 실제 HTTP 계약+응답 파서+DB 연결도 가짜 fetch로 검증했다. 일부러 앱/워커에 실제 transport를 등록하지 않았으며 기본 결제는 여전히 mock이다. 상세 동작·출처·미완료 범위는 toss-order-integration.md를 따른다.
+
+## 결제위젯 테스트 키 선택 (2026-11-15)
+운영자가 두 종류의 키가 모두 표시됨을 확인했다. 신규 연동은 주문서형 결제위젯의 같은 상점 테스트 키 `test_gck_` / `test_gsk_` 한 쌍을 사용한다. 형식 검사는 실제 가맹점 일치나 인증 성공을 보장하지 않는다.
+
+위젯 시크릿 키는 주문 ID 조회를 지원하지 않으므로 장애 복구는 DB에 결합된 결제키로 조회한다. 결제키가 없으면 외부 요청 전에 차단한다. 개별 연동 테스트 키의 기존 조회 방식은 유지한다. 공식 기준: https://docs.tosspayments.com/reference/using-api/api-keys.md
+
+`node scripts/toss-key-setup.mjs prepare /absolute/output.html`로 공개키만 포함된 오프라인 입력 파일을 생성한다. 사용자는 Chrome/Edge에서 파일을 열어 테스트 키 두 개와 비공개 저장 동의를 입력한 뒤 암호화 JSON만 전달한다. `node scripts/toss-key-setup.mjs import /absolute/encrypted.json`은 Git 제외·미추적·일반 파일인 `.env.local`만 원자적으로 갱신한다. local/disabled 설정과 다른 키를 보존하며 복호화용 개인키는 사용 후 제거한다. 원문 키는 로그나 대화에 출력하지 않는다.
+
+타입 검사와 455개 테스트 통과. 실제 토스 키 수신·저장, 토스 네트워크 검증, 브라우저 SDK 및 실제 라우트/워커 연결은 아직 완료되지 않았다. 키 저장만으로 외부 호출이나 실결제가 켜지지 않는다.

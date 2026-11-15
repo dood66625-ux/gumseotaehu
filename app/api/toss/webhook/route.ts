@@ -21,7 +21,9 @@ export async function POST(request: Request) {
       merchantId = process.env.TOSS_TEST_MERCHANT_ID ?? "";
     if (
       !/^[a-fA-F0-9]{64}$/.test(key) ||
-      !/^test_sk_[A-Za-z0-9_]+$/.test(process.env.TOSS_TEST_SECRET_KEY ?? "") ||
+      !/^test_(?:gsk|sk)_[A-Za-z0-9_]+$/.test(
+        process.env.TOSS_TEST_SECRET_KEY ?? "",
+      ) ||
       !merchantId ||
       merchantId.length > 100
     )
