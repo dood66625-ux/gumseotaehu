@@ -8,6 +8,7 @@ if (
   throw Error("DEPLOYMENT_BUILD_SCAN_REQUIRED");
 const names = [
   "OPENAI_API_KEY",
+  "RESEND_API_KEY",
   "DATA_KEY",
   "AUTH_SECRET",
   "ADMIN_PASSWORD",

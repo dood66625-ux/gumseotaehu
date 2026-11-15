@@ -613,3 +613,37 @@ describe("provider-neutral mail reliability, synthetic only", () => {
     expect(ran).toBe(false);
   });
 });
+
+it("connects the Resend HTTP adapter to the DB queue with intercepted requests, preserving acceptance/delivery separation", async () => {
+  const { createResendMailGateway } =
+    await import("../lib/integrations/resend-mail");
+  const f = fixture(),
+    o = f.otp(),
+    pid = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const send = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(Response.json({ id: pid }))
+    .mockResolvedValueOnce(
+      Response.json({
+        id: pid,
+        last_event: "delivered",
+        tags: [{ name: "gumseo_key", value: "mail-" + o.id }],
+      }),
+    );
+  const coordinator = new MailDeliveryCoordinator(
+    profile,
+    createResendMailGateway({
+      apiKey: "re_synthetic_fixture_only",
+      accountScope: "synthetic",
+      enabled: true,
+      fetch: send,
+    }),
+  );
+  coordinator.prepare(o.id);
+  expect((await coordinator.workOnce()).state).toBe("accepted");
+  expect((await coordinator.verify(o.id)).state).toBe("delivered");
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(one("SELECT status FROM outbox WHERE id=?", o.id)!.status).toBe(
+    "delivered",
+  );
+});

@@ -47,7 +47,7 @@ export function launchReadiness() {
         id: "mail",
         kind: "implementation-and-provider",
         detail:
-          "Provider-neutral delivery/retry/bounce core is tested offline. Actual mail provider adapter, verified sender domain/SPF/DKIM/DMARC, real authentication and removal of local OTP endpoints remain required.",
+          "Provider-neutral delivery/retry/bounce core and an unregistered Resend HTTP candidate adapter are tested offline. Actual account/domain/SPF/DKIM/DMARC, authenticated bounce webhooks, worker registration, real receipt/authentication and removal of local OTP endpoints remain required.",
       },
       {
         id: "hosting",
