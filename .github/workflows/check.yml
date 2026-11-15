@@ -20,6 +20,7 @@ jobs:
       - run: npm run readiness -- --expect-blocked
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
+      - run: npm run test:toss-browser
       - run: npm run build:preview
       - run: npm run check:secrets
       - run: npm run preview:serve > /tmp/geumseo-preview.log 2>&1 &

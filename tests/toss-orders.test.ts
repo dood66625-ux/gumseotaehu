@@ -647,3 +647,39 @@ it("the old product price cannot be used to approve a current-price order", asyn
   ).rejects.toThrow("주문금액");
   expect(f.gateway.confirm).not.toHaveBeenCalled();
 });
+
+it("recovers a widget approval with a lost acknowledgement by its stored payment key, then cancels fully", async () => {
+  const f = fixture();
+  const send = vi
+    .fn<typeof fetch>()
+    .mockRejectedValueOnce(Error("lost acknowledgement"))
+    .mockResolvedValueOnce(Response.json(f.payment))
+    .mockResolvedValueOnce(Response.json(f.canceled()));
+  const coordinator = new TossOrderCoordinator(
+    new TossTestContract(
+      "test_gsk_fixture",
+      createTossTestTransport({ enabled: true, fetch: send }),
+    ),
+    "synthetic-mid",
+  );
+  await expect(
+    coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
+  ).rejects.toThrow();
+  expect(svc.ownOrder(f.s, f.oid).payment_status).toBe("pending");
+  expect((await coordinator.recover(f.oid)).state).toBe("verified");
+  expect(send.mock.calls[1][0]).toBe(
+    "https://api.tosspayments.com/v1/payments/" +
+      encodeURIComponent(f.payment.paymentKey),
+  );
+  expect(svc.ownOrder(f.s, f.oid).payment_status).toBe("paid");
+  expect(
+    (await coordinator.refund(f.admin(), f.oid, "가상 주문 전액 취소 확인"))
+      .state,
+  ).toBe("refunded");
+  expect(svc.ownOrder(f.s, f.oid).payment_status).toBe("refunded");
+  expect(send.mock.calls.map(([, init]) => init?.method)).toEqual([
+    "POST",
+    "GET",
+    "POST",
+  ]);
+});

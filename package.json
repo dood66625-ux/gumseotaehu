@@ -31,7 +31,9 @@
     "key:rotate": "tsx scripts/key-rotate.ts",
     "ai:synthetic": "node --use-env-proxy --import tsx scripts/ai-synthetic.ts",
     "check:secrets": "node scripts/check-secrets.mjs --built",
-    "postbuild": "node scripts/sanitize-standalone.mjs && node scripts/check-secrets.mjs --built"
+    "postbuild": "node scripts/sanitize-standalone.mjs && node scripts/check-secrets.mjs --built",
+    "toss:sandbox": "tsx scripts/toss-sandbox.ts",
+    "test:toss-browser": "tsx scripts/test-toss-sandbox.ts"
   },
   "keywords": [],
   "author": "",
