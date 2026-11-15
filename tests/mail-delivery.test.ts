@@ -647,3 +647,58 @@ it("connects the Resend HTTP adapter to the DB queue with intercepted requests, 
     "delivered",
   );
 });
+
+it("deduplicates signed Resend receipts, ignores their bounce claim, and changes state only after independent lookup", async () => {
+  const { receiveResendWebhook } =
+    await import("../lib/integrations/resend-webhook");
+  const { createHmac } = await import("node:crypto");
+  const f = fixture(),
+    o = f.otp();
+  f.mail.prepare(o.id);
+  await f.mail.workOnce();
+  const raw = JSON.stringify({
+    type: "email.bounced",
+    data: { email_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+  });
+  // Bind the fixture provider UUID just as the real adapter does on accepted response.
+  run(
+    "UPDATE mail_queue SET provider_id=? WHERE outbox_id=?",
+    "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    o.id,
+  );
+  const secret = Buffer.alloc(32, 11),
+    timestamp = String(Math.floor(Date.now() / 1000)),
+    eventId = "msg_synthetic_repeated";
+  const signature = createHmac("sha256", secret)
+    .update(eventId + "." + timestamp + "." + raw)
+    .digest("base64");
+  const req = () =>
+    new Request("https://example.invalid/webhook", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "svix-id": eventId,
+        "svix-timestamp": timestamp,
+        "svix-signature": "v1," + signature,
+      },
+      body: raw,
+    });
+  const options = {
+    secret: "whsec_" + secret.toString("base64"),
+    coordinator: f.mail,
+  };
+  expect((await receiveResendWebhook(req(), options)).queued).toBe(true);
+  expect((await receiveResendWebhook(req(), options)).queued).toBe(false);
+  expect(
+    one("SELECT state FROM mail_queue WHERE outbox_id=?", o.id)!.state,
+  ).toBe("accepted");
+  expect(all("SELECT * FROM mail_suppressions")).toHaveLength(0);
+  f.gateway.lookup.mockResolvedValueOnce({
+    key: "mail-" + o.id,
+    providerId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    state: "delivered",
+    authoritative: true,
+  });
+  expect((await f.mail.verify(o.id)).state).toBe("delivered");
+  expect(f.gateway.send).toHaveBeenCalledOnce();
+});

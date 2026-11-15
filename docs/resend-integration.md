@@ -25,3 +25,16 @@
 - https://resend.com/docs/api-reference/emails/send-email
 - https://resend.com/docs/api-reference/emails/retrieve-email
 - https://resend.com/docs/dashboard/emails/idempotency-keys
+
+
+## 서명 웹훅 수신기 추가
+
+`/api/mail/webhook`은 기본 503이며 본문이나 DB를 읽지 않는다. 개발용 수신을 명시적으로 구성할 때만 `RESEND_WEBHOOK_MODE=receipt-only`, `RESEND_WEBHOOK_SECRET`, `RESEND_ACCOUNT_SCOPE`, `TRANSACTION_MAIL_SENDER`, `TRANSACTION_MAIL_REPLY_TO`를 사용한다. origin은 기존 APP_ORIGIN을 사용하며 발송 profile/계정 scope가 같아야 기존 기록에 연결된다. API 발송 키는 수신기에서 필요하지 않고 공급자 GET/POST도 실행하지 않는다. 실제 업체 endpoint 등록이나 운영 공개 승인을 대체하지 않는다.
+
+공식 Svix 2.10.0 라이브러리로 원본 바이트의 `svix-id`/timestamp/signature를 검증한다. v2 verify는 파싱한 이벤트를 반환하지 않으므로 검증 후 JSON을 명시적으로 파싱한다. 서명 회전, 기본 ±5분 시각 검증, 본문 64KiB/전체 읽기 3초, 헤더 4KiB 제한을 적용했다. 본문·수신 주소·반송 사유 원문은 저장하지 않는다. 실패 응답은 정해진 오류 코드만 반환한다.
+
+서명이 맞아도 delivered/bounced/complained 주장을 원장에 직접 반영하지 않는다. 이미 profile/공급자 ID가 결합된 메일의 독립 조회만 예약하고, 메시지 ID 중복은 기존 DB 코어에서 제거한다. 알 수 없는 메일 ID는 연결하지 않는다. 따라서 최초 발송 응답을 잃어 ID를 모르는 건의 자동 복구는 여전히 미완료다. 서명 수신만으로 영구 반송 처리 전체가 완료되는 것도 아니다. Resend GET의 bare bounced는 기존 어댑터에서 unknown으로 남기므로 운영 검토가 필요하다.
+
+타입 검사와 관련 이메일 테스트 57개 통과. 독립 HMAC fixture, Unicode/바이트 변경, 재전송 시간, 변조·잘못된 키, 다중 서명, 과대/지연 본문, 기본 HTTP 차단, 중복 알림→독립 조회→상태 갱신을 검증했다. 외부 요청은 가짜 공급자만 사용했고 실제 메일 발송·endpoint 등록·고객정보 전송은 하지 않았다. 전체 테스트·전체 E2E는 반복하지 않았다.
+
+공식 검증 안내: https://resend.com/docs/dashboard/webhooks/verify-webhooks-requests

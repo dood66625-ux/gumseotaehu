@@ -9,6 +9,7 @@ if (
 const names = [
   "OPENAI_API_KEY",
   "RESEND_API_KEY",
+  "RESEND_WEBHOOK_SECRET",
   "DATA_KEY",
   "AUTH_SECRET",
   "ADMIN_PASSWORD",
