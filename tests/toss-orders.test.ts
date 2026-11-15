@@ -683,3 +683,29 @@ it("recovers a widget approval with a lost acknowledgement by its stored payment
     "POST",
   ]);
 });
+
+it("validates the stored sandbox fixture after restart with a new authenticated session", async () => {
+  const { assertTossSyntheticOrder } =
+    await import("../lib/integrations/toss-sandbox-fixture");
+  const { syntheticBirths } =
+    await import("../lib/integrations/ai-synthetic-fixtures");
+  const first = customer("sandbox@example.invalid");
+  const reading = svc.makeReading(first, syntheticBirths.known);
+  const order = svc.createOrder(first, reading, {
+    terms: true,
+    privacy: true,
+    withdrawal: true,
+    confirmedBirth: true,
+    buyerAdult: true,
+  });
+  const restarted = customer("sandbox@example.invalid");
+  expect(() => svc.readingFor(restarted, reading)).toThrow();
+  expect(assertTossSyntheticOrder(restarted, order).id).toBe(order);
+  expect(() =>
+    assertTossSyntheticOrder(customer("other@example.invalid"), order),
+  ).toThrow();
+  run("UPDATE orders SET amount=33000 WHERE id=?", order);
+  expect(() => assertTossSyntheticOrder(restarted, order)).toThrow(
+    "SYNTHETIC_ORDER_REQUIRED",
+  );
+});

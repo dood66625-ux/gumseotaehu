@@ -10,7 +10,6 @@ import {
   chmodSync,
 } from "node:fs";
 import { resolve } from "node:path";
-import { isDeepStrictEqual } from "node:util";
 import { config } from "../lib/config";
 import { one, closeDb } from "../lib/db";
 import * as svc from "../lib/service";
@@ -18,6 +17,7 @@ import { loginAdmin } from "../lib/admin-auth";
 import { reportPdf } from "../lib/pdf";
 import { Fault } from "../lib/security";
 import { syntheticBirths } from "../lib/integrations/ai-synthetic-fixtures";
+import { assertTossSyntheticOrder } from "../lib/integrations/toss-sandbox-fixture";
 import { tossTestKeyPair } from "../lib/integrations/toss-key-profile.mjs";
 import { TossTestContract } from "../lib/integrations/toss";
 import { TossOrderCoordinator } from "../lib/integrations/toss-orders";
@@ -78,15 +78,7 @@ async function main() {
   }
   const orderId = order.id;
   // Only this fixed fixture can ever be authorized by this separate server.
-  const fixture = svc.readingFor(
-    customer,
-    svc.ownOrder(customer, orderId).reading_id,
-  );
-  if (
-    !isDeepStrictEqual(fixture.input, syntheticBirths.known) ||
-    order.amount !== 22000
-  )
-    throw Error("SYNTHETIC_ORDER_REQUIRED");
+  assertTossSyntheticOrder(customer, orderId);
   const mid = process.env.TOSS_TEST_MID?.trim();
   if (mid && !/^[A-Za-z0-9_-]{1,100}$/.test(mid))
     throw Error("INVALID_TEST_MID");

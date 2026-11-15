@@ -39,7 +39,7 @@ export function createTossSandboxHandler(options: {
     "X-Robots-Tag": "noindex, nofollow",
     // Only this isolated QA origin permits provider resources. Main app CSP stays unchanged.
     "Content-Security-Policy":
-      "default-src 'none'; script-src 'self' https://js.tosspayments.com; style-src 'self'; connect-src 'self' https://*.tosspayments.com https://*.toss.im; frame-src https://*.tosspayments.com https://*.toss.im; img-src 'self' data: https://*.tosspayments.com https://*.toss.im; font-src 'self' https://*.tosspayments.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+      "default-src 'none'; script-src 'self' https://js.tosspayments.com; style-src 'self'; style-src-attr 'unsafe-inline'; connect-src 'self' https://*.tosspayments.com https://*.toss.im; frame-src https://*.tosspayments.com https://*.toss.im; img-src 'self' data: https://*.tosspayments.com https://*.toss.im; font-src 'self' https://*.tosspayments.com; base-uri 'none'; form-action 'self' https://*.tosspayments.com https://*.toss.im; frame-ancestors 'none'",
   };
   function response(
     body: BodyInit | null,

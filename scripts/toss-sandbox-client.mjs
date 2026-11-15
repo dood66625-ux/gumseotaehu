@@ -6,7 +6,9 @@ const payButton = document.querySelector("#pay");
 let state,
   widgets,
   loading = false,
-  paying = false;
+  paying = false,
+  agreementAllowsRequest = false,
+  requestLocked = false;
 function message(value) {
   status.textContent = value;
 }
@@ -26,10 +28,20 @@ async function api(path, body) {
   if (!res.ok) throw Error(result.error || "서버 상태를 확인해주세요.");
   return result;
 }
+function syncPayButton() {
+  if (payButton)
+    payButton.disabled =
+      !widgets ||
+      !agreementAllowsRequest ||
+      requestLocked ||
+      paying ||
+      !state?.merchantConfigured ||
+      state?.order.payment !== "pending";
+}
 async function refresh() {
   state = await api("/state");
   orderView.textContent = `가상 주문: ${state.order.id}\n결제: ${state.order.payment}\n운명서: ${state.order.fulfillment}`;
-  if (payButton && state.order.payment !== "pending") payButton.disabled = true;
+  syncPayButton();
   if (loadButton)
     loadButton.disabled =
       loading || !!widgets || state.order.payment !== "pending";
@@ -75,11 +87,18 @@ if (loadButton)
         selector: "#methods",
         variantKey: "DEFAULT",
       });
-      await widgets.renderAgreement({
+      const agreement = await widgets.renderAgreement({
         selector: "#agreement",
         variantKey: "AGREEMENT",
       });
-      payButton.disabled = !state.merchantConfigured;
+      // The SDK may render preselected terms before subscription. Unknown initial state
+      // is validated by requestPayment itself; later explicit false events disable the button.
+      agreementAllowsRequest = true;
+      agreement.on("agreementStatusChange", (value) => {
+        agreementAllowsRequest = value.agreedRequiredTerms === true;
+        syncPayButton();
+      });
+      syncPayButton();
       message(
         state.merchantConfigured
           ? "토스 테스트 결제수단을 불러왔습니다. 실제 청구는 없습니다."
@@ -99,7 +118,14 @@ if (loadButton)
   };
 if (payButton)
   payButton.onclick = async () => {
-    if (!widgets || paying || !state.merchantConfigured) return;
+    if (
+      !widgets ||
+      paying ||
+      requestLocked ||
+      !agreementAllowsRequest ||
+      !state.merchantConfigured
+    )
+      return;
     paying = true;
     payButton.disabled = true;
     try {
@@ -111,14 +137,20 @@ if (payButton)
         successUrl: location.origin + "/success",
         failUrl: location.origin + "/fail",
       });
-    } catch {
-      message(
-        "결제창이 닫혔거나 요청이 완료되지 않았습니다. 먼저 같은 주문의 상태를 확인하세요.",
-      );
+    } catch (error) {
+      if (error?.code === "NEED_AGREEMENT_WITH_REQUIRED_TERMS") {
+        agreementAllowsRequest = true;
+        message("토스 필수 약관에 동의한 뒤 다시 요청해주세요.");
+      } else {
+        requestLocked = true;
+        message(
+          "결제창이 닫혔거나 요청이 완료되지 않았습니다. 먼저 같은 주문의 상태를 확인하세요.",
+        );
+      }
     } finally {
       paying = false;
       await refresh().catch(() => {});
-      payButton.disabled = true;
+      syncPayButton();
     }
   };
 document.querySelector("#recover").onclick = async () => {

@@ -102,4 +102,4 @@ OpenAI 키는 비공개 설정에만 저장했다. 고정 가상 정보 전용 R
 
 
 ## 토스 결제위젯 격리 시험
-`npm run toss:sandbox -- --test-network`는 가상 주문 전용 서버를 `127.0.0.1:3211`에서 시작한다. 공개 앱의 결제 경로는 변경하지 않는다. 실제 SDK/결제수단 로딩은 확인했고 실제 승인·취소는 MID 확인 후 검증해야 한다. `npm run test:toss-browser`는 공급자를 모두 모의 처리한 모바일 Chromium·WebKit·데스크톱 Chromium 계약 검증이다. [실행·보안 경계·남은 항목](docs/toss-sandbox.md).
+`npm run toss:sandbox -- --test-network`는 가상 주문 전용 서버를 `127.0.0.1:3211`에서 시작한다. 공개 앱의 결제 경로는 변경하지 않는다. 실제 SDK/결제수단 로딩·운영자 제공 MID 저장·테스트 카드사 인증 화면 진입/취소를 확인했다. 실제 인증 완료·승인·취소는 운영자의 결제수단 직접 인증 후 검증해야 한다. `npm run test:toss-browser`는 공급자를 모두 모의 처리한 모바일 Chromium·WebKit·데스크톱 Chromium 계약 검증이다. [실행·보안 경계·남은 항목](docs/toss-sandbox.md).

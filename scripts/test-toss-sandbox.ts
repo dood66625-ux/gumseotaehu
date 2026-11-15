@@ -62,7 +62,7 @@ await new Promise<void>((resolve, reject) => {
   server.once("error", reject);
   server.listen(3212, "127.0.0.1", resolve);
 });
-const sdk = `window.qaCalls=[];window.TossPayments=key=>({widgets:options=>{window.qaCalls.push({key,options});return {setAmount:async value=>window.qaCalls.push(value),renderPaymentMethods:async()=>{document.querySelector('#methods').textContent='테스트 카드';},renderAgreement:async()=>{document.querySelector('#agreement').textContent='테스트 약관';},requestPayment:async options=>{window.qaCalls.push(options);location.href=options.successUrl+'?orderId='+options.orderId+'&paymentKey=opaque-test-key&amount=22000';}};}});`;
+const sdk = `window.qaCalls=[];window.TossPayments=key=>({widgets:options=>{window.qaCalls.push({key,options});return {setAmount:async value=>window.qaCalls.push(value),renderPaymentMethods:async()=>{document.querySelector('#methods').textContent='테스트 카드';},renderAgreement:async()=>{document.querySelector('#agreement').innerHTML='<label><input id=qa-terms type=checkbox>테스트 필수 약관</label>';document.querySelector('#qa-terms').checked=!!window.qaTermsInitial;return {on:(name,cb)=>{if(!window.qaTermsInitial)cb({agreedRequiredTerms:false});document.querySelector('#qa-terms').onchange=e=>cb({agreedRequiredTerms:e.target.checked});}};},requestPayment:async options=>{if(window.qaNeedTermsOnce){window.qaNeedTermsOnce=false;const e=Error();e.code='NEED_AGREEMENT_WITH_REQUIRED_TERMS';throw e;}window.qaCalls.push(options);location.href=options.successUrl+'?orderId='+options.orderId+'&paymentKey=opaque-test-key&amount=22000';}};}});`;
 try {
   for (const engine of [
     "mobile-chromium",
@@ -88,6 +88,9 @@ try {
             ? devices["Pixel 7"]
             : devices["Desktop Chrome"],
       );
+      await context.addInitScript((initial: boolean) => {
+        (window as any).qaTermsInitial = initial;
+      }, engine === "mobile-webkit");
       let external = 0,
         sdkAttempts = 0;
       await context.route("**/*", async (route) => {
@@ -115,10 +118,29 @@ try {
         .filter({ hasText: "불러오지 못했습니다" })
         .waitFor();
       await page.locator("#load").click();
+      await page.locator("#qa-terms").waitFor();
+      assert.equal(
+        await page.locator("#pay").isDisabled(),
+        engine !== "mobile-webkit",
+      );
+      await page.locator("#qa-terms").check();
+      await page.locator("#qa-terms").uncheck();
+      assert.equal(await page.locator("#pay").isDisabled(), true);
+      await page.locator("#qa-terms").check();
       await page.locator("#pay:not([disabled])").waitFor();
       const calls = await page.evaluate(() => (window as any).qaCalls);
       assert.equal(calls[0].options.customerKey, "ANONYMOUS");
       assert.deepEqual(calls[1], { currency: "KRW", value: 22000 });
+      await page.evaluate(() => {
+        (window as any).qaNeedTermsOnce = true;
+      });
+      await page.locator("#pay").click();
+      await page
+        .getByRole("status")
+        .filter({ hasText: "토스 필수 약관에 동의" })
+        .waitFor();
+      assert.equal(confirms, before);
+      await page.locator("#pay:not([disabled])").waitFor();
       await page.locator("#pay").click();
       await page
         .getByRole("status")
