@@ -52,3 +52,7 @@ npm run restore -- var/backups/<old-archive>.gsb var/recovery/current-key.sqlite
 
 ## 메일 복구 주의
 복구 사본의 세션/인증 요청은 모두 폐기하며 메일은 조회 전 보류한다. 실제 공급자 계정과 최신 억제/변경 이력을 확인한 뒤 독립적으로 대사해야 한다. 이미 업체에 접수된 메일을 다시 발송하거나 멱등 보존 기간 밖의 미확인 메일을 자동 재시도하지 않는다. DATA_KEY 교체에도 메일 수신 주소/본문/문의 연락처 암호화가 포함된다. 상세: mail-delivery-integration.md. 현재 실제 공급자/worker 등록은 없으므로 이 코어를 실행해 실메일을 보낼 수 있다는 안내를 하지 않는다.
+
+
+## 컨테이너 로컬 실행·이전 패키지
+공급자 자격증명을 전달하지 않는 local Compose와 web/worker health probes, 검증된 standalone/worker 파일의 이식 패키지를 추가했다. 가상 구매/PDF/재시작 후 같은 보고서와 결제 상태 보존을 컨테이너에서 확인했다. 실행·볼륨·키 보관·healthcheck 한계와 소스 clean build 네트워크 제한은 [local-runtime.md](local-runtime.md)를 따른다. 이 구성은 공개 운영 서버나 자동 오프사이트 백업을 제공하지 않는다.

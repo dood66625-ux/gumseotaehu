@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run setup
       - run: npm run typecheck && npm test && npm run build
+      - run: npm run runtime:package -- var/runtime-ci
       - run: npm run readiness -- --expect-blocked
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e

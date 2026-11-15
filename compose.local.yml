@@ -1,0 +1,60 @@
+# Synthetic local verification only. Never publish the mock authentication endpoints.
+name: gumseo-local
+x-local-environment: &local-environment
+  APP_MODE: local
+  EXTERNAL_EFFECTS: disabled
+  APP_ORIGIN: http://localhost:3100
+  DATABASE_PATH: /data/geumseo.sqlite
+  REPORT_YEAR: '2027'
+  DATA_KEY: ${DATA_KEY:?Local DATA_KEY required}
+  AUTH_SECRET: ${AUTH_SECRET:?Local AUTH_SECRET required}
+  ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Local ADMIN_PASSWORD required}
+  ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:?Local ADMIN_TOTP_SECRET required}
+services:
+  storage:
+    image: node:24-bookworm-slim
+    user: '0:0'
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: [no-new-privileges:true]
+    volumes: [data:/data]
+    command: [node, -e, "const f=require('node:fs');f.chownSync('/data',1000,1000);f.chmodSync('/data',0o700)"]
+    restart: 'no'
+  web:
+    image: gumseo-local-web:local
+    build:
+      context: .
+      target: web
+    environment: *local-environment
+    ports: ['127.0.0.1:3100:3000']
+    networks: [local]
+    volumes: [data:/data]
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: unless-stopped
+    depends_on:
+      storage: {condition: service_completed_successfully}
+  worker:
+    image: gumseo-local-worker:local
+    build:
+      context: .
+      target: worker
+    environment: *local-environment
+    network_mode: none
+    volumes: [data:/data]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: unless-stopped
+    depends_on:
+      storage: {condition: service_completed_successfully}
+volumes:
+  data:
+networks:
+  local: {}

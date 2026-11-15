@@ -7,6 +7,7 @@ export function launchReadiness() {
     externalEffectsEnabled: false,
     completedLocal: [
       "server-price-and-payment-state-checks",
+      "portable-local-runtime-and-container-restart-persistence-checks",
       "isolated-synthetic-openai-adapter-with-durable-call-budget",
       "async-report-publication-with-lease-and-order-revalidation",
       "durable-job-and-refund-reconciliation",
@@ -33,7 +34,7 @@ export function launchReadiness() {
         id: "toss",
         kind: "implementation-and-provider",
         detail:
-          "DB-backed Toss order/approval/refund and signed raw-body notification receipt are tested offline. The test-only receiver is disabled by default and never calls providers. Browser SDK/callback registration, recovery worker, actual merchant/security-key/signature verification and real sandbox tests remain incomplete.",
+          "DB-backed Toss order/approval/refund and signed raw-body notification receipt are tested offline. The test-only receiver is disabled by default and never calls providers. An isolated fixed-fixture widget/server has reached a real test issuer authentication screen and cancellation; production browser/callback/worker registration, authenticated approval/refund, merchant/security-key/signature verification remain incomplete.",
       },
       {
         id: "ai",
@@ -51,7 +52,7 @@ export function launchReadiness() {
         id: "hosting",
         kind: "infrastructure",
         detail:
-          "Private staging, persistent storage/DB, TLS, monitoring, offsite backup and recovery tests required. Docker clean build remains unverified after registry networking failure.",
+          "Local runtime artifacts were built into offline Docker images and synthetic purchase/PDF/restart persistence/non-root/read-only/probes passed. Source Docker clean build remains unverified due registry network limits. Private staging, TLS, alerting, offsite backup and actual-host recovery still required.",
       },
       {
         id: "identity",

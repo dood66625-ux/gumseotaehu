@@ -1,0 +1,15 @@
+{
+  "syntheticOnly": true,
+  "mode": "local-mock",
+  "orderPrice": 22000,
+  "pdfValid": true,
+  "reportUnchangedAfterRestart": true,
+  "persistentDatabase": true,
+  "nonRoot": true,
+  "readOnly": true,
+  "noProviderCredentials": true,
+  "webProbe": true,
+  "workerProbe": true,
+  "verification": "inside-container-api",
+  "hostLoopbackHttp": true
+}

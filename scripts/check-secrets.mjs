@@ -1,6 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+if (
+  process.argv.includes("--deployment-only") &&
+  !process.argv.includes("--built")
+)
+  throw Error("DEPLOYMENT_BUILD_SCAN_REQUIRED");
 const names = [
   "OPENAI_API_KEY",
   "DATA_KEY",
@@ -11,10 +16,12 @@ const names = [
   "TOSS_TEST_SECRET_KEY",
   "TOSS_TEST_WEBHOOK_SECURITY_KEY",
 ];
-const tracked = execFileSync("git", ["ls-files", "-z"])
-  .toString()
-  .split("\0")
-  .filter(Boolean);
+const tracked = process.argv.includes("--deployment-only")
+  ? []
+  : execFileSync("git", ["ls-files", "-z"])
+      .toString()
+      .split("\0")
+      .filter(Boolean);
 const files = [...tracked];
 if (process.argv.includes("--built")) {
   function collect(path) {
@@ -26,6 +33,7 @@ if (process.argv.includes("--built")) {
     }
   }
   for (const path of [
+    "dist",
     ".next/static",
     ".next/standalone",
     "public",
@@ -62,5 +70,7 @@ for (const f of files) {
 }
 if (bad) process.exit(1);
 console.log(
-  `Checked ${files.length} source/asset files: local key/password values absent; no environment/database files tracked.`,
+  process.argv.includes("--deployment-only")
+    ? `Checked ${files.length} deployment files: configured secret values absent; Git tracking check skipped explicitly.`
+    : `Checked ${files.length} source/asset files: local key/password values absent; no environment/database files tracked.`,
 );
