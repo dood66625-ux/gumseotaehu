@@ -2,7 +2,7 @@
 ```mermaid
 stateDiagram-v2
  [*] --> pending
- pending --> paid: 로컬 PG DONE+33000+order/key 대조
+ pending --> paid: 로컬 PG DONE+22000+order/key 대조
  paid --> refund_pending: 운영자 검토
  refund_pending --> refunded: PG CANCELED 대조
  refund_pending --> refund_pending: 취소 실패

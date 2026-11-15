@@ -98,8 +98,8 @@ async function fixture() {
     mId: mid,
     currency: "KRW",
     type: "NORMAL",
-    totalAmount: 33000,
-    balanceAmount: 33000,
+    totalAmount: 22000,
+    balanceAmount: 22000,
     status: "DONE" as const,
     approvedAt: new Date().toISOString(),
   };
@@ -112,7 +112,7 @@ async function fixture() {
   };
   const coordinator = new TossOrderCoordinator(gateway, mid);
   await expect(
-    coordinator.confirm(session, oid, payment.paymentKey, 33000),
+    coordinator.confirm(session, oid, payment.paymentKey, 22000),
   ).rejects.toMatchObject({ status: 503 });
   const body = {
     eventType: "PAYMENT_STATUS_CHANGED",

@@ -9,13 +9,13 @@ const request: HttpRequest = {
     Authorization:
       "Basic " + Buffer.from("test_sk_synthetic:").toString("base64"),
   },
-  body: { amount: 33000 },
+  body: { amount: 22000 },
   timeoutMs: 100,
 };
 const paid = {
   paymentKey: "synthetic-payment",
   orderId: "synthetic-order",
-  totalAmount: 33000,
+  totalAmount: 22000,
   status: "DONE",
 };
 describe("Toss HTTP test transport, all requests intercepted", () => {
@@ -58,7 +58,7 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
       "test_sk_synthetic",
       createTossTestTransport({ enabled: true, fetch: send }),
     );
-    expect((await t.confirm(paid.orderId, paid.paymentKey, 33000)).status).toBe(
+    expect((await t.confirm(paid.orderId, paid.paymentKey, 22000)).status).toBe(
       "DONE",
     );
     expect(send.mock.calls[0][0]).toBe(
@@ -67,7 +67,7 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
     expect(send.mock.calls[0][1]?.redirect).toBe("error");
     expect(send.mock.calls[0][1]?.cache).toBe("no-store");
     expect(JSON.parse(send.mock.calls[0][1]?.body as string).amount).toBe(
-      33000,
+      22000,
     );
   });
   it("looks up settlement and verifies full cancellation through HTTP", async () => {
@@ -81,7 +81,7 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
           cancels: [
             {
               transactionKey: "synthetic-cancel",
-              cancelAmount: 33000,
+              cancelAmount: 22000,
               cancelStatus: "DONE",
             },
           ],
@@ -101,7 +101,7 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
       "https://api.tosspayments.com/v1/payments/synthetic-payment/cancel",
     );
     expect(JSON.parse(send.mock.calls[1][1]?.body as string).cancelAmount).toBe(
-      33000,
+      22000,
     );
   });
   it.each([401, 429, 500])(
@@ -174,7 +174,7 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
       createTossTestTransport({ enabled: true, fetch: send }),
     );
     await expect(
-      t.confirm(paid.orderId, paid.paymentKey, 33000),
+      t.confirm(paid.orderId, paid.paymentKey, 22000),
     ).rejects.toThrow("PG_RESPONSE_MISMATCH");
   });
 });

@@ -1,3 +1,4 @@
+import { isSupportedOrderAmount } from "../product";
 /** Durable test-PG/order integration. No runtime route, SDK or worker registers this adapter. */
 import { z } from "zod";
 import { all, one, run, tx } from "../db";
@@ -22,7 +23,7 @@ const evidence = z.object({
   mId: z.string().min(1).max(100),
   currency: z.literal("KRW"),
   type: z.literal("NORMAL"),
-  totalAmount: z.literal(33000),
+  totalAmount: z.number().int().refine(isSupportedOrderAmount),
   balanceAmount: z.number().int().min(0).max(33000),
   status: z.string(),
   approvedAt: z.string().datetime({ offset: true }).nullable(),
@@ -39,6 +40,7 @@ const evidence = z.object({
 type Claim = {
   orderId: string;
   key: string;
+  amount: number;
   generation: number;
   notificationId: number;
   first: boolean;
@@ -61,7 +63,7 @@ export class TossOrderCoordinator {
   ): Promise<TossOrderResult> {
     const order = ownOrder(s, z.string().uuid().parse(orderId));
     const key = keySchema.parse(paymentKey);
-    if (amount !== 33000 || order.amount !== 33000)
+    if (!isSupportedOrderAmount(order.amount) || amount !== order.amount)
       throw new Fault("주문금액 검증에 실패했습니다.");
     const old = one("SELECT * FROM toss_attempts WHERE order_id=?", orderId);
     if (old && (old.payment_key !== key || old.merchant_id !== this.merchantId))
@@ -128,6 +130,9 @@ export class TossOrderCoordinator {
       return {
         orderId,
         key: attempt.payment_key,
+        amount: Number(
+          one("SELECT amount FROM orders WHERE id=?", orderId)!.amount,
+        ),
         generation: attempt.generation + 1,
         first,
         notificationId: Number(
@@ -180,7 +185,7 @@ export class TossOrderCoordinator {
         if (live.payment_status === "refunded") state = "refunded";
         else if (
           p.status === "DONE" &&
-          p.balanceAmount === 33000 &&
+          p.balanceAmount === live.amount &&
           p.approvedAt
         ) {
           const ledger = one(
@@ -209,7 +214,7 @@ export class TossOrderCoordinator {
         ) {
           const done =
             p.cancels?.filter((c) => c.cancelStatus === "DONE") ?? [];
-          if (done.length !== 1 || done[0].cancelAmount !== 33000)
+          if (done.length !== 1 || done[0].cancelAmount !== live.amount)
             throw Error("FULL_CANCEL_NOT_VERIFIED");
           if (live.payment_status === "pending") {
             const ledger = one(
@@ -218,7 +223,8 @@ export class TossOrderCoordinator {
             );
             if (
               ledger &&
-              (ledger.payment_key !== p.paymentKey || ledger.amount !== 33000)
+              (ledger.payment_key !== p.paymentKey ||
+                ledger.amount !== live.amount)
             )
               throw Error("PG_LEDGER_CONFLICT");
             const approved = Date.parse(p.approvedAt),
@@ -228,7 +234,7 @@ export class TossOrderCoordinator {
               "INSERT INTO pg_ledger(payment_key,order_id,amount,status) VALUES(?,?,?,'DONE') ON CONFLICT(order_id) DO NOTHING",
               p.paymentKey,
               live.id,
-              33000,
+              live.amount,
             );
             run(
               "UPDATE orders SET payment_key=?,paid_at=?,expires=? WHERE id=?",
@@ -247,7 +253,7 @@ export class TossOrderCoordinator {
             "INSERT OR IGNORE INTO refunds(id,order_id,amount,reason_enc,status,created) VALUES(?,?,?,?,?,?)",
             id(),
             live.id,
-            33000,
+            live.amount,
             seal({
               reason: "독립 결제 조회에서 확인된 전액 취소",
               actor: "toss-test-reconciliation",
@@ -260,10 +266,11 @@ export class TossOrderCoordinator {
             live.id,
           );
           const changed = run(
-            "UPDATE pg_ledger SET status='CANCELED',cancel_id=? WHERE order_id=? AND payment_key=? AND amount=33000",
+            "UPDATE pg_ledger SET status='CANCELED',cancel_id=? WHERE order_id=? AND payment_key=? AND amount=?",
             done[0].transactionKey,
             live.id,
             p.paymentKey,
+            live.amount,
           );
           if (changed.changes !== 1) throw Error("CANCEL_LEDGER_MISSING");
           state = "refunded";
@@ -314,7 +321,9 @@ export class TossOrderCoordinator {
   async recover(orderId: string): Promise<TossOrderResult> {
     const claim = this.claim(z.string().uuid().parse(orderId));
     if (!claim) return { state: "processing" };
-    return this.execute(claim, () => this.gateway.lookup(orderId, 33000));
+    return this.execute(claim, () =>
+      this.gateway.lookup(orderId, claim.amount),
+    );
   }
   async refund(
     s: Session,
@@ -348,7 +357,7 @@ export class TossOrderCoordinator {
         "INSERT OR IGNORE INTO refunds(id,order_id,amount,reason_enc,status,created) VALUES(?,?,?,?,?,?)",
         id(),
         orderId,
-        33000,
+        order.amount,
         seal({ reason: reason.trim(), actor: s.id }),
         "pending",
         Date.now(),
@@ -380,8 +389,13 @@ export class TossOrderCoordinator {
     });
     return this.execute(claim, () =>
       shouldCancel
-        ? this.gateway.cancel(orderId, claim.key, "디지털콘텐츠 주문 전액 취소")
-        : this.gateway.lookup(orderId, 33000),
+        ? this.gateway.cancel(
+            orderId,
+            claim.key,
+            "디지털콘텐츠 주문 전액 취소",
+            claim.amount,
+          )
+        : this.gateway.lookup(orderId, claim.amount),
     );
   }
   /** Fresh lookup first; resubmit only on an explicit request and an authenticated IN_PROGRESS payment. */
@@ -413,7 +427,7 @@ export class TossOrderCoordinator {
       )
         throw Error("PG_PREFLIGHT_MISMATCH");
       if (before.status !== "IN_PROGRESS") return before as VerifiedPayment;
-      if (before.balanceAmount !== 33000 || before.approvedAt !== null)
+      if (before.balanceAmount !== order.amount || before.approvedAt !== null)
         throw Error("PG_PREFLIGHT_MISMATCH");
       return this.gateway.confirm(orderId, claim.key, order.amount);
     });

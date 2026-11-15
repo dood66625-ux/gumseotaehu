@@ -187,7 +187,7 @@ async function handler(
       );
       return json({
         paymentKey: key,
-        amount: 33000,
+        amount: svc.ownOrder(s, b.orderId as string).amount,
         localMock: true,
         close: scenario === "close",
       });

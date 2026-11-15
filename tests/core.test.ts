@@ -79,7 +79,7 @@ function order() {
 function paid() {
   const o = order(),
     key = svc.mockAuthenticate(o.s, o.oid);
-  svc.confirmPayment(o.s, o.oid, key, 33000);
+  svc.confirmPayment(o.s, o.oid, key, 22000);
   return { ...o, key };
 }
 function admin() {
@@ -361,7 +361,7 @@ describe("orders, mock PG and durable recovery", () => {
     const { s, oid } = order(),
       key = svc.mockAuthenticate(s, oid);
     expect(() => svc.confirmPayment(s, oid, key, 1)).toThrow();
-    expect(() => svc.confirmPayment(s, oid, "forged", 33000)).toThrow();
+    expect(() => svc.confirmPayment(s, oid, "forged", 22000)).toThrow();
     expect(svc.ownOrder(s, oid).payment_status).toBe("pending");
   });
   it("rejects another customer order/report/PDF data", () => {
@@ -385,7 +385,7 @@ describe("orders, mock PG and durable recovery", () => {
   it("duplicate confirmations and 5 webhook reconciliations create one job/report/event", () => {
     const { s, oid, key } = paid();
     for (let i = 0; i < 5; i++) {
-      svc.confirmPayment(s, oid, key, 33000);
+      svc.confirmPayment(s, oid, key, 22000);
       svc.reconcile();
     }
     svc.workOnce();
@@ -406,7 +406,7 @@ describe("orders, mock PG and durable recovery", () => {
   it("recovers approval with simulated DB failure and process reconnection", () => {
     const { s, oid } = order(),
       key = svc.mockAuthenticate(s, oid);
-    expect(() => svc.confirmPayment(s, oid, key, 33000, true)).toThrow();
+    expect(() => svc.confirmPayment(s, oid, key, 22000, true)).toThrow();
     closeDb();
     db();
     svc.workOnce();
@@ -1040,4 +1040,39 @@ it("rotates customer sessions atomically on successful email authentication", ()
   expect(current.email_hash).toBe(hash("rotation@example.invalid"));
   expect(svc.readingFor(current, rid).input).toEqual(birth);
   expect(() => svc.verifyOtp(current, challenge, code, true)).toThrow();
+});
+
+it("new orders use 22,000 and reject the former 33,000 callback amount", () => {
+  const o = order();
+  expect(svc.ownOrder(o.s, o.oid).amount).toBe(22000);
+  const key = svc.mockAuthenticate(o.s, o.oid);
+  expect(() => svc.confirmPayment(o.s, o.oid, key, 33000)).toThrow("주문금액");
+  svc.confirmPayment(o.s, o.oid, key, 22000);
+  expect(svc.ownOrder(o.s, o.oid).payment_status).toBe("paid");
+});
+it("honors the original 33,000 on a legacy order's approval, stored report and full refund", () => {
+  const o = order();
+  run("UPDATE orders SET amount=33000 WHERE id=?", o.oid);
+  expect(() =>
+    svc.createOrder(o.s, o.rid, {
+      terms: true,
+      privacy: true,
+      withdrawal: true,
+      confirmedBirth: true,
+      buyerAdult: true,
+    }),
+  ).toThrow("판매가가 변경");
+  const key = svc.mockAuthenticate(o.s, o.oid);
+  svc.confirmPayment(o.s, o.oid, key, 33000);
+  svc.workOnce();
+  const report = svc.getReport(o.s, o.oid);
+  expect(report.order.amount).toBe(33000);
+  expect(svc.getReport(o.s, o.oid).report).toEqual(report.report);
+  svc.refund(admin(), o.oid, "과거 주문 전액 취소");
+  expect(
+    one("SELECT amount,status FROM refunds WHERE order_id=?", o.oid),
+  ).toMatchObject({ amount: 33000, status: "completed" });
+  expect(
+    one("SELECT amount,status FROM pg_ledger WHERE order_id=?", o.oid),
+  ).toMatchObject({ amount: 33000, status: "CANCELED" });
 });

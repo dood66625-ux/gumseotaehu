@@ -84,7 +84,7 @@ async function createPaid(page: Page, email: string, close = false) {
         await post(page, "payments/confirm", {
           orderId: order.id,
           paymentKey: p.paymentKey,
-          amount: 33000,
+          amount: 22000,
         })
       ).ok(),
     ).toBeTruthy();
@@ -104,6 +104,8 @@ test("landing remains usable without API; responsive, reduced motion and accessi
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("**/api/**", (r) => r.abort());
   await page.goto("/");
+  await expect(page.locator(".book-price")).toContainText("22,000");
+  await expect(page.locator("body")).not.toContainText("33,000원");
   await expect(
     page.getByRole("link", { name: "내 사주 펼쳐보기" }),
   ).toBeVisible();
@@ -153,11 +155,13 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.getByRole("checkbox").nth(2).check();
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
   await expect(page.getByText("만세력 계산 완료 · 첫 번째 풀이")).toBeVisible();
+  await expect(page.locator(".price")).toContainText("22,000원");
   await page.screenshot({
     path: "docs/" + info.project.name + "-preview.png",
     fullPage: true,
   });
   await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
+  await expect(page.locator(".price")).toContainText("22,000원");
   await page.getByLabel("이메일 주소").fill(email);
   await page.getByRole("button", { name: "인증번호 요청" }).click();
   await page.getByRole("button", { name: "체험용 인증번호 확인" }).click();
@@ -294,7 +298,7 @@ test("API rejects CSRF, amount tampering, fake callback, minor payment and admin
       await post(page, "payments/confirm", {
         orderId: o.id,
         paymentKey: "fake",
-        amount: 33000,
+        amount: 22000,
       })
     ).status(),
   ).toBe(400);
@@ -428,7 +432,7 @@ test("concurrent confirmation requests settle once", async ({ page }, info) => {
       post(page, "payments/confirm", {
         orderId: o.id,
         paymentKey: p.paymentKey,
-        amount: 33000,
+        amount: 22000,
       }),
     ),
   );
@@ -559,7 +563,7 @@ test("test PG webhook stays disabled and cannot be used as a browser payment cal
       data: {
         orderId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
         status: "DONE",
-        totalAmount: 33000,
+        totalAmount: 22000,
       },
     },
   });

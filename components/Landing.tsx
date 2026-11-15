@@ -1,3 +1,4 @@
+import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Intro from "@/components/Intro";
 export default function Landing() {
   return (
@@ -58,7 +59,7 @@ export default function Landing() {
           <i aria-hidden="true">壹</i> 전통 명리학의 계산
         </span>
         <span>
-          <i aria-hidden="true">貳</i> 33,000원 한 번의 결제
+          <i aria-hidden="true">貳</i> {PRODUCT_PRICE_TEXT}원 한 번의 결제
         </span>
         <span>
           <i aria-hidden="true">參</i> 1년 무료 재열람
@@ -180,7 +181,8 @@ export default function Landing() {
           </ol>
           <div className="book-price">
             <strong>
-              33,000<span>원</span>
+              {PRODUCT_PRICE_TEXT}
+              <span>원</span>
             </strong>
             <p>
               단 한 번의 결제

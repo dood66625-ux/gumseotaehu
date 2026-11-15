@@ -1,3 +1,4 @@
+import { PRODUCT_PRICE_TEXT } from "@/lib/product";
 import Link from "next/link";
 import BusinessInfo from "@/components/BusinessInfo";
 import { notFound } from "next/navigation";
@@ -14,7 +15,7 @@ const policies: Record<
       },
       {
         title: "상품과 이용기간",
-        text: "종합 운명서는 33,000원 일회성 디지털콘텐츠 상품입니다. 사주 구조·성향·재물·인연·직업·관계·대운·연간/월별·종합 조언 9개 장, 웹 열람과 PDF 저장을 제공합니다. 시간 미상·계산 구분 미선택 시 관련 항목을 제외합니다. 구매일부터 1년간 이메일 인증을 통한 무료 재열람을 제공합니다. 자동 구독과 AI 채팅은 제공하지 않습니다.",
+        text: `종합 운명서는 ${PRODUCT_PRICE_TEXT}원 일회성 디지털콘텐츠 상품입니다. 사주 구조·성향·재물·인연·직업·관계·대운·연간/월별·종합 조언 9개 장, 웹 열람과 PDF 저장을 제공합니다. 시간 미상·계산 구분 미선택 시 관련 항목을 제외합니다. 구매일부터 1년간 이메일 인증을 통한 무료 재열람을 제공합니다. 자동 구독과 AI 채팅은 제공하지 않습니다.`,
       },
       {
         title: "이용 연령",

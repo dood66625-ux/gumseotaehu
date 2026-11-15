@@ -2,6 +2,7 @@ import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { mkdirSync, readFileSync, chmodSync } from "node:fs";
 import { dirname } from "node:path";
 import { config } from "./config";
+import { migrateOrderPrice } from "./price-migration";
 let instance: DatabaseSync;
 export function db() {
   if (!instance) {
@@ -10,7 +11,14 @@ export function db() {
     instance = new DatabaseSync(path);
     chmodSync(path, 0o600);
     instance.exec("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;");
-    instance.exec(readFileSync("db/001-init.sql", "utf8"));
+    try {
+      instance.exec(readFileSync("db/001-init.sql", "utf8"));
+      migrateOrderPrice(instance);
+    } catch (error) {
+      instance.close();
+      instance = undefined as unknown as DatabaseSync;
+      throw error;
+    }
   }
   return instance;
 }

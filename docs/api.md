@@ -7,7 +7,7 @@
 | POST readings / GET readings/:id | 검증·계산 저장/원 세션 무료 조회 |
 | POST auth/request,auth/verify | email / challengeId,code;15분/5회/단일사용 |
 | GET local-mail/:challenge | 원 요청세션 mock OTP; 공개 운영 금지 |
-| POST orders | readingId,consent;인증+19+;서버33000원 |
+| POST orders | readingId,consent;인증+19+;서버22000원 |
 | GET orders,orders/:id | 인증 이메일 소유 주문만 |
 | POST payments/authenticate | orderId,scenario;로컬PG원장 인증 |
 | POST payments/confirm | orderId,paymentKey,amount;로컬PG원장 조회 대조 |

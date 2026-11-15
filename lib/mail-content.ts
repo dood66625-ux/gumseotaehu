@@ -117,6 +117,12 @@ export function renderMail(
   profile: MailProfile,
   deadline: number,
 ): MailEnvelope {
+  const paidOrder =
+    p.template === "payment_confirmed" && p.orderId
+      ? one("SELECT amount FROM orders WHERE id=?", p.orderId)
+      : undefined;
+  if (p.template === "payment_confirmed" && !paidOrder)
+    throw Error("MAIL_ORDER_REQUIRED");
   const code = p.code ?? "",
     link =
       profile.origin +
@@ -136,7 +142,7 @@ export function renderMail(
     ],
     payment_confirmed: [
       "결제 확인 안내",
-      "33,000원 일회성 결제가 확인되었습니다. 운명서 작성 상태를 이메일 인증 후 확인할 수 있습니다.",
+      `${paidOrder?.amount.toLocaleString("ko-KR")}원 일회성 결제가 확인되었습니다. 운명서 작성 상태를 이메일 인증 후 확인할 수 있습니다.`,
     ],
     report_ready: [
       "운명서가 준비되었습니다",

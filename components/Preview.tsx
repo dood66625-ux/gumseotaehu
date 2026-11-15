@@ -1,4 +1,5 @@
 "use client";
+import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Link from "next/link";
 import Journey from "./Journey";
 import { useLoad, Loading, ErrorBox } from "./client";
@@ -82,7 +83,7 @@ export default function Preview({ id }: { id: string }) {
           ))}
         </ul>
         <p className="price">
-          33,000원 <small>한 번만 결제 · 구독 없음</small>
+          {PRODUCT_PRICE_TEXT}원 <small>한 번만 결제 · 구독 없음</small>
         </p>
         {r.purchaseEligible !== false &&
         r.input.age !== "14-18" &&

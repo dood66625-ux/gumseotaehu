@@ -1,3 +1,4 @@
+import { PRODUCT_PRICE_KRW, isSupportedOrderAmount } from "./product";
 import { snapshotMailRecipient, snapshotTicketContact } from "./mail-records";
 import {
   operationalHealth,
@@ -267,11 +268,18 @@ export function createOrder(s: Session, rid: string, consent: unknown) {
   if (!verified) throw new Fault("이메일을 다시 인증해 주세요.", 401);
   return tx(() => {
     const existing = one(
-      "SELECT id FROM orders WHERE reading_id=? AND email_hash=?",
+      "SELECT id,amount FROM orders WHERE reading_id=? AND email_hash=?",
       rid,
       s.email_hash,
     );
-    if (existing) return existing.id as string;
+    if (existing) {
+      if (existing.amount !== PRODUCT_PRICE_KRW)
+        throw new Fault(
+          "판매가가 변경되었습니다. 새 무료풀이에서 현재 가격으로 주문해 주세요. 기존 구매 내역은 다시 찾기에서 확인할 수 있습니다.",
+          409,
+        );
+      return existing.id as string;
+    }
     const oid = id();
     run(
       "INSERT INTO orders(id,reading_id,email_hash,email_enc,amount,payment_status,fulfillment,created,consent_enc) VALUES(?,?,?,?,?,?,?,?,?)",
@@ -279,7 +287,7 @@ export function createOrder(s: Session, rid: string, consent: unknown) {
       rid,
       s.email_hash,
       verified.email_enc,
-      33000,
+      PRODUCT_PRICE_KRW,
       "pending",
       "waiting",
       Date.now(),
@@ -287,7 +295,8 @@ export function createOrder(s: Session, rid: string, consent: unknown) {
         ...c,
         policy: "draft-2026-11-14-age-v2",
         time: Date.now(),
-        product: "2027-v1",
+        product: "2027-v2",
+        priceKrw: PRODUCT_PRICE_KRW,
         age: "19+",
         ageEvidence: "checkout-self-declaration",
       }),
@@ -328,7 +337,7 @@ export function mockAuthenticate(
       "INSERT INTO pg_ledger(payment_key,order_id,amount,status) VALUES(?,?,?,?)",
       key,
       oid,
-      33000,
+      o.amount,
       "DONE",
     );
     event("payment_initiated", oid);
@@ -345,7 +354,7 @@ export function confirmPayment(
   const o = ownOrder(s, oid);
   if (one("SELECT order_id FROM toss_attempts WHERE order_id=?", oid))
     throw new Fault("테스트 PG 주문은 전용 승인 경로로 확인해야 합니다.", 409);
-  if (amount !== 33000 || amount !== o.amount)
+  if (!isSupportedOrderAmount(o.amount) || amount !== o.amount)
     throw new Fault("주문금액 검증에 실패했습니다.");
   const pg = one(
     "SELECT * FROM pg_ledger WHERE payment_key=? AND order_id=?",
@@ -393,7 +402,7 @@ function finalizePayment(oid: string, key: string) {
     enqueueMail(o.email_hash, {
       template: "payment_confirmed",
       orderId: oid,
-      amount: 33000,
+      amount: o.amount,
       body: "모의 결제 확인. 운명서 작성 상태는 다시 찾기에서 확인할 수 있습니다.",
     });
   });
@@ -831,7 +840,7 @@ export function refund(
       "INSERT OR IGNORE INTO refunds(id,order_id,amount,reason_enc,status,created) VALUES(?,?,?,?,?,?)",
       id(),
       oid,
-      33000,
+      o.amount,
       seal({ reason, actor: s.id }),
       "pending",
       Date.now(),

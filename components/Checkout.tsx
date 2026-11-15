@@ -1,4 +1,5 @@
 "use client";
+import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Link from "next/link";
 import Journey from "./Journey";
 import { useEffect, useState } from "react";
@@ -121,7 +122,7 @@ export default function Checkout({ id }: { id: string }) {
             구매일로부터 1년 무료 재열람
           </p>
           <p className="price">
-            33,000원 <small>최종 결제총액 · 일시불</small>
+            {PRODUCT_PRICE_TEXT}원 <small>최종 결제총액 · 일시불</small>
           </p>
           <p className="hint">
             자동 구독이나 추가 과금은 없습니다. 정식 서비스는 결제 확인 후

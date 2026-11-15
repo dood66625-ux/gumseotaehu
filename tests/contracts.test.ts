@@ -4,7 +4,7 @@ import type { HttpRequest } from "../lib/integrations/contracts";
 const p = {
   paymentKey: "test-payment",
   orderId: "test-order",
-  totalAmount: 33000,
+  totalAmount: 22000,
   status: "DONE",
 };
 describe("Toss v1 offline contract (not real sandbox verification)", () => {
@@ -14,7 +14,7 @@ describe("Toss v1 offline contract (not real sandbox verification)", () => {
       new TossTestContract("test_sk_synthetic").confirm(
         p.orderId,
         p.paymentKey,
-        33000,
+        22000,
       ),
     ).rejects.toThrow("NOT_APPROVED");
   });
@@ -24,15 +24,15 @@ describe("Toss v1 offline contract (not real sandbox verification)", () => {
       seen.push(r);
       return p;
     });
-    await t.confirm(p.orderId, p.paymentKey, 33000);
-    await t.confirm(p.orderId, p.paymentKey, 33000);
+    await t.confirm(p.orderId, p.paymentKey, 22000);
+    await t.confirm(p.orderId, p.paymentKey, 22000);
     expect(seen[0].headers["Idempotency-Key"]).toBe(
       seen[1].headers["Idempotency-Key"],
     );
     expect(seen[0].body).toEqual({
       orderId: p.orderId,
       paymentKey: p.paymentKey,
-      amount: 33000,
+      amount: 22000,
     });
     expect(seen[0].timeoutMs).toBe(10000);
     await expect(t.confirm(p.orderId, p.paymentKey, 1)).rejects.toThrow();
@@ -46,7 +46,7 @@ describe("Toss v1 offline contract (not real sandbox verification)", () => {
     "does not grant access for mismatched/unsettled PG response %j",
     async (response) => {
       const t = new TossTestContract("test_sk_synthetic", async () => response);
-      await expect(t.confirm(p.orderId, p.paymentKey, 33000)).rejects.toThrow();
+      await expect(t.confirm(p.orderId, p.paymentKey, 22000)).rejects.toThrow();
     },
   );
   it("uses lookup by order for reconciliation, including safe URL encoding", async () => {
@@ -66,7 +66,7 @@ describe("Toss v1 offline contract (not real sandbox verification)", () => {
       ...p,
       status: "CANCELED",
       cancels: [
-        { transactionKey: "c1", cancelAmount: 33000, cancelStatus: "DONE" },
+        { transactionKey: "c1", cancelAmount: 22000, cancelStatus: "DONE" },
       ],
     }));
     expect(
@@ -78,7 +78,7 @@ describe("Toss v1 offline contract (not real sandbox verification)", () => {
     const t = new TossTestContract("test_sk_synthetic", async () => {
       throw Error("TIMEOUT");
     });
-    await expect(t.confirm(p.orderId, p.paymentKey, 33000)).rejects.toThrow(
+    await expect(t.confirm(p.orderId, p.paymentKey, 22000)).rejects.toThrow(
       "TIMEOUT",
     );
   });

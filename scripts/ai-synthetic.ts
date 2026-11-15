@@ -1,3 +1,4 @@
+import { PRODUCT_PRICE_KRW } from "../lib/product";
 /** Explicit real API smoke test; fixed invented inputs + separate DB; never a public route. */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -67,7 +68,7 @@ try {
       buyerAdult: true,
     });
     const paymentKey = svc.mockAuthenticate(session, id);
-    svc.confirmPayment(session, id, paymentKey, 33000);
+    svc.confirmPayment(session, id, paymentKey, PRODUCT_PRICE_KRW);
     order = svc.listOrders(session)[0];
   }
   let failure: string | null = null;

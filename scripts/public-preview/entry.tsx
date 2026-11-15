@@ -1,3 +1,4 @@
+import { PRODUCT_PRICE_KRW, PRODUCT_PRICE_TEXT } from "../../lib/product";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import Shell from "../../components/Shell";
@@ -121,11 +122,18 @@ window.fetch = async (input: any, init: any = {}) => {
     }
     return response({
       paymentKey: "synthetic-no-real-payment",
-      amount: 33000,
+      amount: PRODUCT_PRICE_KRW,
       close: b.scenario === "close",
     });
   }
   if (p === "payments/confirm") {
+    if (
+      !s.authenticated ||
+      b.amount !== PRODUCT_PRICE_KRW ||
+      b.orderId !== snapshot.report.order.id ||
+      b.paymentKey !== "synthetic-no-real-payment"
+    )
+      return response({ error: "가상 주문의 결제금액을 확인해 주세요." }, 400);
     s.paid = true;
     save(s);
     return response({ ok: true });
@@ -232,9 +240,9 @@ if (screen !== "home") {
           공개하지 않습니다.
         </p>
         <p>
-          운영 서비스는 33,000원 일회성 종합 운명서, 구매 후 1년 재열람을 목표로
-          개발 중입니다. 법률·정확성·운영 검수가 완료되기 전 실제 판매하지
-          않습니다.
+          운영 서비스는 {PRODUCT_PRICE_TEXT}원 일회성 종합 운명서, 구매 후 1년
+          재열람을 목표로 개발 중입니다. 법률·정확성·운영 검수가 완료되기 전
+          실제 판매하지 않습니다.
         </p>
         <a
           className="button secondary"

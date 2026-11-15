@@ -39,7 +39,7 @@ function paid(email = "async@example.invalid") {
     buyerAdult: true,
   });
   const key = svc.mockAuthenticate(session, order);
-  svc.confirmPayment(session, order, key, 33000);
+  svc.confirmPayment(session, order, key, 22000);
   return { session, order };
 }
 it("awaits without a DB transaction, saves exactly one immutable report and reopens without regeneration", async () => {

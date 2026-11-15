@@ -70,7 +70,7 @@ function customer(email = "buyer@example.invalid") {
     original.session.id,
   )!;
 }
-function fixture() {
+function fixture(amount = 22000) {
   const s = customer(),
     rid = svc.makeReading(s, birth),
     oid = svc.createOrder(s, rid, {
@@ -80,14 +80,16 @@ function fixture() {
       confirmedBirth: true,
       buyerAdult: true,
     });
+  if (amount !== 22000)
+    run("UPDATE orders SET amount=? WHERE id=?", amount, oid);
   const payment: VerifiedPayment = {
     paymentKey: "synthetic-toss-key",
     orderId: oid,
     mId: "synthetic-mid",
     currency: "KRW",
     type: "NORMAL",
-    totalAmount: 33000,
-    balanceAmount: 33000,
+    totalAmount: amount,
+    balanceAmount: amount,
     status: "DONE",
     approvedAt: new Date().toISOString(),
   };
@@ -111,7 +113,7 @@ function fixture() {
     cancels: [
       {
         transactionKey: "synthetic-cancel",
-        cancelAmount: 33000,
+        cancelAmount: amount,
         cancelStatus: "DONE",
       },
     ],
@@ -141,7 +143,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
         customer("stranger@example.invalid"),
         f.oid,
         f.payment.paymentKey,
-        33000,
+        22000,
       ),
     ).rejects.toThrow();
     expect(f.gateway.confirm).not.toHaveBeenCalled();
@@ -151,10 +153,10 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.payment.approvedAt = new Date(Date.now() - 30000).toISOString();
     expect(
-      await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).toEqual({ state: "verified" });
     expect(
-      await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).toEqual({ state: "verified" });
     expect(f.gateway.confirm).toHaveBeenCalledTimes(1);
     expect(f.gateway.lookup).not.toHaveBeenCalled();
@@ -179,7 +181,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.set({ ...f.payment, ...patch } as VerifiedPayment);
     const result = await f.coordinator
-      .confirm(f.s, f.oid, f.payment.paymentKey, 33000)
+      .confirm(f.s, f.oid, f.payment.paymentKey, 22000)
       .catch(() => ({ state: "uncertain" }));
     expect(result.state).not.toBe("verified");
     expect(svc.ownOrder(f.s, f.oid).payment_status).toBe("pending");
@@ -189,7 +191,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.gateway.confirm.mockRejectedValueOnce(Error("sensitive-provider-text"));
     await expect(
-      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow("추가 결제 없이");
     expect(svc.ownOrder(f.s, f.oid).payment_status).toBe("pending");
     const restarted = new TossOrderCoordinator(f.gateway, "synthetic-mid");
@@ -214,10 +216,10 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
       f.s,
       f.oid,
       f.payment.paymentKey,
-      33000,
+      22000,
     );
     expect(
-      await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).toEqual({ state: "processing" });
     release(f.payment);
     await first;
@@ -237,7 +239,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
       f.s,
       f.oid,
       f.payment.paymentKey,
-      33000,
+      22000,
     );
     run("UPDATE toss_attempts SET lease_until=0 WHERE order_id=?", f.oid);
     await f.coordinator.recover(f.oid);
@@ -253,7 +255,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     );
     try {
       await expect(
-        f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+        f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
       ).rejects.toThrow();
     } finally {
       db().exec("DROP TRIGGER synthetic_crash");
@@ -266,7 +268,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("recovers a lost full-cancel response without another cancel POST", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     svc.workOnce();
     f.set(f.canceled());
     f.gateway.cancel.mockRejectedValueOnce(Error("timeout"));
@@ -281,7 +283,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("deduplicates webhook notifications and never trusts body status", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     const notice = {
       orderId: f.oid,
       eventId: "synthetic-event",
@@ -307,7 +309,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("reconciles external full cancellation only after independent verified lookup", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     svc.workOnce();
     f.set(f.canceled());
     f.coordinator.notify({
@@ -321,9 +323,9 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("does not turn a partial cancel into a full refund or grant access", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     const a = f.admin();
-    f.set({ ...f.payment, status: "PARTIAL_CANCELED", balanceAmount: 32000 });
+    f.set({ ...f.payment, status: "PARTIAL_CANCELED", balanceAmount: 21000 });
     expect(await f.coordinator.refund(a, f.oid, "가상 부분취소 검토")).toEqual({
       state: "review",
     });
@@ -332,7 +334,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("only explicitly retries a cancel after recent DONE lookup and keeps the original body", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     const a = f.admin();
     f.gateway.cancel.mockRejectedValueOnce(Error("provider unavailable"));
     await expect(
@@ -350,16 +352,17 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
       f.oid,
       f.payment.paymentKey,
       "디지털콘텐츠 주문 전액 취소",
+      22000,
     ]);
   });
   it("blocks mock-path cancellation and confirmation for a provider-bound order", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     expect(() => svc.refund(f.admin(), f.oid, "잘못된 경로 환불")).toThrow(
       "전용 취소",
     );
     expect(() =>
-      svc.confirmPayment(f.s, f.oid, f.payment.paymentKey, 33000),
+      svc.confirmPayment(f.s, f.oid, f.payment.paymentKey, 22000),
     ).toThrow("전용 승인");
     expect(() => svc.mockAuthenticate(f.s, f.oid)).toThrow("전용 승인");
   });
@@ -367,7 +370,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.gateway.confirm.mockRejectedValueOnce(Error("lost approval"));
     await expect(
-      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow();
     f.set(f.canceled());
     expect(await f.coordinator.recover(f.oid)).toEqual({ state: "refunded" });
@@ -381,7 +384,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.gateway.confirm.mockRejectedValueOnce(Error("request not sent"));
     await expect(
-      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow();
     f.set({ ...f.payment, status: "IN_PROGRESS", approvedAt: null });
     expect(await f.coordinator.recover(f.oid)).toEqual({ state: "review" });
@@ -401,7 +404,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.gateway.confirm.mockRejectedValueOnce(Error("lost response"));
     await expect(
-      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow();
     f.set({ ...f.payment, status: "IN_PROGRESS", approvedAt: null });
     await f.coordinator.recover(f.oid);
@@ -411,7 +414,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("retains a notification received while another lookup is in flight", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     f.coordinator.notify({ orderId: f.oid, eventId: "before" });
     let release!: (p: VerifiedPayment) => void;
     f.gateway.lookup.mockImplementationOnce(
@@ -437,7 +440,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.gateway.confirm.mockRejectedValueOnce(Error("429"));
     await expect(
-      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow();
     expect(await f.coordinator.recoverPending()).toEqual([]);
     expect(f.gateway.lookup).not.toHaveBeenCalled();
@@ -447,7 +450,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("includes the provider refund reason in offline DATA_KEY rotation", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     f.gateway.cancel.mockRejectedValueOnce(Error("timeout"));
     await expect(
       f.coordinator.refund(f.admin(), f.oid, "가상 결제사 환불 검토 사유"),
@@ -482,7 +485,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
       first.s,
       first.oid,
       first.payment.paymentKey,
-      33000,
+      22000,
     );
     const second = fixture();
     await expect(
@@ -490,7 +493,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
         second.s,
         second.oid,
         second.payment.paymentKey,
-        33000,
+        22000,
       ),
     ).rejects.toThrow();
     expect(second.gateway.confirm).not.toHaveBeenCalled();
@@ -513,7 +516,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
       "synthetic-mid",
     );
     expect(
-      await coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      await coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).toEqual({ state: "verified" });
     expect(
       await coordinator.refund(f.admin(), f.oid, "전체 계약 연결 모의 환불"),
@@ -536,7 +539,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
       });
     svc.deleteContent(f.admin(), f.oid, ticket, "본인 확인 후 삭제 처리");
     await expect(
-      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow("삭제된 주문");
     expect(f.gateway.confirm).not.toHaveBeenCalled();
   });
@@ -553,7 +556,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
       f.s,
       f.oid,
       f.payment.paymentKey,
-      33000,
+      22000,
     );
     const ticket = svc.ticket(f.s, {
       orderId: f.oid,
@@ -573,7 +576,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
   });
   it("does not count a recent claim as a recent successful provider check", async () => {
     const f = fixture();
-    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+    await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000);
     const a = f.admin();
     f.gateway.cancel.mockRejectedValueOnce(Error("timeout"));
     await expect(
@@ -594,7 +597,7 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
     const f = fixture();
     f.gateway.confirm.mockRejectedValueOnce(Error("unavailable"));
     await expect(
-      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow();
     f.gateway.lookup.mockRejectedValue(Error("unavailable"));
     for (let n = 1; n < 8; n++)
@@ -612,8 +615,35 @@ describe("Toss test adapter to durable orders, synthetic gateway only", () => {
         "synthetic-mid",
       );
     await expect(
-      blocked.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+      blocked.confirm(f.s, f.oid, f.payment.paymentKey, 22000),
     ).rejects.toThrow("확인 중");
     expect(svc.ownOrder(f.s, f.oid).payment_status).toBe("pending");
   });
+});
+
+it("provider recovery and cancellation use the original legacy price after a product price change", async () => {
+  const f = fixture(33000);
+  await f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000);
+  f.set(f.canceled());
+  await f.coordinator.refund(f.admin(), f.oid, "과거 주문 전액 취소");
+  expect(f.gateway.cancel.mock.calls[0]).toEqual([
+    f.oid,
+    f.payment.paymentKey,
+    "디지털콘텐츠 주문 전액 취소",
+    33000,
+  ]);
+  expect(svc.ownOrder(f.s, f.oid)).toMatchObject({
+    amount: 33000,
+    payment_status: "refunded",
+  });
+  expect(
+    one("SELECT amount FROM refunds WHERE order_id=?", f.oid)?.amount,
+  ).toBe(33000);
+});
+it("the old product price cannot be used to approve a current-price order", async () => {
+  const f = fixture();
+  await expect(
+    f.coordinator.confirm(f.s, f.oid, f.payment.paymentKey, 33000),
+  ).rejects.toThrow("주문금액");
+  expect(f.gateway.confirm).not.toHaveBeenCalled();
 });

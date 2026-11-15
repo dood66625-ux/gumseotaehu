@@ -119,7 +119,7 @@ function paid() {
       buyerAdult: true,
     }),
     key = svc.mockAuthenticate(s, oid);
-  svc.confirmPayment(s, oid, key, 33000);
+  svc.confirmPayment(s, oid, key, 22000);
   svc.workOnce();
   const id = all("SELECT * FROM outbox").find((o) => {
     const p = open(o.payload);

@@ -11,7 +11,7 @@ const browser = await chromium.launch(),
   page = await context.newPage();
 const go = (screen) => {
   const url = new URL(base);
-  url.searchParams.set("v", "royal-9");
+  url.searchParams.set("v", "royal-10");
   if (screen) url.searchParams.set("screen", screen);
   return page.goto(url.toString());
 };
@@ -23,6 +23,8 @@ page.on("request", (r) => {
 });
 try {
   await go();
+  if (!(await page.locator(".book-price").textContent()).includes("22,000"))
+    throw Error("Preview price is stale");
   await page.getByRole("link", { name: "내 사주 펼쳐보기" }).click();
   if (
     (await page.getByLabel("이용자·구매자 연령").count()) ||
@@ -42,6 +44,8 @@ try {
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
   await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
   await page.getByLabel("이메일 주소").waitFor();
+  if (!(await page.locator(".price").textContent()).includes("22,000"))
+    throw Error("Checkout price mismatch");
   if (
     (await page.getByLabel("이메일 주소").inputValue()) !==
     "preview@example.invalid"
@@ -52,6 +56,23 @@ try {
   await page.getByLabel("인증번호 6자리").fill("123456");
   await page.getByRole("button", { name: "이메일 인증 완료" }).click();
   await page.getByText("구매 이메일 인증이 완료되었습니다.").waitFor();
+  const tampered = await page.evaluate(async () => {
+    const data = JSON.parse(
+      document.getElementById("preview-data").textContent,
+    );
+    const r = await fetch("/api/payments/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: data.report.order.id,
+        paymentKey: "synthetic-no-real-payment",
+        amount: 33000,
+      }),
+    });
+    return r.status;
+  });
+  if (tampered !== 400)
+    throw Error("Old price incorrectly accepted by preview adapter");
   for (const c of await page.locator("form").last().getByRole("checkbox").all())
     if ((await c.getAttribute("name")) !== "marketing") await c.check();
   await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
