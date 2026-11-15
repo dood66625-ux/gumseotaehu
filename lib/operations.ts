@@ -1,4 +1,5 @@
-import { all, one, run } from "./db";
+import { privacyCheckpointHealth } from "./privacy-checkpoint";
+import { db, all, one, run } from "./db";
 export function workerHeartbeat() {
   const now = Date.now();
   run(
@@ -58,6 +59,7 @@ export function operationalHealth() {
     heartbeat,
     workerHealthy: heartbeat !== null && now - heartbeat < 60000,
     counts,
+    privacyCheckpoint: privacyCheckpointHealth(db(), now),
   };
 }
 /** Missing jobs are recoverable; missing already-delivered reports require backup recovery. */

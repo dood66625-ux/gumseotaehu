@@ -36,7 +36,8 @@
     "test:toss-browser": "tsx scripts/test-toss-sandbox.ts",
     "build:worker": "node scripts/build-worker.mjs",
     "runtime:package": "node scripts/package-runtime.mjs",
-    "test:runtime": "tsx scripts/test-local-runtime.ts"
+    "test:runtime": "tsx scripts/test-local-runtime.ts",
+    "privacy:checkpoint": "tsx scripts/privacy-checkpoint.ts"
   },
   "keywords": [],
   "author": "",

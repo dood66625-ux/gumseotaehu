@@ -56,3 +56,7 @@ npm run restore -- var/backups/<old-archive>.gsb var/recovery/current-key.sqlite
 
 ## 컨테이너 로컬 실행·이전 패키지
 공급자 자격증명을 전달하지 않는 local Compose와 web/worker health probes, 검증된 standalone/worker 파일의 이식 패키지를 추가했다. 가상 구매/PDF/재시작 후 같은 보고서와 결제 상태 보존을 컨테이너에서 확인했다. 실행·볼륨·키 보관·healthcheck 한계와 소스 clean build 네트워크 제한은 [local-runtime.md](local-runtime.md)를 따른다. 이 구성은 공개 운영 서버나 자동 오프사이트 백업을 제공하지 않는다.
+
+
+## 삭제 이력 체크포인트 우선 사용
+새 `npm run backup`은 DB 원본 UUID를 생성하고 로컬 삭제 체크포인트를 먼저 갱신한다. 작업자도 약 30초마다 삭제를 내보내며 변경 없는 manifest는 재사용한다. 새 백업 복구는 `--checkpoint <latest.json>`으로 서명·원본 DB·생성 시각·manifest 결합을 검증한다. 구형 `--deletions` 예시는 수동 최신성 확인이 필요한 호환 경로다. 최신 파일의 오프사이트 보관은 여전히 별도이며 [자동 저장·복구 절차와 한계](privacy-checkpoints.md)를 따른다. 관리자 화면의 체크포인트 경고가 있으면 파일/권한/디스크/키·DB 일치를 조사한다.

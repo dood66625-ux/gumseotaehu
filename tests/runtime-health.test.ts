@@ -36,3 +36,28 @@ it("fails closed for absent, stale, future, corrupt or symlinked worker state wi
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it("fails the runtime probe when an existing deletion checkpoint reports failure or expiry", () => {
+  const dir = mkdtempSync(join(tmpdir(), "gumseo-privacy-probe-"));
+  const file = join(dir, "probe.sqlite");
+  const db = new DatabaseSync(file);
+  try {
+    db.exec(
+      "CREATE TABLE worker_heartbeat(name TEXT PRIMARY KEY,updated INTEGER);CREATE TABLE privacy_checkpoint_health(id INTEGER PRIMARY KEY,generated_at INTEGER,last_failure INTEGER);INSERT INTO worker_heartbeat VALUES('reports',2000000);INSERT INTO privacy_checkpoint_health VALUES(1,1999000,NULL)",
+    );
+    expect(workerIsHealthy(file, 2000000)).toBe(true);
+    db.exec("UPDATE privacy_checkpoint_health SET last_failure=2000000");
+    expect(workerIsHealthy(file, 2000000)).toBe(false);
+    db.exec(
+      "UPDATE privacy_checkpoint_health SET last_failure=NULL,generated_at=1000000",
+    );
+    expect(workerIsHealthy(file, 2000000)).toBe(false);
+    db.exec("UPDATE privacy_checkpoint_health SET generated_at=2000001");
+    expect(workerIsHealthy(file, 2000000)).toBe(false);
+    db.exec("UPDATE privacy_checkpoint_health SET generated_at='corrupt'");
+    expect(workerIsHealthy(file, 2000000)).toBe(false);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

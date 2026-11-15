@@ -12,6 +12,26 @@ export function workerIsHealthy(path: string, now = Date.now()) {
     const row = database
       .prepare("SELECT updated FROM worker_heartbeat WHERE name='reports'")
       .get() as { updated: number } | undefined;
+    const hasPrivacy = database
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='privacy_checkpoint_health'",
+      )
+      .get();
+    if (hasPrivacy) {
+      const privacy = database
+        .prepare(
+          "SELECT generated_at,last_failure FROM privacy_checkpoint_health WHERE id=1",
+        )
+        .get();
+      if (
+        !privacy ||
+        !Number.isSafeInteger(privacy.generated_at) ||
+        privacy.last_failure ||
+        Number(privacy.generated_at) > now ||
+        now - Number(privacy.generated_at) >= 600000
+      )
+        return false;
+    }
     return (
       !!row &&
       Number.isSafeInteger(row.updated) &&

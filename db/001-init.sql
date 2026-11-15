@@ -45,3 +45,7 @@ CREATE TABLE IF NOT EXISTS mail_suppressions(email_hash TEXT PRIMARY KEY,reason 
 
 CREATE TABLE IF NOT EXISTS report_usage(order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,version INTEGER NOT NULL,provider TEXT NOT NULL,input_tokens INTEGER NOT NULL CHECK(input_tokens>=0),output_tokens INTEGER NOT NULL CHECK(output_tokens>=0),estimated_usd_micros INTEGER CHECK(estimated_usd_micros>=0),PRIMARY KEY(order_id,version));
 INSERT OR IGNORE INTO schema_migrations VALUES(7,unixepoch()*1000);
+
+CREATE TABLE IF NOT EXISTS privacy_checkpoint_source(id INTEGER PRIMARY KEY CHECK(id=1),source_id TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS privacy_checkpoint_health(id INTEGER PRIMARY KEY CHECK(id=1),generated_at INTEGER NOT NULL,last_failure INTEGER);
+INSERT OR IGNORE INTO schema_migrations VALUES(9,unixepoch()*1000);

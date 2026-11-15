@@ -17,6 +17,7 @@ export function launchReadiness() {
       "single-operator-session-rotation-and-recent-mfa",
       "verified-two-address-email-change-mock",
       "encrypted-backup-and-signed-deletion-replay",
+      "automatic-local-deletion-checkpoints-with-source-time-validation",
       "offline-data-key-rotation-with-session-revocation",
       "astrology-boundary-guards-and-reference-subset",
     ],
@@ -70,7 +71,7 @@ export function launchReadiness() {
         id: "privacy",
         kind: "implementation-and-review",
         detail:
-          "Approved transaction retention/legal holds, automated backup deletion propagation and managed AUTH_SECRET/credential rotation remain incomplete; offline DATA_KEY rotation is implemented. Latest deletion manifest freshness needs operator verification.",
+          "Approved transaction retention/legal holds, automated backup deletion propagation and managed AUTH_SECRET/credential rotation remain incomplete; offline DATA_KEY rotation is implemented. Local automatic checkpoints validate signature/time/source DB and expose failure/staleness; authoritative offsite latest-copy freshness still needs operator verification.",
       },
       {
         id: "admin",

@@ -70,6 +70,7 @@ export function restoreEncryptedBackup(
   destination: string,
   key: Buffer,
   deletions: Deletions = [],
+  expectedSourceId?: string,
 ) {
   checkKey(key);
   const target = resolve(destination);
@@ -103,6 +104,22 @@ export function restoreEncryptedBackup(
     writeFileSync(candidate, plain, { flag: "wx", mode: 0o600 });
     const restored = new DatabaseSync(candidate);
     try {
+      if (expectedSourceId) {
+        const hasSource = restored
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='privacy_checkpoint_source'",
+          )
+          .get();
+        const source = hasSource
+          ? restored
+              .prepare(
+                "SELECT source_id FROM privacy_checkpoint_source WHERE id=1",
+              )
+              .get()
+          : null;
+        if (!source || source.source_id !== expectedSourceId)
+          throw Error("BACKUP_CHECKPOINT_SOURCE_MISMATCH");
+      }
       if (deletions.length) applyDeletions(restored, deletions, key);
       restored.exec("PRAGMA foreign_keys=ON; BEGIN IMMEDIATE;");
       try {

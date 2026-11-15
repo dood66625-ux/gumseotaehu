@@ -198,6 +198,12 @@ export default function Admin() {
             작업자: {data.health.workerHealthy ? "정상 확인" : "연결 확인 필요"}
           </p>
           <p>
+            삭제 이력 복구용 체크포인트:{" "}
+            {data.health.privacyCheckpoint?.healthy
+              ? "로컬 최신본 확인"
+              : "자동 저장·최신성 확인 필요"}
+          </p>
+          <p>
             생성 실패 {data.health.counts.failedJobs}건 · 환불 오류{" "}
             {data.health.counts.refundErrors}건 · 검토 기한 경과 문의{" "}
             {data.health.counts.overdueTickets}건
