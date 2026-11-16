@@ -27,6 +27,21 @@ def release(compose=b'mock compose', tamper=False):
     return output
 
 class AutomationTests(unittest.TestCase):
+    def test_busy_lock_retries_then_acquires(self):
+        with patch.object(a.fcntl, 'flock', side_effect=[BlockingIOError(), None]) as lock, patch.object(a.time, 'sleep'):
+            a.acquire_lock(None)
+            self.assertEqual(lock.call_count, 2)
+
+    def test_busy_lock_timeout_has_safe_error(self):
+        with patch.object(a.fcntl, 'flock', side_effect=BlockingIOError()):
+            with self.assertRaisesRegex(ValueError, 'AUTOMATION_BUSY_RETRY_LATER'):
+                a.acquire_lock(None, timeout=0)
+
+    def test_error_diagnostics_do_not_leak_arguments(self):
+        error = a.subprocess.CalledProcessError(1, ['secret-command'], stderr=b'private key')
+        self.assertEqual(a.error_code(error), 'SUBPROCESS_EXIT_1')
+        self.assertEqual(a.error_code(ValueError('a private value')), 'ValueError')
+
     def test_valid_release(self):
         with tempfile.TemporaryDirectory() as directory:
             self.assertEqual(a.extract_release(release(), directory), 'a' * 40)

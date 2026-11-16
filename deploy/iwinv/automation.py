@@ -20,6 +20,27 @@ EXPORT = Path('/var/lib/gumseo-export')
 COMPOSE = ['/usr/bin/docker', 'compose', '--env-file', '/etc/gumseo/test.env', '-f', '/usr/local/lib/gumseo/compose.local.yml']
 NAMES = {'images.tar.gz', 'compose.local.yml', 'COMMIT', 'SHA256SUMS'}
 
+def acquire_lock(lock, timeout=240):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                raise ValueError('AUTOMATION_BUSY_RETRY_LATER') from None
+            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
+
+def error_code(error):
+    # Never expose command arguments, env values, provider bodies or arbitrary text.
+    if isinstance(error, ValueError) and re.fullmatch(r'[A-Z][A-Z0-9_]{2,80}', str(error)):
+        return str(error)
+    if isinstance(error, subprocess.CalledProcessError):
+        return 'SUBPROCESS_EXIT_' + str(error.returncode)
+    if isinstance(error, subprocess.TimeoutExpired):
+        return 'SUBPROCESS_TIMEOUT'
+    return type(error).__name__
+
 def run(args, timeout=300):
     return subprocess.run(args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout).stdout
 
@@ -180,7 +201,7 @@ def main():
     if shutil.disk_usage(STATE).free < 2 * 1024 ** 3:
         raise ValueError('DISK_SPACE_LOW_MANUAL_REVIEW_REQUIRED')
     with (STATE / 'lock').open('a') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        acquire_lock(lock)
         command = os.environ.get('SSH_ORIGINAL_COMMAND', '')
         if command == 'deploy-private-mock':
             deploy(sys.stdin.buffer)
@@ -195,6 +216,6 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception:
-        print('PRIVATE_AUTOMATION_FAILED: inspect server locally; no automatic DB rollback', file=sys.stderr)
+    except Exception as error:
+        print('PRIVATE_AUTOMATION_FAILED [' + error_code(error) + ']: inspect server locally; no automatic DB rollback', file=sys.stderr)
         sys.exit(1)
