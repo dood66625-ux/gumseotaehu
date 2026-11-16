@@ -6,8 +6,9 @@ root=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 install -d -m 700 /var/lib/gumseo-automation
 install -d -m 755 /usr/local/lib/gumseo
 install -m 755 "$root/deploy/iwinv/automation.py" /usr/local/sbin/gumseo-private-automation
+install -m 755 "$root/deploy/iwinv/monitor.py" /usr/local/sbin/gumseo-private-monitor
 install -m 644 "$root/compose.local.yml" /usr/local/lib/gumseo/compose.local.yml
-for kind in backup update; do
+for kind in backup update monitor; do
   install -m 644 "$root/deploy/iwinv/$kind.service" "/etc/systemd/system/gumseo-private-$kind.service"
   install -m 644 "$root/deploy/iwinv/$kind.timer" "/etc/systemd/system/gumseo-private-$kind.timer"
 done
@@ -15,6 +16,7 @@ systemctl daemon-reload
 # Apply and verify one release before enabling periodic work.
 systemctl start gumseo-private-update.service
 test -s /var/lib/gumseo-automation/deployed-commit
-systemctl enable --now gumseo-private-update.timer gumseo-private-backup.timer
+systemctl start gumseo-private-monitor.service
+systemctl enable --now gumseo-private-update.timer gumseo-private-backup.timer gumseo-private-monitor.timer
 systemctl list-timers --all 'gumseo-private-*'
 echo 'PRIVATE MOCK automation installed. Offsite backup remains a separate setup.'

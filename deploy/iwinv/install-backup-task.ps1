@@ -14,3 +14,12 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances 
 Register-ScheduledTask -TaskName 'GumseoEncryptedBackup' -Action $action -Trigger @($repeat, $logon) -Principal $principal -Settings $settings -Description 'Copy encrypted private mock backup while logged in; never saves SSH key passphrase.' -Force | Out-Null
 Start-ScheduledTask -TaskName 'GumseoEncryptedBackup'
 Write-Output 'Backup task registered. Check LastTaskResult and a verified archive in GumseoBackups; registration alone is not proof of an offsite copy.'
+## Optional local monitoring; missing script does not change the existing backup job.
+$monitor = Join-Path $PSScriptRoot 'check-health.ps1'
+if (Test-Path $monitor) {
+    $monitorAction = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument ('-NoProfile -ExecutionPolicy Bypass -File "{0}" -Notify' -f $monitor)
+    $monitorRepeat = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) -RepetitionInterval (New-TimeSpan -Minutes 15)
+    Register-ScheduledTask -TaskName 'GumseoHealthMonitor' -Action $monitorAction -Trigger @($monitorRepeat, $logon) -Principal $principal -Settings $settings -Description 'Check private server health while logged in; fixed local alerts, no email.' -Force | Out-Null
+    Start-ScheduledTask -TaskName 'GumseoHealthMonitor'
+    Write-Output 'Health task registered; inspect LastTaskResult and GumseoTools\monitor-state.json.'
+}

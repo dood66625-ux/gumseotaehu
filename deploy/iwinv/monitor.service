@@ -1,0 +1,9 @@
+[Unit]
+Description=Gumseo private operational health snapshot
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/gumseo-private-monitor
+UMask=0077
+TimeoutStartSec=60
