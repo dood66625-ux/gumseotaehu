@@ -1,6 +1,6 @@
 // One observed synthetic order only. Independent GET evidence before rebinding MID.
 import { DatabaseSync } from 'node:sqlite';
-const orderId = '22bf49c5-a032-46a5-a472-214412ec63f1';
+let orderId;
 const oldMid = 'q_gdood65qf7', testMid = 'tq_gdood65qf7';
 let db;
 let step = 'CONFIG';
@@ -10,7 +10,14 @@ try {
   step = 'OPEN_DATABASE';
   db = new DatabaseSync('/app/var/toss-sandbox/journey.sqlite');
   step = 'LOCAL_ORDER';
-  const row = db.prepare('SELECT a.payment_key,a.merchant_id,o.amount,o.payment_status FROM toss_attempts a JOIN orders o ON o.id=a.order_id WHERE o.id=?').get(orderId);
+  // The separate harness creates only one fixed synthetic order. Never guess an
+  // ID from a screenshot or repair an ambiguous/multi-order database.
+  const candidates = db.prepare('SELECT a.payment_key,a.merchant_id,o.id,o.amount,o.payment_status FROM toss_attempts a JOIN orders o ON o.id=a.order_id').all();
+  checks.singleIsolatedOrder = db.prepare('SELECT COUNT(*) AS count FROM orders').get().count === 1 && candidates.length === 1;
+  if (!checks.singleIsolatedOrder) throw Error();
+  const row = candidates[0];
+  orderId = row.id;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(orderId)) throw Error();
   Object.assign(checks, { observedOrderFound: !!row, amountMatches: row?.amount === 22000, localPending: row?.payment_status === 'pending', oldMerchantMatches: row?.merchant_id === oldMid });
   if (!row || row.amount !== 22000 || row.payment_status !== 'pending' || row.merchant_id !== oldMid || typeof row.payment_key !== 'string' || row.payment_key.length > 200) throw Error();
   step = 'PROVIDER_LOOKUP';
