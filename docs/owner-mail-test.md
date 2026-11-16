@@ -16,3 +16,6 @@ npm run mail:owner -- --send --approve <prepared-approvalHash>
 발송 전에 DB CAS로 dispatched를 남긴다. 접수 성공은 accepted로만 기록하며 delivered/고객 열람이라고 표시하지 않는다. 응답 누락·실패·중단은 자동 재발송하지 않으며, 운영자가 업체 대시보드와 받은편지함을 확인해야 한다. 이미 accepted인 시도는 재시작 후에도 다시 보내지 않는다. 다른 수신자/본문을 CLI 인자로 받지 않는다. 별도 scope `gumseo-mail`은 프로젝트용 계정 레이블이며 실제 Resend 조직 ID 검증을 의미하지 않는다.
 
 2026-11-16: 타입 검사 및 owner 전용 ledger/Resend 어댑터 관련 22개 테스트 통과. 실제 발송 전 단계이며 테스트의 공급자 요청은 가짜 fetch만 사용했다. 기본 APP_MODE=local/EXTERNAL_EFFECTS=disabled와 다른 키는 보존했다. 웹훅 등록·실고객 발송·공개 운영은 활성화하지 않았다.
+
+
+2026-11-16 실제 시험: 운영자가 대화에서 미리보기/수신 주소의 1회 발송을 승인했다. 고정 메시지를 Resend에 한 번 요청했고 정상 응답을 받아 ledger에 accepted로 저장했다. API 키 원문과 provider 응답 본문은 출력하지 않았다. 추가/자동 재발송은 하지 않았다. 실제 받은편지함 수신은 운영자 확인 대기이며 accepted를 delivered로 표시하지 않는다. 고객 대상 발송·앱 모드·외부 발송 worker는 변경하지 않았다.
