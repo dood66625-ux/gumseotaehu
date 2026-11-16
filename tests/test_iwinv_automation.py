@@ -122,6 +122,7 @@ class AutomationTests(unittest.TestCase):
             group.return_value.gr_gid = 1000
             a.backup()
             bundle = Path(directory) / 'export/latest.tar.gz'
+            self.assertEqual(bundle.parent.stat().st_mode & 0o777, 0o750)
             with tarfile.open(bundle) as exported:
                 self.assertEqual(set(exported.getnames()), {'archive.gsb', 'latest.json', manifest})
             expected = hashlib.sha256(bundle.read_bytes()).hexdigest()

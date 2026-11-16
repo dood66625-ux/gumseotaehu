@@ -101,6 +101,9 @@ def backup():
         raise ValueError('INVALID_BACKUP_PATH')
     export = EXPORT
     export.mkdir(mode=0o750, parents=True, exist_ok=True)
+    # main's private umask strips group bits at mkdir; the owner must traverse
+    # this directory to fetch the explicitly group-readable encrypted export.
+    os.chmod(export, 0o750)
     group = grp.getgrnam('gumseo').gr_gid
     os.chown(export, 0, group)
     with tempfile.TemporaryDirectory(prefix='export-', dir=STATE) as directory:
