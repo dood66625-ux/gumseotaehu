@@ -2,22 +2,44 @@
 import EmailChange from "./EmailChange";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, EmailAuth, ErrorBox } from "./client";
+import { api, ApiError, EmailAuth, ErrorBox, Loading } from "./client";
 export default function Recover() {
   const [verified, setVerified] = useState(false),
     [orders, setOrders] = useState<any[]>([]),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [loading, setLoading] = useState(true);
   async function load() {
+    setLoading(true);
+    setError("");
     try {
       setOrders(await api("orders"));
       setVerified(true);
-    } catch {
-      setVerified(false);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        setVerified(false);
+        setOrders([]);
+      } else {
+        setError(
+          "구매 내역을 불러오지 못했습니다. 추가 결제 없이 다시 확인해주세요.",
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   }
   useEffect(() => {
     load();
   }, []);
+  if (loading) return <Loading />;
+  if (error)
+    return (
+      <div className="card">
+        <ErrorBox error={error} />
+        <button className="button secondary" onClick={load}>
+          구매 내역 다시 확인
+        </button>
+      </div>
+    );
   return (
     <>
       {!verified ? (

@@ -1,5 +1,13 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
 export async function api<T = any>(path: string, body?: unknown): Promise<T> {
   if (body !== undefined && path !== "session")
     await fetch("/api/session", {
@@ -14,7 +22,8 @@ export async function api<T = any>(path: string, body?: unknown): Promise<T> {
     cache: "no-store",
   });
   const value = await r.json();
-  if (!r.ok) throw Error(value.error || "요청을 처리하지 못했습니다.");
+  if (!r.ok)
+    throw new ApiError(value.error || "요청을 처리하지 못했습니다.", r.status);
   return value;
 }
 export function useLoad<T>(path: string) {
@@ -55,14 +64,29 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
     [code, setCode] = useState(""),
     [local, setLocal] = useState(""),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [requestedAt, setRequestedAt] = useState(0),
+    [now, setNow] = useState(0);
+  useEffect(() => {
+    if (!requestedAt) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [requestedAt]);
+  const retrySeconds = requestedAt
+    ? Math.max(0, Math.ceil((requestedAt + 60000 - now) / 1000))
+    : 0;
+  const expired = !!requestedAt && now >= requestedAt + 900000;
   async function request(e: React.FormEvent) {
     e.preventDefault();
+    if (busy || (requestedAt && Date.now() < requestedAt + 60000)) return;
     setBusy(true);
     setError("");
     try {
       const r = await api("auth/request", { email });
       setChallenge(r.challengeId);
+      const time = Date.now();
+      setRequestedAt(time);
+      setNow(time);
       setLocal("");
       setCode("");
     } catch (e) {
@@ -99,20 +123,50 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
             type="email"
             autoComplete="email"
             required
+            disabled={busy || !!challenge}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             maxLength={254}
           />
         </div>
-        <button className="button secondary" disabled={busy}>
-          인증번호 요청
+        <button
+          className="button secondary"
+          disabled={busy || retrySeconds > 0}
+        >
+          {retrySeconds > 0
+            ? `${retrySeconds}초 후 다시 요청`
+            : challenge
+              ? "인증번호 다시 요청"
+              : "인증번호 요청"}
         </button>
       </form>
       {challenge && (
         <>
           <p className="notice">
-            인증번호는 15분간 유효하며 5회까지 입력할 수 있습니다.
+            {email} 주소의 인증번호입니다. 인증번호는 15분간 유효하며 5회까지
+            입력할 수 있습니다. 새로 요청하면 이전 인증번호는 사용할 수
+            없습니다.
           </p>
+          {expired && (
+            <p className="error" role="alert">
+              인증번호가 만료됐습니다. 새 번호를 요청해주세요.
+            </p>
+          )}
+          <button
+            className="text-button"
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setChallenge("");
+              setCode("");
+              setLocal("");
+              setError("");
+              setRequestedAt(0);
+              setNow(0);
+            }}
+          >
+            이메일 주소 수정
+          </button>
           <button
             className="text-button"
             type="button"
@@ -149,7 +203,7 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
                 onChange={(e) => setCode(e.target.value)}
               />
             </div>
-            <button className="button" disabled={busy}>
+            <button className="button" disabled={busy || expired}>
               이메일 인증 완료
             </button>
           </form>
