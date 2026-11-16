@@ -115,19 +115,25 @@ def deploy(source):
             raise ValueError('COMPOSE_CHANGE_REQUIRES_LOCAL_REVIEW')
         run(['/usr/bin/docker', 'load', '-i', str(Path(directory) / 'images.tar.gz')], 600)
         backup()  # Failure stops deployment. No volume deletion or key replacement.
-        run(COMPOSE + ['up', '-d', '--no-build'], 180)
-        for _ in range(40):
-            ids = [run(COMPOSE + ['ps', '-q', service]).decode().strip() for service in ('web', 'worker')]
-            if all(ids):
-                health = [run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', item]).decode().strip() for item in ids]
-                if health == ['healthy', 'healthy']:
-                    (STATE / 'deployed-commit').write_text(commit + '\n')
-                    print('PRIVATE_MOCK_DEPLOYMENT_HEALTHY ' + commit)
-                    return
-            time.sleep(3)
-        raise ValueError('HEALTH_CHECK_FAILED_MANUAL_REVIEW_REQUIRED')
+        try:
+            run(COMPOSE + ['up', '-d', '--no-build'], 180)
+            for _ in range(40):
+                ids = [run(COMPOSE + ['ps', '-q', service]).decode().strip() for service in ('web', 'worker')]
+                if all(ids):
+                    health = [run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', item]).decode().strip() for item in ids]
+                    if health == ['healthy', 'healthy']:
+                        (STATE / 'deployed-commit').write_text(commit + '\n')
+                        print('PRIVATE_MOCK_DEPLOYMENT_HEALTHY ' + commit)
+                        return
+                time.sleep(3)
+            raise ValueError('HEALTH_CHECK_FAILED_MANUAL_REVIEW_REQUIRED')
+        except Exception:
+            (STATE / 'review-required').write_text(commit + '\n')
+            raise
 
 def pull():
+    if (STATE / 'review-required').exists():
+        raise ValueError('AUTOMATIC_UPDATE_PAUSED_FOR_MANUAL_REVIEW')
     request = urllib.request.Request('https://api.github.com/repos/dood66625-ux/gumseotaehu/releases?per_page=20', headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'gumseo-private-mock'})
     with urllib.request.urlopen(request, timeout=30) as response:
         releases = json.loads(response.read(1024 * 1024))

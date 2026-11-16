@@ -53,6 +53,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          for attempt in $(seq 1 48); do
+            result=$(gh run list --workflow check.yml --commit "$GITHUB_SHA" --event push --limit 1 --json status,conclusion --jq '.[0] | if .status == "completed" then .conclusion else "pending" end')
+            if [ "$result" = success ]; then break; fi
+            if [ "$result" != pending ] && [ "$result" != null ] && [ -n "$result" ]; then
+              echo 'Related verification did not succeed; package not published.'
+              exit 1
+            fi
+            sleep 10
+          done
+          test "$result" = success
           git fetch origin main
           test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
           tar -cf var/mock-release.tar -C var/private-release images.tar.gz compose.local.yml COMMIT SHA256SUMS
