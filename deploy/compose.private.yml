@@ -1,0 +1,5 @@
+# Overlay on compose.local.yml. Host-local HTTPS gateway only; no public DNS or ports added.
+services:
+  web:
+    environment:
+      APP_ORIGIN: https://localhost:3443

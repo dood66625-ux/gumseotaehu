@@ -1,0 +1,36 @@
+{
+ admin off
+ skip_install_trust
+ persist_config off
+ auto_https disable_redirects
+}
+
+{$STAGING_SITE} {
+ bind {$STAGING_BIND:127.0.0.1}
+ tls internal
+ header {
+  -Server
+  >X-Robots-Tag "noindex, nofollow"
+  >Cache-Control "private, no-store"
+  >Referrer-Policy "no-referrer"
+ }
+ basic_auth {
+  {$STAGING_USER} {$STAGING_PASSWORD_HASH}
+ }
+ reverse_proxy {$STAGING_UPSTREAM} {
+  header_up -Authorization
+  header_up -Proxy-Authorization
+  header_up -Forwarded
+  header_up -X-Forwarded-For
+  header_up X-Forwarded-Proto https
+ }
+ handle_errors {
+  header {
+   -Server
+   Cache-Control "private, no-store"
+   X-Robots-Tag "noindex, nofollow"
+   Referrer-Policy "no-referrer"
+  }
+  respond "Private test environment: access unavailable." {err.status_code}
+ }
+}

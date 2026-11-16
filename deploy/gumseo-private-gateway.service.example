@@ -1,0 +1,36 @@
+# Reviewed installation template; not installed or enabled by this repository.
+[Unit]
+Description=Gumseo private synthetic test gateway
+After=network-online.target docker.service
+Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=gumseo
+Group=gumseo
+WorkingDirectory=/opt/gumseo
+EnvironmentFile=/etc/gumseo/private-gateway.conf
+Environment=STAGING_SITE=https://localhost:3443
+Environment=STAGING_BIND=127.0.0.1
+Environment=STAGING_UPSTREAM=127.0.0.1:3100
+Environment=XDG_DATA_HOME=/var/lib/gumseo-private/data
+Environment=XDG_CONFIG_HOME=/var/lib/gumseo-private/config
+StateDirectory=gumseo-private
+StateDirectoryMode=0700
+ExecStart=/usr/local/bin/caddy run --config /opt/gumseo/deploy/Caddyfile.private --adapter caddyfile
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

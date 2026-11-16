@@ -1,0 +1,16 @@
+{
+  "loopbackOnly": true,
+  "syntheticOnly": true,
+  "caddyVersion": "2.11.9",
+  "tls": "local-internal-ca",
+  "anonymousDenied": true,
+  "wrongPasswordDenied": true,
+  "apiAndAssetsProtected": true,
+  "csrfEnforced": true,
+  "mockPurchase": true,
+  "pdf": true,
+  "emailReauthentication": true,
+  "reportUnchanged": true,
+  "mobileNavigation": true,
+  "noExternalRequests": true
+}

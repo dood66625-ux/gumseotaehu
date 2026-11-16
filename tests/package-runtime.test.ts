@@ -77,3 +77,23 @@ it.each(["secret", "private-path", "external-link"])(
     }
   },
 );
+
+it("includes reviewed deploy templates without copying their private configuration", () => {
+  const f = fixture();
+  try {
+    mkdirSync(join(f.source, "deploy"));
+    writeFileSync(
+      join(f.source, "deploy", "Caddyfile.private"),
+      "basic_auth {}",
+    );
+    packageRuntime(f.source, f.out);
+    expect(
+      readFileSync(join(f.out, "deploy", "Caddyfile.private"), "utf8"),
+    ).toBe("basic_auth {}");
+    expect(existsSync(join(f.out, "deploy", "private-gateway.conf"))).toBe(
+      false,
+    );
+  } finally {
+    rmSync(f.dir, { recursive: true, force: true });
+  }
+});

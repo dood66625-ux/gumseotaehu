@@ -7,6 +7,8 @@ const secretNames = [
   "DATA_KEY",
   "AUTH_SECRET",
   "ADMIN_PASSWORD",
+  "STAGING_PASSWORD",
+  "STAGING_PASSWORD_HASH",
   "ADMIN_TOTP_SECRET",
   "OPENAI_API_KEY",
   "RESEND_API_KEY",
@@ -75,6 +77,21 @@ export function packageRuntime(source, destination, secrets = []) {
         recursive: true,
         verbatimSymlinks: true,
       });
+    for (const name of [
+      "Caddyfile.private",
+      "compose.private.yml",
+      "gumseo-private-gateway.service.example",
+    ]) {
+      const source = path.join(root, "deploy", name);
+      if (!fs.existsSync(source)) continue;
+      if (
+        !fs.lstatSync(source).isFile() ||
+        fs.lstatSync(source).isSymbolicLink()
+      )
+        throw Error("UNSAFE_DEPLOY_TEMPLATE");
+      fs.mkdirSync(path.join(out, "deploy"), { recursive: true });
+      fs.copyFileSync(source, path.join(out, "deploy", name));
+    }
     const manifest = {
       version: 1,
       platform: process.platform,

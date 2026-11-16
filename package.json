@@ -39,7 +39,8 @@
     "test:runtime": "tsx scripts/test-local-runtime.ts",
     "privacy:checkpoint": "tsx scripts/privacy-checkpoint.ts",
     "mail:check": "tsx scripts/mail-check.ts",
-    "mail:owner": "node --use-env-proxy --import tsx scripts/owner-mail-test.ts"
+    "mail:owner": "node --use-env-proxy --import tsx scripts/owner-mail-test.ts",
+    "test:staging": "tsx scripts/test-private-staging.ts"
   },
   "keywords": [],
   "author": "",
