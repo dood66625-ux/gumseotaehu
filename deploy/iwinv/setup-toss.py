@@ -20,7 +20,7 @@ def write_config(client, secret, target=TARGET):
     # O_EXCL prevents regeneration of keys protecting existing sandbox data.
     descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, 'w') as file:
-        values = {'APP_MODE': 'local', 'EXTERNAL_EFFECTS': 'disabled', 'DATA_KEY': secrets.token_hex(32), 'AUTH_SECRET': secrets.token_hex(32), 'ADMIN_PASSWORD': secrets.token_hex(24), 'ADMIN_TOTP_SECRET': secrets.token_hex(20), 'TOSS_TEST_CLIENT_KEY': client, 'TOSS_TEST_SECRET_KEY': secret, 'TOSS_TEST_MID': 'q_gdood65qf7'}
+        values = {'APP_MODE': 'local', 'EXTERNAL_EFFECTS': 'disabled', 'DATA_KEY': secrets.token_hex(32), 'AUTH_SECRET': secrets.token_hex(32), 'ADMIN_PASSWORD': secrets.token_hex(24), 'ADMIN_TOTP_SECRET': secrets.token_hex(20), 'TOSS_TEST_CLIENT_KEY': client, 'TOSS_TEST_SECRET_KEY': secret, 'TOSS_TEST_MID': 'tq_gdood65qf7'}
         for key, value in values.items():
             file.write(key + '=' + value + '\n')
 

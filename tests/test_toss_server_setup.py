@@ -23,6 +23,7 @@ class SetupTests(unittest.TestCase):
             original = target.read_bytes()
             self.assertEqual(target.stat().st_mode & 0o777, 0o600)
             self.assertIn(b'EXTERNAL_EFFECTS=disabled', original)
+            self.assertIn(b'TOSS_TEST_MID=tq_gdood65qf7\n', original)
             self.assertNotIn(b'OPENAI_API_KEY', original)
             self.assertNotIn(b'RESEND_API_KEY', original)
             with self.assertRaises(FileExistsError):
