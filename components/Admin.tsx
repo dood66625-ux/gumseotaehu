@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ErrorBox, Loading } from "./client";
 export default function Admin() {
+  const actionForm = useRef<HTMLFormElement>(null);
   const [data, setData] = useState<any>(null),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
@@ -10,6 +11,14 @@ export default function Admin() {
     [action, setAction] = useState("resend"),
     [query, setQuery] = useState(""),
     [correctCalendar, setCorrectCalendar] = useState("solar");
+  function chooseOrder(orderId: string, refund = false) {
+    actionForm.current?.reset();
+    setOid(orderId);
+    if (refund) setAction("refund");
+    setError("");
+    setMessage("");
+    actionForm.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   async function load() {
     try {
       setData(await api("admin?query=" + encodeURIComponent(query)));
@@ -279,9 +288,14 @@ export default function Admin() {
                     : "—"}
                 </td>
                 <td>
-                  <button className="small" onClick={() => setOid(o.id)}>
+                  <button className="small" disabled={busy} onClick={() => chooseOrder(o.id)}>
                     업무 선택
                   </button>
+                  {["paid", "refund_pending"].includes(o.payment) && (
+                    <button className="small danger" disabled={busy} onClick={() => chooseOrder(o.id, true)}>
+                      {o.payment === "refund_pending" ? "환불 처리 확인" : "환불"}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -293,12 +307,19 @@ export default function Admin() {
           주문이 없습니다. 고객 여정으로 모의 주문을 만들어 주세요.
         </p>
       )}
-      <form className="card" onSubmit={act}>
+      <form className="card" onSubmit={act} ref={actionForm}>
         <h2>선택 주문 업무</h2>
+        {action === "refund" && data.orders.find((o: any) => o.id === oid) && (
+          <p className="notice" role="status">
+            주문 {oid} · 전액 {data.orders.find((o: any) => o.id === oid).amount.toLocaleString()}원 환불 검토입니다.
+            사유와 대상 주문을 확인한 뒤 실행하세요. 이 화면은 모의 PG용이며 실제 토스 취소를 실행하지 않습니다.
+          </p>
+        )}
         <div className="field">
           <label htmlFor="action-order">주문번호</label>
           <input
             id="action-order"
+            disabled={busy}
             value={oid}
             onChange={(e) => setOid(e.target.value)}
             required
@@ -308,6 +329,7 @@ export default function Admin() {
           <label htmlFor="action">처리 종류</label>
           <select
             id="action"
+            disabled={busy}
             value={action}
             onChange={(e) => setAction(e.target.value)}
           >
@@ -431,7 +453,7 @@ export default function Admin() {
           }
           disabled={busy}
         >
-          선택 업무 실행
+          {busy ? "처리 중…" : action === "refund" ? "선택 주문 모의 전액 환불" : "선택 업무 실행"}
         </button>
       </form>
       <h2>고객 문의</h2>
