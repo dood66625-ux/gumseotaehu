@@ -22,6 +22,7 @@ function fixture() {
     "assets",
     "public",
     "db",
+    "scripts",
   ])
     mkdirSync(join(source, sub), { recursive: true });
   for (const file of [
@@ -29,6 +30,7 @@ function fixture() {
     "dist/worker.js",
     "dist/runtime-health.js",
     "db/001-init.sql",
+    "scripts/toss-sandbox-client.mjs",
   ])
     writeFileSync(join(source, file), "fixture");
   return { dir, source, out };
@@ -41,7 +43,7 @@ it("packages only runtime files with hashes and preserves safe relative links; r
     writeFileSync(join(f.source, "var", "private.sqlite"), "private");
     symlinkSync("server.js", join(f.source, ".next/standalone", "link.js"));
     const result = packageRuntime(f.source, f.out);
-    expect(result.files).toBe(5);
+    expect(result.files).toBe(6);
     expect(existsSync(join(f.out, ".env.local"))).toBe(false);
     expect(existsSync(join(f.out, "var"))).toBe(false);
     const manifest = JSON.parse(

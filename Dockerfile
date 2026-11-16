@@ -27,6 +27,7 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/db ./db
 COPY --from=build /app/assets ./assets
+COPY --from=build /app/scripts/toss-sandbox-client.mjs ./scripts/toss-sandbox-client.mjs
 USER node
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 CMD ["node","dist/runtime-health.js","worker"]
 CMD ["node","dist/worker.js"]
