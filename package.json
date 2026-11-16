@@ -38,7 +38,8 @@
     "runtime:package": "node scripts/package-runtime.mjs",
     "test:runtime": "tsx scripts/test-local-runtime.ts",
     "privacy:checkpoint": "tsx scripts/privacy-checkpoint.ts",
-    "mail:check": "tsx scripts/mail-check.ts"
+    "mail:check": "tsx scripts/mail-check.ts",
+    "mail:owner": "node --use-env-proxy --import tsx scripts/owner-mail-test.ts"
   },
   "keywords": [],
   "author": "",
