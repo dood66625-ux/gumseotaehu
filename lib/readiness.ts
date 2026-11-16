@@ -15,6 +15,8 @@ export function launchReadiness() {
       "disabled-by-default-signed-test-webhook-receipt",
       "offline-mail-queue-idempotency-bounce-and-restore-quarantine",
       "single-operator-session-rotation-and-recent-mfa",
+      "owner-confirmed-isolated-test-admin-credential-rotation",
+      "owner-verified-private-staging-backup-and-health-timers",
       "verified-two-address-email-change-mock",
       "encrypted-backup-and-signed-deletion-replay",
       "automatic-local-deletion-checkpoints-with-source-time-validation",
@@ -53,7 +55,7 @@ export function launchReadiness() {
         id: "hosting",
         kind: "infrastructure",
         detail:
-          "Local runtime artifacts were built into offline Docker images and synthetic purchase/PDF/restart persistence/non-root/read-only/probes passed. Source Docker clean build remains unverified due registry network limits. Private staging, TLS, alerting, offsite backup and actual-host recovery still required.",
+          "Local runtime artifacts were built into offline Docker images and synthetic purchase/PDF/restart persistence/non-root/read-only/probes passed. Source Docker clean build remains unverified due registry network limits. The owner verified private iwinv staging, recurring server backups, an encrypted Windows copy, and the first scheduled health check. Public TLS, always-on external alerts, and actual-host recovery remain open.",
       },
       {
         id: "identity",
@@ -77,7 +79,7 @@ export function launchReadiness() {
         id: "admin",
         kind: "implementation",
         detail:
-          "Multi-user role lifecycle, managed MFA enrollment/recovery and credential rotation remain incomplete; only one local operator is supported.",
+          "Multi-user role lifecycle, managed MFA enrollment/recovery and production credential rotation remain incomplete; only one local operator is supported.",
       },
       {
         id: "traffic",

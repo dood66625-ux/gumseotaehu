@@ -11,6 +11,6 @@
   "sandboxStoppedAndRemoved": true,
   "actualAiGenerationVerified": false,
   "preRefundPdfOpenedByOwner": "not independently confirmed",
-  "testAdminCredentialRotation": "owner execution pending",
+  "testAdminCredentialRotation": "operator confirmed TEST_ADMIN_ROTATED",
   "productionIntegrationVerified": false
 }
