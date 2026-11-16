@@ -1,0 +1,11 @@
+[Unit]
+Description=Gumseo private mock backup every six hours
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=6h
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

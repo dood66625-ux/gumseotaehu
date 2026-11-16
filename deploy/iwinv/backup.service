@@ -1,0 +1,11 @@
+[Unit]
+Description=Gumseo private mock encrypted backup and offline restore drill
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=SSH_ORIGINAL_COMMAND=backup-private-mock
+ExecStart=/usr/local/sbin/gumseo-private-automation
+UMask=0077
+TimeoutStartSec=300

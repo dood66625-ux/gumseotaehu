@@ -1,0 +1,12 @@
+[Unit]
+Description=Gumseo private mock update from reviewed GitHub releases
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=SSH_ORIGINAL_COMMAND=pull-private-mock
+ExecStart=/usr/local/sbin/gumseo-private-automation
+UMask=0077
+TimeoutStartSec=1200

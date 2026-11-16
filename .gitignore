@@ -14,3 +14,5 @@ docs/reference-master-brief.md
 
 scripts/public-preview/snapshot.json
 dist/
+__pycache__/
+*.pyc
