@@ -35,7 +35,7 @@ export function launchReadiness() {
         id: "toss",
         kind: "implementation-and-provider",
         detail:
-          "DB-backed Toss order/approval/refund and signed raw-body notification receipt are tested offline. The test-only receiver is disabled by default and never calls providers. An isolated fixed-fixture widget/server has reached a real test issuer authentication screen and cancellation; production browser/callback/worker registration, authenticated approval/refund, merchant/security-key/signature verification remain incomplete.",
+          "An owner-operated isolated test server completed test authentication, verified approval, report readiness, MFA-authorized full cancellation and post-refund PDF HTTP 403. Test MID mismatch recovery used independent lookup before rebinding the unique synthetic order. Production routes/workers, webhook verification and merchant contract review remain incomplete; live payments remain disabled.",
       },
       {
         id: "ai",

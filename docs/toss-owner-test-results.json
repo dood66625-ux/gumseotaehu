@@ -1,0 +1,16 @@
+{
+  "dateKst": "2026-11-17",
+  "scope": "isolated fixed synthetic order with test keys",
+  "evidence": "owner screenshots and read-only provider diagnostic",
+  "testProviderDone": true,
+  "appPaidAndReportReady": true,
+  "testMerchantMismatchRecovered": true,
+  "adminMfaFullCancel": true,
+  "appRefunded": true,
+  "postRefundPdfHttpStatus": 403,
+  "sandboxStoppedAndRemoved": true,
+  "actualAiGenerationVerified": false,
+  "preRefundPdfOpenedByOwner": "not independently confirmed",
+  "testAdminCredentialRotation": "owner execution pending",
+  "productionIntegrationVerified": false
+}
