@@ -42,3 +42,6 @@
 
 ## 키 전달 준비
 운영자는 Sending access / mail.gumseo.kr 범위의 키 생성을 완료했다고 알렸다. `scripts/resend-key-setup.mjs prepare <NEW html path>`는 공개키만 포함된 오프라인 HTML을 만든다. 컴퓨터 안에서 RSA-OAEP/AES-GCM으로 암호화하고, 비공개 .env.local 저장 동의를 포함한 JSON만 전달한다. `import <encrypted.json>`은 Git 제외·미추적 일반 파일의 RESEND_API_KEY만 원자적으로 저장하고 나머지 설정을 유지한다. 복호화 개인키는 사용 후 제거한다. 앱 모드/외부 통신 차단·메일 발송 설정은 변경하지 않는다. 키 형식만으로 권한·계정/도메인 일치·실제 발송 성공을 보장하지 않는다. 웹훅 키와 API 키는 별개다. 전체 검사 대신 관련 2개 테스트와 실제 HTML의 브라우저 암호화/다운로드를 가상 키로 검증한다.
+
+
+2026-11-16: 운영자가 첨부한 암호화 JSON에서 RESEND_API_KEY를 Git 제외 비공개 .env.local에 저장했다. 저장 동의와 암호문 무결성·키 형식을 확인했고 다른 키/APP_MODE/EXTERNAL_EFFECTS는 보존했다. 일회용 복호화 개인키를 제거했다. 실제 Resend API 인증·발송·수신은 실행하지 않았으며 account scope/발신 설정/웹훅 키는 아직 미설정이다.
