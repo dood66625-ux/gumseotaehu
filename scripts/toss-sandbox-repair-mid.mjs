@@ -3,12 +3,19 @@ import { DatabaseSync } from 'node:sqlite';
 const orderId = '22bf49c5-a032-46a5-a472-214412ec63f1';
 const oldMid = 'q_gdood65qf7', testMid = 'tq_gdood65qf7';
 let db;
+let step = 'CONFIG';
+const checks = {};
 try {
   if (!/^test_gsk_[A-Za-z0-9_]{1,480}$/.test(process.env.TOSS_TEST_SECRET_KEY || '') || process.env.APP_MODE !== 'local' || process.env.EXTERNAL_EFFECTS !== 'disabled') throw Error();
+  step = 'OPEN_DATABASE';
   db = new DatabaseSync('/app/var/toss-sandbox/journey.sqlite');
+  step = 'LOCAL_ORDER';
   const row = db.prepare('SELECT a.payment_key,a.merchant_id,o.amount,o.payment_status FROM toss_attempts a JOIN orders o ON o.id=a.order_id WHERE o.id=?').get(orderId);
+  Object.assign(checks, { observedOrderFound: !!row, amountMatches: row?.amount === 22000, localPending: row?.payment_status === 'pending', oldMerchantMatches: row?.merchant_id === oldMid });
   if (!row || row.amount !== 22000 || row.payment_status !== 'pending' || row.merchant_id !== oldMid || typeof row.payment_key !== 'string' || row.payment_key.length > 200) throw Error();
+  step = 'PROVIDER_LOOKUP';
   const response = await fetch('https://api.tosspayments.com/v1/payments/' + encodeURIComponent(row.payment_key), { headers: { Authorization: 'Basic ' + Buffer.from(process.env.TOSS_TEST_SECRET_KEY + ':').toString('base64') }, redirect: 'error', signal: AbortSignal.timeout(10000) });
+  checks.httpStatus = response.status;
   if (!response.ok) throw Error();
   const reader = response.body.getReader(); const chunks = []; let size = 0;
   try {
@@ -19,15 +26,19 @@ try {
     }
   } finally { reader.releaseLock(); }
   const evidence = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  step = 'PROVIDER_EVIDENCE';
+  Object.assign(checks, { testMerchantMatches: evidence.mId === testMid, providerOrderMatches: evidence.orderId === orderId, boundKeyMatches: evidence.paymentKey === row.payment_key, providerAmountMatches: evidence.totalAmount === 22000, providerDone: evidence.status === 'DONE', currencyMatches: evidence.currency === 'KRW', typeMatches: evidence.type === 'NORMAL' });
   if (evidence.mId !== testMid || evidence.orderId !== orderId || evidence.paymentKey !== row.payment_key || evidence.totalAmount !== 22000 || evidence.status !== 'DONE' || evidence.currency !== 'KRW' || evidence.type !== 'NORMAL') throw Error();
+  step = 'LOCAL_TRANSACTION';
   db.exec('BEGIN IMMEDIATE');
   try {
-    if (db.prepare('SELECT 1 FROM pg_ledger WHERE order_id=?').get(orderId)) throw Error();
+    checks.ledgerAlreadyExists = !!db.prepare('SELECT 1 FROM pg_ledger WHERE order_id=?').get(orderId);
+    if (checks.ledgerAlreadyExists) throw Error();
     const changed = db.prepare("UPDATE toss_attempts SET merchant_id=?,needs_check=1,next_check=0,failures=0,generation=generation+1,lease_until=0,updated=? WHERE order_id=? AND merchant_id=? AND EXISTS(SELECT 1 FROM orders WHERE id=? AND amount=22000 AND payment_status='pending')").run(testMid, Date.now(), orderId, oldMid, orderId);
     if (changed.changes !== 1) throw Error();
     db.exec('COMMIT');
   } catch (error) { db.exec('ROLLBACK'); throw error; }
   console.log('SYNTHETIC_TEST_MID_REBOUND_AFTER_INDEPENDENT_LOOKUP; payment remains pending until ordinary verification');
 } catch {
-  console.error('TEST_MID_REPAIR_REFUSED; keys and payment details suppressed'); process.exitCode = 1;
+  console.error(JSON.stringify({ repair: 'REFUSED', step, ...checks })); process.exitCode = 1;
 } finally { db?.close(); }
