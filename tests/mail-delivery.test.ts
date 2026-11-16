@@ -16,6 +16,7 @@ import { hash, open, seal } from "../lib/security";
 import { decryptJson } from "../lib/crypto";
 import * as svc from "../lib/service";
 import { MailDeliveryCoordinator } from "../lib/mail-delivery";
+import { requestEmailChange } from "../lib/email-change";
 import type {
   MailGateway,
   MailEvidence,
@@ -247,7 +248,7 @@ describe("provider-neutral mail reliability, synthetic only", () => {
     expect(await f.mail.workOnce()).toEqual({ state: "idle" });
     expect(f.gateway.send).toHaveBeenCalledTimes(1);
   });
-  it.each(["expired", "consumed", "superseded"])(
+  it.each(["expired", "consumed", "superseded", "attempts-exhausted"])(
     "cancels %s OTP before dispatch",
     async (kind) => {
       const f = fixture(),
@@ -257,6 +258,8 @@ describe("provider-neutral mail reliability, synthetic only", () => {
         run("UPDATE challenges SET expires=0 WHERE id=?", o.cid);
       if (kind === "consumed") svc.verifyOtp(o.s, o.cid, o.code);
       if (kind === "superseded") svc.requestOtp(o.s, o.email);
+      if (kind === "attempts-exhausted")
+        run("UPDATE challenges SET attempts=5 WHERE id=?", o.cid);
       await f.mail.workOnce();
       expect(f.gateway.send).not.toHaveBeenCalled();
       expect(
@@ -264,6 +267,25 @@ describe("provider-neutral mail reliability, synthetic only", () => {
       ).toBe("canceled");
     },
   );
+  it("does not send an email-change code after its verification attempts are exhausted", async () => {
+    const f = fixture(),
+      order = paid();
+    const changeId = requestEmailChange(
+      order.s,
+      order.oid,
+      "changed@example.invalid",
+    );
+    const mail = all("SELECT * FROM outbox").find(
+      (o) => open(o.payload).changeId === changeId,
+    )!;
+    f.mail.prepare(mail.id);
+    run("UPDATE email_changes SET attempts=5 WHERE id=?", changeId);
+    await f.mail.workOnce();
+    expect(f.gateway.send).not.toHaveBeenCalled();
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", mail.id)?.state,
+    ).toBe("canceled");
+  });
   it("rejects stale report-ready messages after refund", async () => {
     const f = fixture(),
       o = paid();

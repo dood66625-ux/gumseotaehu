@@ -59,6 +59,7 @@ export function mailDeadline(
       : null;
     return c &&
       !c.consumed &&
+      c.attempts < 5 &&
       c.expires > now &&
       c.email_hash === emailHash &&
       p.code &&
@@ -72,6 +73,7 @@ export function mailDeadline(
       : null;
     return c &&
       c.state === "pending" &&
+      c.attempts < 5 &&
       c.expires > now &&
       c.new_hash === emailHash &&
       p.code &&
