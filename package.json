@@ -37,7 +37,8 @@
     "build:worker": "node scripts/build-worker.mjs",
     "runtime:package": "node scripts/package-runtime.mjs",
     "test:runtime": "tsx scripts/test-local-runtime.ts",
-    "privacy:checkpoint": "tsx scripts/privacy-checkpoint.ts"
+    "privacy:checkpoint": "tsx scripts/privacy-checkpoint.ts",
+    "mail:check": "tsx scripts/mail-check.ts"
   },
   "keywords": [],
   "author": "",
