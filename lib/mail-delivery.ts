@@ -355,11 +355,18 @@ export class MailDeliveryCoordinator {
       return this.fail(c);
     }
   }
-  async workOnce() {
+  async workOnce(createdAtOrAfter = 0) {
     if (this.gateway.idempotencyWindowMs === 0) return { state: "disabled" };
+    if (
+      !Number.isSafeInteger(createdAtOrAfter) ||
+      createdAtOrAfter < 0 ||
+      createdAtOrAfter > Date.now()
+    )
+      throw Error("INVALID_MAIL_CUTOVER");
     const q = one(
-      "SELECT outbox_id FROM mail_queue WHERE profile_digest=? AND lease_until<=? AND scheduled<=? AND (state IN ('queued','retrying','sending','uncertain') OR needs_check=1) ORDER BY updated LIMIT 1",
+      "SELECT q.outbox_id FROM mail_queue q JOIN outbox o ON o.id=q.outbox_id WHERE q.profile_digest=? AND q.recovery_hold=0 AND o.created>=? AND q.lease_until<=? AND q.scheduled<=? AND (q.state IN ('queued','retrying','sending','uncertain') OR q.needs_check=1) ORDER BY q.updated LIMIT 1",
       this.digest,
+      createdAtOrAfter,
       Date.now(),
       Date.now(),
     );

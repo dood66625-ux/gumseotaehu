@@ -17,6 +17,8 @@ import { decryptJson } from "../lib/crypto";
 import * as svc from "../lib/service";
 import { MailDeliveryCoordinator } from "../lib/mail-delivery";
 import { requestEmailChange } from "../lib/email-change";
+import { createResendMailGateway } from "../lib/integrations/resend-mail";
+import { runMailCycle } from "../lib/mail-worker";
 import type {
   MailGateway,
   MailEvidence,
@@ -129,6 +131,121 @@ function paid() {
   return { s, oid, id };
 }
 describe("provider-neutral mail reliability, synthetic only", () => {
+  it("keeps mail scheduler disabled before touching records or transports", async () => {
+    const coordinator = { prepare: vi.fn(), workOnce: vi.fn() };
+    expect(await runMailCycle(coordinator, { createdAtOrAfter: 0 })).toEqual({
+      state: "disabled",
+    });
+    expect(coordinator.prepare).not.toHaveBeenCalled();
+    expect(coordinator.workOnce).not.toHaveBeenCalled();
+  });
+  it("runs Resend HTTP parsing and durable scheduling together without treating acceptance as delivery", async () => {
+    const f = fixture(),
+      otp = f.otp();
+    const pid = "11111111-1111-4111-8111-111111111111";
+    let key = "";
+    const send = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      if (init?.method === "POST") {
+        key = new Headers(init.headers).get("Idempotency-Key")!;
+        return new Response(JSON.stringify({ id: pid }));
+      }
+      return new Response(
+        JSON.stringify({
+          id: pid,
+          last_event: "delivered",
+          tags: [{ name: "gumseo_key", value: key }],
+        }),
+      );
+    });
+    const mail = new MailDeliveryCoordinator(
+      profile,
+      createResendMailGateway({
+        apiKey: "re_synthetic_fixture",
+        accountScope: "test-integration",
+        enabled: true,
+        fetch: send as typeof fetch,
+      }),
+    );
+    await runMailCycle(mail, { enabled: true, createdAtOrAfter: 0 });
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", otp.id)?.state,
+    ).toBe("accepted");
+    expect(key).toBe("mail-" + otp.id);
+    await mail.verify(otp.id);
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", otp.id)?.state,
+    ).toBe("delivered");
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+  it("keeps a sending-only Resend credential lookup failure from granting delivery or resending", async () => {
+    const otp = fixture().otp();
+    const pid = "11111111-1111-4111-8111-111111111111";
+    const send = vi.fn(async (_url: unknown, init?: RequestInit) =>
+      init?.method === "POST"
+        ? new Response(JSON.stringify({ id: pid }))
+        : new Response(JSON.stringify({ message: "restricted credential" }), {
+            status: 401,
+          }),
+    );
+    const mail = new MailDeliveryCoordinator(
+      profile,
+      createResendMailGateway({
+        apiKey: "re_synthetic_fixture",
+        accountScope: "test-integration",
+        enabled: true,
+        fetch: send as typeof fetch,
+      }),
+    );
+    await runMailCycle(mail, { enabled: true, createdAtOrAfter: 0 });
+    await mail.verify(otp.id);
+    expect(
+      one("SELECT state,provider_id FROM mail_queue WHERE outbox_id=?", otp.id),
+    ).toMatchObject({ state: "uncertain", provider_id: pid });
+    expect(
+      send.mock.calls.filter((call) => call[1]?.method === "POST"),
+    ).toHaveLength(1);
+  });
+  it("does not resend a Resend message when provider acknowledgement was lost", async () => {
+    const otp = fixture().otp();
+    const send = vi.fn(async () => {
+      throw Error("synthetic acknowledgement lost");
+    });
+    const mail = new MailDeliveryCoordinator(
+      profile,
+      createResendMailGateway({
+        apiKey: "re_synthetic_fixture",
+        accountScope: "test-integration",
+        enabled: true,
+        fetch: send as typeof fetch,
+      }),
+    );
+    await runMailCycle(mail, { enabled: true, createdAtOrAfter: 0 });
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", otp.id)?.state,
+    ).toBe("uncertain");
+    await mail.verify(otp.id);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", otp.id)?.state,
+    ).not.toBe("delivered");
+  });
+  it("does not enroll historical local mail or restored quarantined messages", async () => {
+    const f = fixture(),
+      old = f.otp("old@example.invalid"),
+      held = f.otp("held@example.invalid");
+    run("UPDATE outbox SET created=1 WHERE id=?", old.id);
+    f.mail.prepare(old.id);
+    f.mail.prepare(held.id);
+    run("UPDATE mail_queue SET recovery_hold=1 WHERE outbox_id=?", held.id);
+    await runMailCycle(f.mail, { enabled: true, createdAtOrAfter: 2 });
+    expect(f.gateway.send).not.toHaveBeenCalled();
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", old.id)?.state,
+    ).toBe("queued");
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", held.id)?.state,
+    ).toBe("queued");
+  });
   it("keeps the default provider disabled without making a network request", async () => {
     const f = fixture(),
       o = f.otp(),
