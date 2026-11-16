@@ -38,3 +38,7 @@
 타입 검사와 관련 이메일 테스트 57개 통과. 독립 HMAC fixture, Unicode/바이트 변경, 재전송 시간, 변조·잘못된 키, 다중 서명, 과대/지연 본문, 기본 HTTP 차단, 중복 알림→독립 조회→상태 갱신을 검증했다. 외부 요청은 가짜 공급자만 사용했고 실제 메일 발송·endpoint 등록·고객정보 전송은 하지 않았다. 전체 테스트·전체 E2E는 반복하지 않았다.
 
 공식 검증 안내: https://resend.com/docs/dashboard/webhooks/verify-webhooks-requests
+
+
+## 키 전달 준비
+운영자는 Sending access / mail.gumseo.kr 범위의 키 생성을 완료했다고 알렸다. `scripts/resend-key-setup.mjs prepare <NEW html path>`는 공개키만 포함된 오프라인 HTML을 만든다. 컴퓨터 안에서 RSA-OAEP/AES-GCM으로 암호화하고, 비공개 .env.local 저장 동의를 포함한 JSON만 전달한다. `import <encrypted.json>`은 Git 제외·미추적 일반 파일의 RESEND_API_KEY만 원자적으로 저장하고 나머지 설정을 유지한다. 복호화 개인키는 사용 후 제거한다. 앱 모드/외부 통신 차단·메일 발송 설정은 변경하지 않는다. 키 형식만으로 권한·계정/도메인 일치·실제 발송 성공을 보장하지 않는다. 웹훅 키와 API 키는 별개다. 전체 검사 대신 관련 2개 테스트와 실제 HTML의 브라우저 암호화/다운로드를 가상 키로 검증한다.
