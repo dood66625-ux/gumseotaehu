@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 """Local operational signals only. No mail, provider requests or customer content."""
-import grp
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import time
@@ -29,7 +29,16 @@ def evaluate(now, health, free, backup_at, update_failed, review):
 def output(args):
     return subprocess.run(args, check=True, capture_output=True, text=True, timeout=10).stdout.strip()
 
+def read_deployed_commit(path):
+    try:
+        commit = path.read_text(encoding='ascii').strip()
+    except (OSError, UnicodeError):
+        return None
+    return commit if re.fullmatch(r'[0-9a-f]{40}', commit) else None
+
 def main():
+    import grp
+
     if os.geteuid() != 0:
         raise RuntimeError('ROOT_REQUIRED')
     health = {}
@@ -47,6 +56,7 @@ def main():
     except Exception:
         update_failed = True
     row = evaluate(int(time.time()), health, shutil.disk_usage('/var/lib').free, backup_at, update_failed, (STATE / 'review-required').exists())
+    row['deployedCommit'] = read_deployed_commit(STATE / 'deployed-commit')
     EXPORT.mkdir(mode=0o750, exist_ok=True)
     os.chmod(EXPORT, 0o750)
     os.chown(EXPORT, 0, grp.getgrnam('gumseo').gr_gid)

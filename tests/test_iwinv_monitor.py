@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 
 spec = importlib.util.spec_from_file_location('monitor', Path(__file__).parents[1] / 'deploy/iwinv/monitor.py')
@@ -7,6 +8,19 @@ m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
 class MonitorTests(unittest.TestCase):
+    def test_only_valid_deployed_commit_is_exported(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / 'deployed-commit'
+            self.assertIsNone(m.read_deployed_commit(path))
+            commit = '0123456789abcdef' * 2 + '01234567'
+            path.write_text(commit + '\n', encoding='ascii')
+            self.assertEqual(m.read_deployed_commit(path), commit)
+            for invalid in (commit[:-1], commit + '\nunexpected', 'z' * 40):
+                path.write_text(invalid, encoding='ascii')
+                self.assertIsNone(m.read_deployed_commit(path))
+            path.write_bytes(bytes([255]))
+            self.assertIsNone(m.read_deployed_commit(path))
+
     def evaluate(self, **changes):
         args = dict(now=100000, health={'web': 'healthy', 'worker': 'healthy'}, free=3 * 1024 ** 3, backup_at=99000, update_failed=False, review=False)
         args.update(changes)
