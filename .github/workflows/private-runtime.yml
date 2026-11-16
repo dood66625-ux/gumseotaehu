@@ -1,0 +1,38 @@
+name: Build private mock runtime
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run runtime:package -- var/private-runtime
+      - name: Build images without server compilation
+        run: |
+          docker build --target web -t gumseo-local-web:local var/private-runtime
+          docker build --target worker -t gumseo-local-worker:local var/private-runtime
+          mkdir -p var/private-release
+          docker save gumseo-local-web:local gumseo-local-worker:local | gzip > var/private-release/images.tar.gz
+          cp compose.local.yml var/private-release/compose.local.yml
+          git rev-parse HEAD > var/private-release/COMMIT
+          cd var/private-release
+          sha256sum images.tar.gz compose.local.yml COMMIT > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: private-mock-runtime-${{ github.sha }}
+          path: var/private-release/
+          retention-days: 3
+          if-no-files-found: error
