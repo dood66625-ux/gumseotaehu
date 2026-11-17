@@ -1,31 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
-    super(message);
-  }
-}
-export async function api<T = any>(path: string, body?: unknown): Promise<T> {
-  if (body !== undefined && path !== "session")
-    await fetch("/api/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
-  const r = await fetch("/api/" + path, {
-    method: body === undefined ? "GET" : "POST",
-    headers: body === undefined ? {} : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    cache: "no-store",
-  });
-  const value = await r.json();
-  if (!r.ok)
-    throw new ApiError(value.error || "요청을 처리하지 못했습니다.", r.status);
-  return value;
-}
+import { api } from "../lib/client-api";
+export { api, ApiError } from "../lib/client-api";
 export function useLoad<T>(path: string) {
   const [data, setData] = useState<T | null>(null),
     [error, setError] = useState("");

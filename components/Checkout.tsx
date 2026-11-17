@@ -11,13 +11,21 @@ export default function Checkout({
   id: string;
   testReviewHref?: string;
 }) {
-  const { data: r, error: loadError } = useLoad<any>("readings/" + id);
+  const {
+    data: r,
+    error: loadError,
+    load: reloadReading,
+  } = useLoad<any>("readings/" + id);
   const [verified, setVerified] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [scenario, setScenario] = useState("success");
   useEffect(() => {
-    api("session").then((s) => setVerified(s.authenticated));
+    api("session")
+      .then((s) => setVerified(s.authenticated))
+      .catch(() =>
+        setError("인증 상태를 확인하지 못했습니다. 잠시 후 다시 확인해주세요."),
+      );
   }, []);
   async function pay(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -65,7 +73,15 @@ export default function Checkout({
       setBusy(false);
     }
   }
-  if (loadError) return <ErrorBox error={loadError} />;
+  if (loadError)
+    return (
+      <div className="card">
+        <ErrorBox error={loadError} />
+        <button className="button secondary" onClick={reloadReading}>
+          출생정보 다시 확인
+        </button>
+      </div>
+    );
   if (!r) return <Loading />;
   if (
     r.purchaseEligible === false ||
