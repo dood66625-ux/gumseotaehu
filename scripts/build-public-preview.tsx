@@ -164,15 +164,17 @@ let home = renderToStaticMarkup(
   <Shell>
     <Landing />
     {reviewEnabled && (
-      <section className="page card">
-        <h2>심사용 토스 테스트 결제</h2>
-        <p>
-          가상 주문으로 카드 결제창을 확인합니다. 실제 청구와 유료 운명서 제공은
-          활성화하지 않습니다.
-        </p>
-        <a className="button" href={reviewTarget}>
-          토스 카드 결제창 확인
-        </a>
+      <section className="page" aria-label="심사용 테스트 결제" style={{ marginBottom: 40 }}>
+        <div className="card">
+          <h2>심사용 토스 테스트 결제</h2>
+          <p>
+            가상 주문으로 카드 결제창을 확인합니다. 실제 청구와 유료 운명서 제공은
+            활성화하지 않습니다.
+          </p>
+          <a className="button" href={reviewTarget}>
+            토스 카드 결제창 확인
+          </a>
+        </div>
       </section>
     )}
   </Shell>,
