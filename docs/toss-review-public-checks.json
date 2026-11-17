@@ -42,6 +42,21 @@
       "scope": "automated Chromium checks only; not full accessibility certification"
     },
     "githubChecksAndRuntimeBuild": "1998967 succeeded",
-    "exactServerCommit": "not independently read"
+    "exactServerCommit": "not independently read",
+    "publicPurchasePath": {
+      "steps": [
+        "home",
+        "synthetic birth input",
+        "free reading",
+        "synthetic email authentication",
+        "purchase consents",
+        "pay.gumseo.kr",
+        "real Toss TEST widget"
+      ],
+      "syntheticFieldsReadOnly": true,
+      "paymentButtonEnabled": true,
+      "cardOrAuthenticationInformationEntered": false,
+      "approvalAttempted": false
+    }
   }
 }

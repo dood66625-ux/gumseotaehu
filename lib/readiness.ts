@@ -37,7 +37,7 @@ export function launchReadiness() {
         id: "toss",
         kind: "implementation-and-provider",
         detail:
-          "An owner-operated isolated test server completed test authentication, verified approval, report readiness, MFA-authorized full cancellation and post-refund PDF HTTP 403. Test MID mismatch recovery used independent lookup before rebinding the unique synthetic order. Production routes/workers, webhook verification and merchant contract review remain incomplete; live payments remain disabled.",
+          "An owner-operated isolated test server completed test authentication, verified approval, report readiness, MFA-authorized full cancellation and post-refund PDF HTTP 403. Test MID mismatch recovery used independent lookup before rebinding the unique synthetic order. Public synthetic review HTTPS and the real Toss TEST widget/card gateway are verified. Approval on the new public domain, production routes/workers, webhook verification and merchant contract review remain incomplete; live payments remain disabled.",
       },
       {
         id: "ai",
@@ -49,13 +49,13 @@ export function launchReadiness() {
         id: "mail",
         kind: "implementation-and-provider",
         detail:
-          "Provider-neutral delivery/retry/bounce core and an unregistered Resend HTTP candidate adapter are tested offline. Actual account/domain/SPF/DKIM/DMARC, authenticated bounce webhooks, worker registration, real receipt/authentication and removal of local OTP endpoints remain required.",
+          "Provider-neutral delivery/retry/bounce core, an unregistered Resend HTTP adapter and aggregate queue inspection are tested offline. The owner supplied the Resend credential, showed a verified sending domain and reported receipt of the separate owner-only test email. Customer OTP/transaction receipt and bounce evidence, provider webhook enrollment, worker cutover/registration and removal of local OTP endpoints remain required; customer mail is disabled.",
       },
       {
         id: "hosting",
         kind: "infrastructure",
         detail:
-          "Local runtime artifacts were built into offline Docker images and synthetic purchase/PDF/restart persistence/non-root/read-only/probes passed. Source Docker clean build remains unverified due registry network limits. The owner verified private iwinv staging, recurring server backups, an encrypted Windows copy, and the first scheduled health check. Public TLS, always-on external alerts, and actual-host recovery remain open.",
+          "Local runtime artifacts were built into offline Docker images and synthetic purchase/PDF/restart persistence/non-root/read-only/probes passed. GitHub runtime image builds succeeded. The owner verified private iwinv staging, recurring server backups, an encrypted Windows copy, and the first scheduled health check. Public HTTPS for the isolated synthetic review domains is verified. Always-on external alerts, actual-host recovery and operating-service validation remain open; the review site is not a production sales launch.",
       },
       {
         id: "identity",
