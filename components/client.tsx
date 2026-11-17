@@ -1,25 +1,46 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../lib/client-api";
 export { api, ApiError } from "../lib/client-api";
 export function useLoad<T>(path: string) {
-  const [data, setData] = useState<T | null>(null),
-    [error, setError] = useState("");
-  const load = useCallback(
-    () =>
-      api<T>(path)
-        .then((v) => {
-          setData(v);
-          setError("");
-        })
-        .catch((e) => setError(e.message)),
-    [path],
-  );
+  const generation = useRef(0);
+  const [result, setResult] = useState<{
+    path: string;
+    data: T | null;
+    error: string;
+  }>({ path, data: null, error: "" });
+  const load = useCallback(async () => {
+    const current = ++generation.current;
+    setResult({ path, data: null, error: "" });
+    try {
+      const data = await api<T>(path);
+      if (generation.current === current) setResult({ path, data, error: "" });
+    } catch (error) {
+      if (generation.current === current)
+        setResult({
+          path,
+          data: null,
+          error:
+            error instanceof Error
+              ? error.message
+              : "요청을 처리하지 못했습니다.",
+        });
+    }
+  }, [path]);
   useEffect(() => {
     load();
+    return () => {
+      generation.current++;
+    };
   }, [load]);
-  return { data, error, load };
+  // Hide old data immediately during a path change, before the new effect runs.
+  return {
+    data: result.path === path ? result.data : null,
+    error: result.path === path ? result.error : "",
+    load,
+  };
 }
+
 export function ErrorBox({ error }: { error: string }) {
   return error ? (
     <div className="error" role="alert">
