@@ -1,0 +1,142 @@
+import { expect, test } from "@playwright/test";
+const oid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const overview = (payment = "paid") => ({
+  orders: [
+    {
+      id: oid,
+      email: "synthetic…",
+      amount: 22000,
+      payment,
+      fulfillment: "ready",
+    },
+  ],
+  tickets: [],
+  jobs: [],
+  refunds: [],
+  audit: [],
+  events: [],
+  mailCount: 0,
+  metrics: { gross: 22000, refunds: payment === "refunded" ? 22000 : 0 },
+});
+
+test("admin overview outage offers read-only retry instead of asking for another login", async ({
+  page,
+}) => {
+  let unavailable = true;
+  await page.route(/\/api\/admin\?query=/, (route) =>
+    unavailable
+      ? route.fulfill({ status: 503, json: { error: "synthetic outage" } })
+      : route.fulfill({ json: overview() }),
+  );
+  await page.goto("/admin");
+  await expect(
+    page.getByRole("heading", { name: "운영 현황 조회 오류" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("운영자 비밀번호")).toHaveCount(0);
+  unavailable = false;
+  await page.getByRole("button", { name: "처리 내역 다시 확인" }).click();
+  await expect(
+    page.getByRole("heading", { name: "운영 현황", exact: true }),
+  ).toBeVisible();
+});
+
+test("refund acknowledgement remains visible through refresh failure and retry does not execute another action", async ({
+  page,
+}) => {
+  let unavailable = false,
+    actions = 0;
+  await page.route(/\/api\/admin\?query=/, (route) =>
+    unavailable
+      ? route.fulfill({ status: 503, json: { error: "synthetic outage" } })
+      : route.fulfill({ json: overview(actions ? "refunded" : "paid") }),
+  );
+  await page.route("**/api/admin/refund", (route) => {
+    actions++;
+    unavailable = true;
+    return route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "환불", exact: true }).click();
+  await page
+    .getByLabel("검토 근거·본인확인·처리 사유")
+    .fill("가상 주문의 모의 환불 검토입니다.");
+  await page
+    .getByRole("checkbox", {
+      name: "대상 주문, 본인확인 및 법정 소비자 권리를 검토했습니다.",
+    })
+    .check();
+  await page
+    .getByRole("button", { name: "선택 주문 모의 전액 환불", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "처리가 기록되었습니다." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "업무를 다시 실행하지 말고" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "선택 주문 모의 전액 환불", exact: true }),
+  ).toHaveCount(0);
+  unavailable = false;
+  await page.getByRole("button", { name: "처리 내역 다시 확인" }).click();
+  await expect(page.getByRole("row").filter({ hasText: oid })).toContainText(
+    "refunded",
+  );
+  await expect(
+    page.getByRole("status").filter({ hasText: "처리가 기록되었습니다." }),
+  ).toBeVisible();
+  expect(actions).toBe(1);
+});
+
+test("expired admin authority clears protected data and requests fresh authentication", async ({
+  page,
+}) => {
+  let expired = false;
+  await page.route(/\/api\/admin\?query=/, (route) =>
+    expired
+      ? route.fulfill({
+          status: 403,
+          json: { error: "synthetic revoked authority" },
+        })
+      : route.fulfill({ json: overview() }),
+  );
+  await page.goto("/admin");
+  await expect(
+    page.getByRole("heading", { name: "운영 현황", exact: true }),
+  ).toBeVisible();
+  expired = true;
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await expect(page.getByLabel("운영자 비밀번호")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(oid);
+  await expect(
+    page.getByRole("button", { name: "처리 내역 다시 확인" }),
+  ).toHaveCount(0);
+});
+
+test("invalid order search can be corrected without repeating login or an action", async ({
+  page,
+}) => {
+  await page.route(/\/api\/admin\?query=/, (route) =>
+    new URL(route.request().url()).searchParams.get("query") ===
+    "invalid-search"
+      ? route.fulfill({
+          status: 400,
+          json: { error: "주문번호의 앞부분을 입력해 주세요." },
+        })
+      : route.fulfill({ json: overview() }),
+  );
+  await page.goto("/admin");
+  await page
+    .getByLabel("주문번호 검색", { exact: true })
+    .fill("invalid-search");
+  await page.getByRole("button", { name: "주문 검색", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "운영 현황 조회 오류" }),
+  ).toBeVisible();
+  await page.getByLabel("주문번호 조회 조건", { exact: true }).fill("");
+  await page.getByRole("button", { name: "처리 내역 다시 확인" }).click();
+  await expect(
+    page.getByRole("heading", { name: "운영 현황", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("운영자 비밀번호")).toHaveCount(0);
+});

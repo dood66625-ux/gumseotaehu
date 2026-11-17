@@ -1,13 +1,16 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { api, ErrorBox, Loading } from "./client";
+import { api, ApiError, ErrorBox, Loading } from "./client";
 import MailHealthPanel from "./MailHealthPanel";
 export default function Admin() {
   const actionForm = useRef<HTMLFormElement>(null);
+  const loadGeneration = useRef(0);
   const [data, setData] = useState<any>(null),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true),
+    [loadError, setLoadError] = useState(""),
     [oid, setOid] = useState(""),
     [action, setAction] = useState("resend"),
     [query, setQuery] = useState(""),
@@ -20,18 +23,43 @@ export default function Admin() {
     setMessage("");
     actionForm.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  function clearAdminView() {
+    loadGeneration.current++;
+    setData(null);
+    setLoading(false);
+    setLoadError("");
+    setMessage("");
+    setOid("");
+    setQuery("");
+  }
   async function load() {
+    const current = ++loadGeneration.current;
+    setLoading(true);
+    setLoadError("");
     try {
-      setData(await api("admin?query=" + encodeURIComponent(query)));
-    } catch {
-      setData(null);
+      const next = await api("admin?query=" + encodeURIComponent(query));
+      if (current === loadGeneration.current) setData(next);
+    } catch (e) {
+      if (current !== loadGeneration.current) return;
+      if (e instanceof ApiError && [401, 403].includes(e.status))
+        clearAdminView();
+      else
+        setLoadError(
+          "운영 현황을 불러오지 못했습니다. 업무를 다시 실행하지 말고 처리 내역을 다시 확인해주세요.",
+        );
+    } finally {
+      if (current === loadGeneration.current) setLoading(false);
     }
   }
   useEffect(() => {
     load();
+    return () => {
+      loadGeneration.current++;
+    };
   }, []);
   async function login(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
     setError("");
     setBusy(true);
     const f = new FormData(e.currentTarget);
@@ -49,8 +77,10 @@ export default function Admin() {
   }
   async function act(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy || loading || loadError) return;
     setBusy(true);
     setError("");
+    setMessage("");
     const f = new FormData(e.currentTarget);
     try {
       const body: any = { orderId: oid, reason: f.get("reason") };
@@ -77,11 +107,45 @@ export default function Admin() {
       await load();
     } catch (e) {
       setError((e as Error).message);
-      if ((e as Error).message.includes("로그인을 다시")) setData(null);
+      if (e instanceof ApiError && [401, 403].includes(e.status))
+        clearAdminView();
     } finally {
       setBusy(false);
     }
   }
+  const receipt =
+    message && !message.startsWith("search:") ? (
+      <p className="success" role="status">
+        {message}
+      </p>
+    ) : null;
+  if (loading)
+    return (
+      <div className="page">
+        {receipt}
+        <Loading />
+      </div>
+    );
+  if (loadError)
+    return (
+      <div className="page">
+        <h1>운영 현황 조회 오류</h1>
+        {receipt}
+        <ErrorBox error={loadError} />
+        <div className="field">
+          <label htmlFor="admin-retry-query">주문번호 조회 조건</label>
+          <input
+            id="admin-retry-query"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="비우면 최근 주문을 조회합니다."
+          />
+        </div>
+        <button className="button secondary" onClick={load}>
+          처리 내역 다시 확인
+        </button>
+      </div>
+    );
   if (!data)
     return (
       <div className="page">
@@ -175,15 +239,19 @@ export default function Admin() {
         <button
           className="button secondary"
           onClick={async () => {
-            await api("logout", {});
-            setData(null);
+            try {
+              await api("logout", {});
+              clearAdminView();
+            } catch (e) {
+              setError((e as Error).message);
+            }
           }}
         >
           로그아웃
         </button>
       </div>
       <div className="actions">
-        <button className="button secondary" onClick={() => setData(null)}>
+        <button className="button secondary" onClick={clearAdminView}>
           관리자 인증 갱신
         </button>
         <button
@@ -191,8 +259,7 @@ export default function Admin() {
           onClick={async () => {
             try {
               await api("admin/revoke-sessions", {});
-              setData(null);
-              setMessage("관리자 세션을 모두 종료했습니다.");
+              clearAdminView();
             } catch (e) {
               setError((e as Error).message);
             }
@@ -290,12 +357,22 @@ export default function Admin() {
                     : "—"}
                 </td>
                 <td>
-                  <button className="small" disabled={busy} onClick={() => chooseOrder(o.id)}>
+                  <button
+                    className="small"
+                    disabled={busy}
+                    onClick={() => chooseOrder(o.id)}
+                  >
                     업무 선택
                   </button>
                   {["paid", "refund_pending"].includes(o.payment) && (
-                    <button className="small danger" disabled={busy} onClick={() => chooseOrder(o.id, true)}>
-                      {o.payment === "refund_pending" ? "환불 처리 확인" : "환불"}
+                    <button
+                      className="small danger"
+                      disabled={busy}
+                      onClick={() => chooseOrder(o.id, true)}
+                    >
+                      {o.payment === "refund_pending"
+                        ? "환불 처리 확인"
+                        : "환불"}
                     </button>
                   )}
                 </td>
@@ -313,8 +390,10 @@ export default function Admin() {
         <h2>선택 주문 업무</h2>
         {action === "refund" && data.orders.find((o: any) => o.id === oid) && (
           <p className="notice" role="status">
-            주문 {oid} · 전액 {data.orders.find((o: any) => o.id === oid).amount.toLocaleString()}원 환불 검토입니다.
-            사유와 대상 주문을 확인한 뒤 실행하세요. 이 화면은 모의 PG용이며 실제 토스 취소를 실행하지 않습니다.
+            주문 {oid} · 전액{" "}
+            {data.orders.find((o: any) => o.id === oid).amount.toLocaleString()}
+            원 환불 검토입니다. 사유와 대상 주문을 확인한 뒤 실행하세요. 이
+            화면은 모의 PG용이며 실제 토스 취소를 실행하지 않습니다.
           </p>
         )}
         <div className="field">
@@ -441,11 +520,7 @@ export default function Admin() {
           </div>
         )}
         <ErrorBox error={error} />
-        {message && !message.startsWith("search:") && (
-          <p className="success" role="status">
-            {message}
-          </p>
-        )}
+        {receipt}
         <button
           className={
             "button " +
@@ -455,7 +530,11 @@ export default function Admin() {
           }
           disabled={busy}
         >
-          {busy ? "처리 중…" : action === "refund" ? "선택 주문 모의 전액 환불" : "선택 업무 실행"}
+          {busy
+            ? "처리 중…"
+            : action === "refund"
+              ? "선택 주문 모의 전액 환불"
+              : "선택 업무 실행"}
         </button>
       </form>
       <h2>고객 문의</h2>
