@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { mkdirSync, writeFileSync, readFileSync, copyFileSync } from "node:fs";
 import { resolve } from "node:path";
 import Shell from "../components/Shell";
+import RefundPolicy from "../components/RefundPolicy";
 import Landing from "../components/Landing";
 import { calculate } from "../lib/astrology";
 import { preview, generate } from "../lib/interpretation";
@@ -56,20 +57,20 @@ const data = {
 writeFileSync(resolve(out, "sample-report.pdf"), await reportPdf(data.report));
 const route = (s: string) => {
   const paths: Record<string, string> = {
-    "/": base + "/?v=royal-10",
-    "/start": base + "/?v=royal-10&screen=start",
-    "/recover": base + "/?v=royal-10&screen=recover",
-    "/help": base + "/?v=royal-10&screen=help",
-    "/admin": base + "/?v=royal-10&screen=admin",
-    "/checkout/fail": base + "/?v=royal-10&screen=fail",
-    "/legal/terms": base + "/?v=royal-10&screen=terms",
-    "/legal/privacy": base + "/?v=royal-10&screen=privacy",
-    "/legal/refund": base + "/?v=royal-10&screen=refund",
-    "/legal/business": base + "/?v=royal-10&screen=business",
-    "/reading/preview?id=": base + "/?v=royal-10&screen=preview&id=",
-    "/checkout?id=": base + "/?v=royal-10&screen=checkout&id=",
-    "/checkout/success?orderId=": base + "/?v=royal-10&screen=success&orderId=",
-    "/report/": base + "/?v=royal-10&screen=report&id=",
+    "/": base + "/?v=royal-11",
+    "/start": base + "/?v=royal-11&screen=start",
+    "/recover": base + "/?v=royal-11&screen=recover",
+    "/help": base + "/?v=royal-11&screen=help",
+    "/admin": base + "/?v=royal-11&screen=admin",
+    "/checkout/fail": base + "/?v=royal-11&screen=fail",
+    "/legal/terms": base + "/?v=royal-11&screen=terms",
+    "/legal/privacy": base + "/?v=royal-11&screen=privacy",
+    "/legal/refund": base + "/refund.html",
+    "/legal/business": base + "/?v=royal-11&screen=business",
+    "/reading/preview?id=": base + "/?v=royal-11&screen=preview&id=",
+    "/checkout?id=": base + "/?v=royal-11&screen=checkout&id=",
+    "/checkout/success?orderId=": base + "/?v=royal-11&screen=success&orderId=",
+    "/report/": base + "/?v=royal-11&screen=report&id=",
     "/empress.webp": base + "/empress.webp",
     "/empress-royal-v2.webp": base + "/empress-royal-v2.webp",
     "/empress-mobile-v2.webp": base + "/empress-mobile-v2.webp",
@@ -83,7 +84,7 @@ await build({
   bundle: true,
   minify: true,
   jsx: "automatic",
-  outfile: resolve(out, "royal-v10.js"),
+  outfile: resolve(out, "royal-v11.js"),
   define: { "process.env.NODE_ENV": '"production"' },
   plugins: [
     {
@@ -162,9 +163,14 @@ let home = renderToStaticMarkup(
     (m, attr, p) => `${attr}="${route(p)}"`,
   );
 const serialized = JSON.stringify(data).replaceAll("<", "\\u003c");
+const refund = renderToStaticMarkup(<Shell><RefundPolicy /></Shell>).replace(
+  /(href|src|srcset)="(\/[^\"]*)"/gi,
+  (m, attr, p) => `${attr}="${route(p)}"`,
+);
+writeFileSync(resolve(out, "refund.html"), `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>환불 및 취소 규정 | 금서태후</title><link rel="stylesheet" href="${base}/royal-v2.css"></head><body>${refund}</body></html>`);
 writeFileSync(
   resolve(out, "index.html"),
-  `<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>금서태후 · 그대의 운명을 펼치다</title><link rel="stylesheet" href="${base}/royal-v2.css"><link rel="icon" href="${base}/icon.svg"><script>if(new URLSearchParams(location.search).has('screen'))document.documentElement.dataset.view='inner';</script><style>#app>.loading{display:none}html[data-view=inner] #home{display:none}html[data-view=inner] #app>.loading{display:block}</style></head><body><div id="home">${home}</div><div id="app"><div class="loading" role="status"><span>禁</span>그대의 금서를 펼치고 있습니다.</div></div><script id="preview-data" type="application/json">${serialized}</script><script type="module">if(new URLSearchParams(location.search).has('screen'))import('${base}/royal-v10.js');</script><script defer src="${base}/intro-v2.js"></script></body></html>`,
+  `<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>금서태후 · 그대의 운명을 펼치다</title><link rel="stylesheet" href="${base}/royal-v2.css"><link rel="icon" href="${base}/icon.svg"><script>if(new URLSearchParams(location.search).has('screen'))document.documentElement.dataset.view='inner';</script><style>#app>.loading{display:none}html[data-view=inner] #home{display:none}html[data-view=inner] #app>.loading{display:block}</style></head><body><div id="home">${home}</div><div id="app"><div class="loading" role="status"><span>禁</span>그대의 금서를 펼치고 있습니다.</div></div><script id="preview-data" type="application/json">${serialized}</script><script type="module">if(new URLSearchParams(location.search).has('screen'))import('${base}/royal-v11.js');</script><script defer src="${base}/intro-v2.js"></script></body></html>`,
 );
 
 for (const file of [

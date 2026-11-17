@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 const types = {
   "index.html": "text/html; charset=utf-8",
+  "refund.html": "text/html; charset=utf-8",
   "site.css": "text/css",
   "royal-v2.css": "text/css",
   "royal-v2.js": "text/javascript",
@@ -14,6 +15,7 @@ const types = {
   "royal-v8.js": "text/javascript",
   "royal-v9.js": "text/javascript",
   "royal-v10.js": "text/javascript",
+  "royal-v11.js": "text/javascript",
   "imperial-serif-v2.woff": "font/woff",
   "imperial-serif-v2.woff2": "font/woff2",
   "empress-royal-v2.webp": "image/webp",
