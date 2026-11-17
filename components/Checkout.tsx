@@ -138,7 +138,7 @@ export default function Checkout({ id }: { id: string }) {
             미제공·계약 불일치 등 법정 권리는 보장됩니다. 미성년자 계약 취소권도
             배제하지 않습니다.
             <br />
-            <Link href="/legal/refund">상황별 환불·정정 정책 전체 보기 ↗</Link>
+            <Link href="/legal/refund">환불 및 취소 규정 전체 보기 ↗</Link>
           </div>
           <p className="hint">
             무료 미리보기를 제공했습니다. 금서태후는 창작 캐릭터이며 AI 기반

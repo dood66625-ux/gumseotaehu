@@ -10,6 +10,7 @@ import ReportReader from "../../components/ReportReader";
 import Recover from "../../components/Recover";
 import Help from "../../components/Help";
 import BusinessInfo from "../../components/BusinessInfo";
+import RefundPolicy from "../../components/RefundPolicy";
 const snapshot = JSON.parse(
   document.getElementById("preview-data")!.textContent!,
 );
@@ -217,6 +218,8 @@ if (screen !== "home") {
         <h1>가상 운명서 다시 찾기</h1>
         <Recover />
       </>
+    ) : screen === "refund" ? (
+      <RefundPolicy />
     ) : screen === "business" ? (
       <>
         <h1>사업자 정보</h1>

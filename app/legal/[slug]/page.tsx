@@ -2,6 +2,7 @@ import { PRODUCT_PRICE_TEXT } from "@/lib/product";
 import Link from "next/link";
 import BusinessInfo from "@/components/BusinessInfo";
 import { notFound } from "next/navigation";
+import RefundPolicy from "@/components/RefundPolicy";
 const policies: Record<
   string,
   { title: string; sections: { title: string; text: string }[] }
@@ -108,6 +109,7 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const slug = (await params).slug;
+  if (slug === "refund") return <RefundPolicy />;
   const p = policies[slug];
   if (!p) notFound();
   return (

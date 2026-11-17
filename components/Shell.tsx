@@ -41,7 +41,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         <div className="footer-links">
           <a href="/legal/terms">이용약관</a>
           <a href="/legal/privacy">개인정보 처리방침</a>
-          <a href="/legal/refund">환불·정정 정책</a>
+          <a href="/legal/refund">환불 및 취소 규정</a>
           <a href="/legal/business">사업자 정보</a>
           <a href="/help">구매·환불 요청</a>
           <a href="/admin">관리자</a>
@@ -49,8 +49,9 @@ export default function Shell({ children }: { children: ReactNode }) {
         <p className="fine">
           운영 예정 사업자: {business.name} · 대표자 {business.representative}
           <br />
-          사업자등록번호{" "}
-          {business.registrationNumber}
+          사업자등록번호 {business.registrationNumber}
+          <br />
+          사업장 주소: {business.address}
           <br />
           연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>
         </p>
