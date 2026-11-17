@@ -18,6 +18,7 @@ test("slow order lookup never overlaps polling and refresh recovers without anot
         payment: "paid",
         fulfillment: calls === 1 ? "working" : "ready",
         deleted: false,
+        expires: Date.now() + 86400000,
       },
     });
   });

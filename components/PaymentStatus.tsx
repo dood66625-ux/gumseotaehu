@@ -2,23 +2,26 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, ErrorBox, Loading } from "./client";
+import { customerOrderState } from "../lib/customer-order-state";
 export default function PaymentStatus({ id }: { id: string }) {
   const [o, setO] = useState<any>(),
     [error, setError] = useState("");
   useEffect(() => {
     let active = true;
+    let shouldPoll = true;
     let timer: ReturnType<typeof setTimeout>;
     async function load() {
       try {
         const r = await api("orders/" + id);
         if (active) {
+          shouldPoll = !customerOrderState(r).terminal;
           setO(r);
           setError("");
         }
       } catch (e) {
         if (active) setError((e as Error).message);
       } finally {
-        if (active) timer = setTimeout(load, 2000);
+        if (active && shouldPoll) timer = setTimeout(load, 2000);
       }
     }
     load();
@@ -36,8 +39,9 @@ export default function PaymentStatus({ id }: { id: string }) {
         </Link>
       </>
     );
-  if (!o) return <Loading />;
-  const ready = !o.deleted && o.payment === "paid" && o.fulfillment === "ready";
+  if (!o || o.id !== id) return <Loading />;
+  const view = customerOrderState(o);
+  const ready = view.canRead;
   return (
     <>
       <img
@@ -47,24 +51,10 @@ export default function PaymentStatus({ id }: { id: string }) {
         height="180"
         alt="금서태후"
       />
-      <span className="status">
-        {o.payment === "paid" ? "모의 결제 확인 완료" : "주문 상태 확인"}
-      </span>
-      <h1>
-        {ready
-          ? "그대의 운명서가\n열렸느니라."
-          : "결제와 작성 상태를\n확인하고 있습니다."}
-      </h1>
+      <span className="status">{view.label}</span>
+      <h1>{view.heading}</h1>
       <div className="card gold">
-        <p className="quote">
-          {ready
-            ? "그대의 이야기를 천천히 펼쳐보거라."
-            : o.deleted
-              ? "고객 요청 또는 보관기간 종료에 따라 운명서 원문이 삭제되었습니다."
-              : o.fulfillment === "failed"
-                ? "작성에 실패했습니다. 결제 사실은 보관되어 있으며 복구 또는 환불을 신청할 수 있습니다."
-                : "창을 닫아도 서버의 작성 작업은 계속됩니다."}
-        </p>
+        <p className="quote">{view.description}</p>
         <dl className="data-list">
           <div>
             <dt>주문</dt>
@@ -85,12 +75,21 @@ export default function PaymentStatus({ id }: { id: string }) {
           </Link>
         ) : (
           <p className="notice">
-            추가 결제 없이 저장된 주문 상태를 확인하고 있습니다. 오래 지연되면
-            아래 복구·환불 문의에서 주문번호와 함께 요청해주세요.
+            {view.terminal
+              ? "이 주문의 이용은 종료됐습니다. 기록 확인이나 이의가 있으면 아래 문의 경로를 이용해주세요."
+              : "추가 결제 없이 저장된 주문 상태를 확인하고 있습니다. 오래 지연되면 아래 문의 경로를 이용해주세요."}
           </p>
         )}
       </div>
       <div className="actions">
+        {view.terminal && (
+          <button
+            className="button secondary"
+            onClick={() => window.location.reload()}
+          >
+            주문 상태 다시 확인
+          </button>
+        )}
         <Link className="button secondary" href="/recover">
           내 운명서 다시 찾기
         </Link>
