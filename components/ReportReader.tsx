@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { reportDisclosure } from "../lib/report-disclosure";
 import { useState } from "react";
+import { reportDownload } from "../lib/report-download";
 import { api, useLoad, ErrorBox, Loading } from "./client";
 export default function ReportReader({ id }: { id: string }) {
   const { data: d, error: loadError } = useLoad<any>("reports/" + id),
@@ -9,22 +10,21 @@ export default function ReportReader({ id }: { id: string }) {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   async function pdf() {
+    if (busy) return;
     setBusy(true);
     setError("");
+    setMessage("");
     try {
-      const res = await fetch("/api/reports/" + id + "/pdf");
-      if (!res.ok) {
-        const v = await res.json();
-        throw Error(v.error);
-      }
-      const blob = await res.blob(),
+      const blob = await reportDownload(id),
         url = URL.createObjectURL(blob),
         a = document.createElement("a");
       a.href = url;
       a.download = "geumseo-report.pdf";
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setMessage("동일한 운명서의 한글 PDF를 내려받았습니다.");
+      setMessage(
+        "PDF 다운로드를 요청했습니다. 브라우저의 다운로드 목록에서 저장 결과를 확인해주세요.",
+      );
     } catch (e) {
       setError((e as Error).message);
     } finally {
