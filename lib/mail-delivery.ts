@@ -82,6 +82,9 @@ export class MailDeliveryCoordinator {
       JSON.stringify({ version: 1, ...this.profile, provider: gateway.name }),
     );
   }
+  get profileBinding() {
+    return this.digest;
+  }
   prepare(id: string) {
     return tx(() => {
       const q = one("SELECT * FROM mail_queue WHERE outbox_id=?", id),

@@ -1,7 +1,9 @@
 /** Candidate scheduler only: not imported by the app worker and disabled by default.
  * Explicit cutover excludes old local/demo mail when a delivery worker is enrolled.
  */
-import { all } from "./db";
+import { all, one } from "./db";
+import { config } from "./config";
+import { readMailCutoverFile } from "./mail-cutover";
 import type { MailDeliveryCoordinator } from "./mail-delivery";
 
 export async function runMailCycle(
@@ -31,4 +33,29 @@ export async function runMailCycle(
   );
   for (const row of rows) coordinator.prepare(row.outbox_id);
   return { prepared: rows.length, result: await coordinator.workOnce(cutoff) };
+}
+
+/** Future enrollment entry point only; the normal app worker does not invoke it. */
+export async function runPersistedMailCycle(
+  coordinator: Pick<
+    MailDeliveryCoordinator,
+    "prepare" | "workOnce" | "profileBinding"
+  >,
+  options: { enabled?: boolean; cutoverFile: string; prepareLimit?: number },
+) {
+  if (options.enabled !== true) return { state: "disabled" as const };
+  const source = one(
+    "SELECT source_id FROM privacy_checkpoint_source WHERE id=1",
+  );
+  if (!source) throw Error("MAIL_CUTOVER_SOURCE_REQUIRED");
+  const policy = readMailCutoverFile(
+    options.cutoverFile,
+    { sourceId: source.source_id, profileDigest: coordinator.profileBinding },
+    config().key,
+  );
+  return runMailCycle(coordinator, {
+    enabled: true,
+    createdAtOrAfter: policy.createdAtOrAfter,
+    prepareLimit: options.prepareLimit,
+  });
 }

@@ -18,7 +18,8 @@ import * as svc from "../lib/service";
 import { MailDeliveryCoordinator } from "../lib/mail-delivery";
 import { requestEmailChange } from "../lib/email-change";
 import { createResendMailGateway } from "../lib/integrations/resend-mail";
-import { runMailCycle } from "../lib/mail-worker";
+import { runMailCycle, runPersistedMailCycle } from "../lib/mail-worker";
+import { createMailCutoverFile } from "../lib/mail-cutover";
 import type {
   MailGateway,
   MailEvidence,
@@ -131,6 +132,77 @@ function paid() {
   return { s, oid, id };
 }
 describe("provider-neutral mail reliability, synthetic only", () => {
+  it("keeps persisted enrollment disabled without reading its file or coordinator binding", async () => {
+    const coordinator = {
+      prepare: vi.fn(),
+      workOnce: vi.fn(),
+      get profileBinding(): string {
+        throw Error("SHOULD_NOT_READ");
+      },
+    };
+    expect(
+      await runPersistedMailCycle(coordinator, {
+        cutoverFile: "/does-not-exist",
+      }),
+    ).toEqual({ state: "disabled" });
+    expect(coordinator.prepare).not.toHaveBeenCalled();
+    expect(coordinator.workOnce).not.toHaveBeenCalled();
+  });
+  it("uses the persisted cutoff after restart and excludes old prepared mail plus restored holds", async () => {
+    const f = fixture(),
+      old = f.otp("old-cutover@example.invalid");
+    const now = Date.now();
+    run("UPDATE outbox SET created=? WHERE id=?", now, old.id);
+    f.mail.prepare(old.id);
+    run(
+      "INSERT OR IGNORE INTO privacy_checkpoint_source VALUES(1,?)",
+      "11111111-1111-4111-8111-111111111111",
+    );
+    const source = one(
+      "SELECT source_id FROM privacy_checkpoint_source WHERE id=1",
+    )!;
+    const dir = mkdtempSync("var/mail-cutover-integration-"),
+      file = dir + "/policy.json";
+    try {
+      createMailCutoverFile(
+        file,
+        { sourceId: source.source_id, profileDigest: f.mail.profileBinding },
+        config().key,
+        now,
+      );
+      vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+      const fresh = f.otp("new-cutover@example.invalid"),
+        held = f.otp("held-cutover@example.invalid");
+      run("UPDATE mail_queue SET recovery_hold=1 WHERE outbox_id=?", held.id);
+      const changed = new MailDeliveryCoordinator(
+        { ...profile, sender: "changed@example.invalid" },
+        f.gateway,
+      );
+      await expect(
+        runPersistedMailCycle(changed, { enabled: true, cutoverFile: file }),
+      ).rejects.toThrow("MAIL_CUTOVER_MISMATCH");
+      expect(f.gateway.send).not.toHaveBeenCalled();
+      await runPersistedMailCycle(f.mail, { enabled: true, cutoverFile: file });
+      expect(f.gateway.send).toHaveBeenCalledTimes(1);
+      expect(
+        one("SELECT state FROM mail_queue WHERE outbox_id=?", fresh.id)?.state,
+      ).toBe("accepted");
+      expect(
+        one("SELECT state FROM mail_queue WHERE outbox_id=?", old.id)?.state,
+      ).toBe("queued");
+      expect(
+        one("SELECT state FROM mail_queue WHERE outbox_id=?", held.id)?.state,
+      ).toBe("local_only");
+      const restarted = new MailDeliveryCoordinator(profile, f.gateway);
+      await runPersistedMailCycle(restarted, {
+        enabled: true,
+        cutoverFile: file,
+      });
+      expect(f.gateway.send).toHaveBeenCalledTimes(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
   it("keeps mail scheduler disabled before touching records or transports", async () => {
     const coordinator = { prepare: vi.fn(), workOnce: vi.fn() };
     expect(await runMailCycle(coordinator, { createdAtOrAfter: 0 })).toEqual({
