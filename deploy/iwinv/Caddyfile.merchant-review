@@ -1,0 +1,35 @@
+{
+	email mjreview3@gmail.com
+	admin off
+}
+
+gumseo.kr {
+	root * /srv
+	header {
+		-Server
+		X-Robots-Tag "noindex, nofollow"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Strict-Transport-Security "max-age=86400"
+		Cache-Control "no-store"
+	}
+	@private path /api/* /admin* /.git/* /.env*
+	respond @private 404
+	file_server
+}
+
+pay.gumseo.kr {
+	header {
+		-Server
+		Referrer-Policy "no-referrer"
+		X-Robots-Tag "noindex, nofollow"
+		Strict-Transport-Security "max-age=86400"
+	}
+	@private path /admin /login /refund
+	respond @private 404
+	reverse_proxy 127.0.0.1:3212 {
+		header_up Host pay.gumseo.kr
+		header_up -Authorization
+		header_up -Proxy-Authorization
+	}
+}

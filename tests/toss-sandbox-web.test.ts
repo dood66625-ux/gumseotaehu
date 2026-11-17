@@ -1,6 +1,19 @@
 import { expect, it, vi } from "vitest";
 import { createTossSandboxHandler } from "../lib/integrations/toss-sandbox-web";
 const origin = "http://127.0.0.1:3211";
+it("rejects invalid persistent review session gates", () => {
+  const f = fixture();
+  expect(() =>
+    createTossSandboxHandler({
+      origin,
+      clientKey: "test_gck_fixture",
+      merchantConfigured: true,
+      backend: f.backend,
+      clientScript: "",
+      sessionGate: "invalid",
+    }),
+  ).toThrow("INVALID_SESSION_GATE");
+});
 const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 function fixture(mid = true) {
   const backend = {

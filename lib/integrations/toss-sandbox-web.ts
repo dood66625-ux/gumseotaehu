@@ -20,6 +20,7 @@ export function createTossSandboxHandler(options: {
   merchantConfigured: boolean;
   backend: SandboxBackend;
   clientScript: string;
+  sessionGate?: string;
 }) {
   const origin = new URL(options.origin);
   if (
@@ -30,7 +31,9 @@ export function createTossSandboxHandler(options: {
     throw Error("LOOPBACK_ORIGIN_REQUIRED");
   if (!/^test_gck_[A-Za-z0-9_]+$/.test(options.clientKey))
     throw Error("WIDGET_TEST_CLIENT_REQUIRED");
-  const gate = randomBytes(32).toString("hex");
+  if (options.sessionGate && !/^[a-f0-9]{64}$/.test(options.sessionGate))
+    throw Error("INVALID_SESSION_GATE");
+  const gate = options.sessionGate || randomBytes(32).toString("hex");
   const headers = {
     "Cache-Control": "private, no-store",
     "Referrer-Policy": "no-referrer",

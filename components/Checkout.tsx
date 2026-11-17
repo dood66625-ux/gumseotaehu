@@ -4,7 +4,13 @@ import Link from "next/link";
 import Journey from "./Journey";
 import { useEffect, useState } from "react";
 import { api, useLoad, Loading, EmailAuth, ErrorBox } from "./client";
-export default function Checkout({ id }: { id: string }) {
+export default function Checkout({
+  id,
+  testReviewHref,
+}: {
+  id: string;
+  testReviewHref?: string;
+}) {
   const { data: r, error: loadError } = useLoad<any>("readings/" + id);
   const [verified, setVerified] = useState(false),
     [error, setError] = useState(""),
@@ -19,6 +25,10 @@ export default function Checkout({ id }: { id: string }) {
     setBusy(true);
     setError("");
     try {
+      if (testReviewHref === "https://pay.gumseo.kr/") {
+        window.location.assign(testReviewHref);
+        return;
+      }
       const order = await api("orders", {
         readingId: id,
         consent: {
@@ -186,28 +196,34 @@ export default function Checkout({ id }: { id: string }) {
             <input name="marketing" type="checkbox" />
             혜택·소식 수신에 동의합니다. (선택 · 현재 발송하지 않음)
           </label>
-          <details className="report-disclosure">
-            <summary>다른 체험 결제 상황 살펴보기</summary>{" "}
-            <div className="field">
-              <label htmlFor="scenario">체험 결제 옵션</label>
-              <select
-                id="scenario"
-                value={scenario}
-                onChange={(e) => setScenario(e.target.value)}
-              >
-                <option value="success">정상 체험</option>
-                <option value="decline">결제 거절</option>
-                <option value="close">화면을 닫은 뒤 다시 찾기</option>
-              </select>
-            </div>
-          </details>
+          {!testReviewHref && (
+            <details className="report-disclosure">
+              <summary>다른 체험 결제 상황 살펴보기</summary>{" "}
+              <div className="field">
+                <label htmlFor="scenario">체험 결제 옵션</label>
+                <select
+                  id="scenario"
+                  value={scenario}
+                  onChange={(e) => setScenario(e.target.value)}
+                >
+                  <option value="success">정상 체험</option>
+                  <option value="decline">결제 거절</option>
+                  <option value="close">화면을 닫은 뒤 다시 찾기</option>
+                </select>
+              </div>
+            </details>
+          )}
           <ErrorBox error={error} />
           <button
             className="button"
             style={{ width: "100%" }}
             disabled={busy || !verified}
           >
-            {busy ? "주문 확인 중…" : "운명서 펼치기 · 체험 결제"}
+            {busy
+              ? "주문 확인 중…"
+              : testReviewHref
+                ? "운명서 펼치기 · 토스 테스트 결제"
+                : "운명서 펼치기 · 체험 결제"}
           </button>
         </section>
       </form>

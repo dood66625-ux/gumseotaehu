@@ -2,7 +2,13 @@ import { build } from "esbuild";
 import { mkdirSync } from "node:fs";
 mkdirSync("dist", { recursive: true });
 await build({
-  entryPoints: ["scripts/worker.ts", "scripts/runtime-health.ts", "scripts/runtime-backup.ts", "scripts/toss-sandbox.ts"],
+  entryPoints: [
+    "scripts/worker.ts",
+    "scripts/runtime-health.ts",
+    "scripts/runtime-backup.ts",
+    "scripts/toss-sandbox.ts",
+    "scripts/merchant-review.ts",
+  ],
   outdir: "dist",
   bundle: true,
   platform: "node",

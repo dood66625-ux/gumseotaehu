@@ -8,6 +8,9 @@ m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
 class MonitorTests(unittest.TestCase):
+    def test_installed_review_service_failure_is_reported(self):
+        row = self.evaluate(health={'web':'healthy','worker':'healthy','review':'unhealthy','review-proxy':'false'})
+        self.assertEqual(set(row['issues']),{'REVIEW_CHECKOUT_UNHEALTHY','REVIEW_PROXY_UNAVAILABLE'})
     def test_only_valid_deployed_commit_is_exported(self):
         with TemporaryDirectory() as directory:
             path = Path(directory) / 'deployed-commit'

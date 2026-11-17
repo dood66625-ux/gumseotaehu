@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 const types = {
   "index.html": "text/html; charset=utf-8",
   "refund.html": "text/html; charset=utf-8",
+  "royal-v12.js": "text/javascript",
   "site.css": "text/css",
   "royal-v2.css": "text/css",
   "royal-v2.js": "text/javascript",
@@ -31,10 +32,11 @@ const types = {
 http
   .createServer((req, res) => {
     const u = new URL(req.url, "http://127.0.0.1:3200");
+    const prefix = process.env.PREVIEW_BASE_PATH ?? "/gumseotaehu";
     let f =
-      u.pathname === "/gumseotaehu/"
+      u.pathname === prefix + "/"
         ? "index.html"
-        : u.pathname.replace("/gumseotaehu/", "");
+        : u.pathname.slice(prefix.length + 1);
     if (!Object.hasOwn(types, f)) {
       res.writeHead(404);
       res.end("Not found");
@@ -45,7 +47,11 @@ http
       "Cache-Control": "no-store",
       "X-Robots-Tag": "noindex,nofollow",
     });
-    res.end(readFileSync(resolve("var/public-preview", f)));
+    res.end(
+      readFileSync(
+        resolve(process.env.PREVIEW_OUTPUT || "var/public-preview", f),
+      ),
+    );
   })
   .listen(3200, "127.0.0.1", () =>
     console.log("Synthetic preview: http://127.0.0.1:3200/gumseotaehu/"),

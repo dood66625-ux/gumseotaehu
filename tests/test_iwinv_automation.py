@@ -27,6 +27,20 @@ def release(compose=b'mock compose', tamper=False):
     return output
 
 class AutomationTests(unittest.TestCase):
+    def test_review_rollout_is_not_enabled_without_local_installation(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(a, 'REVIEW_COMPOSE', Path(directory)/'not-installed.yml'), patch.object(a, 'run') as run:
+            a.update_review_if_installed()
+            run.assert_not_called()
+
+    def test_review_failure_does_not_record_successful_main_rollout(self):
+        def run(args, *rest):
+            if 'ps' in args: return b'container\n'
+            if 'inspect' in args: return b'healthy\n'
+            return b''
+        with tempfile.TemporaryDirectory() as directory, self.deploy_fixture(directory), patch.object(a, 'run', side_effect=run), patch.object(a, 'backup'), patch.object(a, 'update_review_if_installed', side_effect=ValueError('REVIEW_CHECKOUT_HEALTH_FAILED')):
+            with self.assertRaises(ValueError): a.deploy(release())
+            self.assertFalse((Path(directory)/'deployed-commit').exists())
+            self.assertTrue((Path(directory)/'review-required').exists())
     def test_busy_lock_retries_then_acquires(self):
         with patch.object(a.fcntl, 'flock', side_effect=[BlockingIOError(), None]) as lock, patch.object(a.time, 'sleep'):
             a.acquire_lock(None)

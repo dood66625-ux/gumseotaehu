@@ -14,7 +14,7 @@ import RefundPolicy from "../../components/RefundPolicy";
 const snapshot = JSON.parse(
   document.getElementById("preview-data")!.textContent!,
 );
-const base = "/gumseotaehu",
+const base = snapshot.previewBasePath ?? "/gumseotaehu",
   nativeFetch = window.fetch.bind(window);
 const read = () =>
   JSON.parse(
@@ -208,7 +208,10 @@ if (screen !== "home") {
     ) : screen === "preview" ? (
       <Preview id={snapshot.reading.id} />
     ) : screen === "checkout" ? (
-      <Checkout id={snapshot.reading.id} />
+      <Checkout
+        id={snapshot.reading.id}
+        testReviewHref={snapshot.testReviewHref}
+      />
     ) : screen === "success" ? (
       <PaymentStatus id={id} />
     ) : screen === "report" ? (

@@ -19,6 +19,21 @@ STATE = Path('/var/lib/gumseo-automation')
 EXPORT = Path('/var/lib/gumseo-export')
 COMPOSE = ['/usr/bin/docker', 'compose', '--env-file', '/etc/gumseo/test.env', '-f', '/usr/local/lib/gumseo/compose.local.yml']
 NAMES = {'images.tar.gz', 'compose.local.yml', 'COMMIT', 'SHA256SUMS'}
+REVIEW_COMPOSE = Path('/usr/local/lib/gumseo/compose.merchant-review.yml')
+
+def update_review_if_installed():
+    if not REVIEW_COMPOSE.exists():
+        return
+    args = ['/usr/bin/docker', 'compose', '-f', str(REVIEW_COMPOSE)]
+    run(args + ['up', '-d', '--no-build', '--force-recreate'], 180)
+    for _ in range(30):
+        container = run(args + ['ps', '-q', 'review']).decode().strip()
+        if container and run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', container]).decode().strip() == 'healthy':
+            proxy = run(args + ['ps', '-q', 'proxy']).decode().strip()
+            if proxy and run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Running}}', proxy]).decode().strip() == 'true':
+                return
+        time.sleep(2)
+    raise ValueError('REVIEW_CHECKOUT_HEALTH_FAILED')
 
 def acquire_lock(lock, timeout=240):
     deadline = time.monotonic() + timeout
@@ -146,6 +161,7 @@ def deploy(source):
                 if all(ids):
                     health = [run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', item]).decode().strip() for item in ids]
                     if health == ['healthy', 'healthy']:
+                        update_review_if_installed()
                         (STATE / 'deployed-commit').write_text(commit + '\n')
                         print('PRIVATE_MOCK_DEPLOYMENT_HEALTHY ' + commit)
                         return

@@ -16,6 +16,10 @@ def evaluate(now, health, free, backup_at, update_failed, review):
     for service in ('web', 'worker'):
         if health.get(service) != 'healthy':
             issues.append(service.upper() + '_UNHEALTHY')
+    if 'review' in health and health['review'] != 'healthy':
+        issues.append('REVIEW_CHECKOUT_UNHEALTHY')
+    if 'review-proxy' in health and health['review-proxy'] != 'true':
+        issues.append('REVIEW_PROXY_UNAVAILABLE')
     if free < 2 * 1024 ** 3:
         issues.append('DISK_SPACE_LOW')
     if not isinstance(backup_at, int) or backup_at > now + 30 or now - backup_at > 8 * 3600:
@@ -47,6 +51,10 @@ def main():
             health[service] = output(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', 'gumseo-local-' + service + '-1'])
         except Exception:
             health[service] = 'unknown'
+    if Path('/usr/local/lib/gumseo/compose.merchant-review.yml').exists():
+        for name, expression, container in [('review','{{.State.Health.Status}}','gumseo-merchant-review-review-1'),('review-proxy','{{.State.Running}}','gumseo-merchant-review-proxy-1')]:
+            try: health[name] = output(['/usr/bin/docker','inspect','--format',expression,container])
+            except Exception: health[name] = 'unknown'
     try:
         backup_at = json.loads((STATE / 'backup-status.json').read_text())['at']
     except Exception:
