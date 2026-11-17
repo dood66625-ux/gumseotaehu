@@ -1076,3 +1076,33 @@ it("honors the original 33,000 on a legacy order's approval, stored report and f
     one("SELECT amount,status FROM pg_ledger WHERE order_id=?", o.oid),
   ).toMatchObject({ amount: 33000, status: "CANCELED" });
 });
+
+it("admin mail health is aggregate-only, authorized and does not dispatch or mutate the queue", () => {
+  const buyer = verified("synthetic-health@example.invalid"),
+    operator = admin();
+  expect(() => svc.adminOverview({ ...buyer, role: "operations" })).toThrow(
+    "관리자 권한",
+  );
+  const records = all("SELECT outbox_id FROM mail_queue ORDER BY outbox_id");
+  run(
+    "UPDATE mail_queue SET state='uncertain', recovery_hold=1 WHERE outbox_id=?",
+    records[0].outbox_id,
+  );
+  run(
+    "UPDATE mail_queue SET state='accepted',first_dispatched=? WHERE outbox_id=?",
+    Date.now() - 86400001,
+    records[1].outbox_id,
+  );
+  const before = all("SELECT * FROM mail_queue ORDER BY outbox_id");
+  const health = svc.adminOverview(operator).mailHealth;
+  expect(health.counts.uncertain).toBe(1);
+  expect(health.signals.recoveryHeld).toBe(1);
+  expect(health.signals.acceptedWithoutDelivery).toBe(1);
+  expect(health.counts.delivered).toBe(0);
+  expect(health.mailSentByCheck).toBe(false);
+  expect(health.launchReady).toBe(false);
+  expect(JSON.stringify(health)).not.toMatch(
+    /synthetic-health@|recipient_enc|provider_id|payload|email_hash/,
+  );
+  expect(all("SELECT * FROM mail_queue ORDER BY outbox_id")).toEqual(before);
+});

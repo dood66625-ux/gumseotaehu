@@ -8,7 +8,8 @@ import {
 import { requireRecentAdmin } from "./admin-auth";
 import { randomBytes, randomInt } from "node:crypto";
 import { z } from "zod";
-import { all, one, run, tx } from "./db";
+import { all, one, run, tx, db } from "./db";
+import { mailQueueHealth } from "./mail-health";
 import { audit, event, Fault, hash, id, limit, open, seal } from "./security";
 import {
   birthSchema,
@@ -786,6 +787,7 @@ export function adminOverview(s: Session, query = "") {
     mailDeliveries: all(
       "SELECT outbox_id,template,state,attempts,failures,scheduled,last_error FROM mail_queue ORDER BY updated DESC LIMIT 50",
     ),
+    mailHealth: mailQueueHealth(db()),
     mailCount: one("SELECT count(*) AS n FROM outbox")!.n,
   };
 }

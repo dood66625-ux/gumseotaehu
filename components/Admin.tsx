@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { api, ErrorBox, Loading } from "./client";
+import MailHealthPanel from "./MailHealthPanel";
 export default function Admin() {
   const actionForm = useRef<HTMLFormElement>(null);
   const [data, setData] = useState<any>(null),
@@ -245,6 +246,7 @@ export default function Admin() {
           </p>
         </section>
       )}
+      {data.mailHealth && <MailHealthPanel health={data.mailHealth} />}
       <h2>주문·결제·보고서</h2>
       <p className="hint">
         최근 200건을 표시합니다. 이전 주문은 주문번호 앞부분으로 검색하세요.

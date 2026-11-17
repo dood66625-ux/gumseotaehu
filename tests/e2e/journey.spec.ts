@@ -222,6 +222,7 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.getByLabel("1회용 인증코드").fill(await freshAdminCode());
   await page.getByRole("button", { name: "관리자 로그인" }).click();
   await expect(page.getByRole("heading", { name: "운영 현황" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "이메일 처리 점검", exact: true })).toBeVisible();
   await page.getByLabel("주문번호", { exact: true }).fill(oid);
   await page.getByLabel("처리 종류").selectOption("refund");
   await page
