@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { reportDisclosure } from "../lib/report-disclosure";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { reportDownload } from "../lib/report-download";
 import { api, useLoad, ErrorBox, Loading } from "./client";
 export default function ReportReader({ id }: { id: string }) {
@@ -9,14 +9,31 @@ export default function ReportReader({ id }: { id: string }) {
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const generation = useRef(0);
+  const pendingPdf = useRef<AbortController | null>(null);
+  useLayoutEffect(() => {
+    generation.current++;
+    setMessage("");
+    setError("");
+    setBusy(false);
+    return () => {
+      generation.current++;
+      pendingPdf.current?.abort();
+      pendingPdf.current = null;
+    };
+  }, [id]);
   async function pdf() {
-    if (busy) return;
+    if (busy || pendingPdf.current) return;
+    const current = generation.current,
+      controller = new AbortController();
+    pendingPdf.current = controller;
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      const blob = await reportDownload(id),
-        url = URL.createObjectURL(blob),
+      const blob = await reportDownload(id, controller.signal);
+      if (current !== generation.current || controller.signal.aborted) return;
+      const url = URL.createObjectURL(blob),
         a = document.createElement("a");
       a.href = url;
       a.download = "geumseo-report.pdf";
@@ -26,18 +43,20 @@ export default function ReportReader({ id }: { id: string }) {
         "PDF 다운로드를 요청했습니다. 브라우저의 다운로드 목록에서 저장 결과를 확인해주세요.",
       );
     } catch (e) {
-      setError((e as Error).message);
+      if (current === generation.current) setError((e as Error).message);
     } finally {
-      setBusy(false);
+      if (pendingPdf.current === controller) pendingPdf.current = null;
+      if (current === generation.current) setBusy(false);
     }
   }
   async function resend() {
+    const current = generation.current;
     setError("");
     try {
       const r = await api("resend", { orderId: id });
-      setMessage(r.message);
+      if (current === generation.current) setMessage(r.message);
     } catch (e) {
-      setError((e as Error).message);
+      if (current === generation.current) setError((e as Error).message);
     }
   }
   if (loadError)

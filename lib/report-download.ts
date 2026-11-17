@@ -1,8 +1,20 @@
 /** Fetch a bounded PDF; browser save completion is not observable here. */
-export async function reportDownload(id: string): Promise<Blob> {
+export async function reportDownload(
+  id: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
   const controller = new AbortController();
   const failure =
     "PDF를 가져오지 못했습니다. 추가 결제 없이 다시 시도하거나 이메일로 운명서를 다시 찾아주세요.";
+  if (signal?.aborted) throw Error(failure);
+  let cancelRequest: () => void = () => {};
+  const cancellation = new Promise<never>((_, reject) => {
+    cancelRequest = () => {
+      controller.abort();
+      reject(Error(failure));
+    };
+  });
+  signal?.addEventListener("abort", cancelRequest, { once: true });
   let timer: ReturnType<typeof setTimeout>;
   let cancelBody: (() => void) | undefined;
   const deadline = new Promise<never>((_, reject) => {
@@ -19,6 +31,10 @@ export async function reportDownload(id: string): Promise<Blob> {
     cancelBody = () => {
       void response.body?.cancel().catch(() => {});
     };
+    if (controller.signal.aborted) {
+      cancelBody();
+      throw Error(failure);
+    }
     if (!response.ok)
       throw Error(
         response.status === 401
@@ -64,7 +80,7 @@ export async function reportDownload(id: string): Promise<Blob> {
     }
   }
   try {
-    return await Promise.race([read(), deadline]);
+    return await Promise.race([read(), deadline, cancellation]);
   } catch (error) {
     if (
       error instanceof Error &&
@@ -74,6 +90,7 @@ export async function reportDownload(id: string): Promise<Blob> {
     throw Error(failure);
   } finally {
     clearTimeout(timer!);
+    signal?.removeEventListener("abort", cancelRequest);
     controller.abort();
     cancelBody?.();
   }

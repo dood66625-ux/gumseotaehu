@@ -87,3 +87,44 @@ test("an HTML response does not download or retain the previous success notice",
   ).toHaveCount(0);
   expect(downloads).toBe(1);
 });
+
+test("leaving the reader aborts its pending PDF and never downloads on the recovery page", async ({
+  page,
+}) => {
+  let pending: import("@playwright/test").Route | undefined,
+    downloads = 0,
+    aborted = 0;
+  page.on("download", () => downloads++);
+  page.on("requestfailed", (request) => {
+    if (request.url().endsWith("/synthetic-pdf/pdf")) aborted++;
+  });
+  await page.route("**/api/reports/synthetic-pdf", (route) =>
+    route.fulfill({ json: report }),
+  );
+  await page.route("**/api/reports/synthetic-pdf/pdf", (route) => {
+    pending = route;
+  });
+  await page.route("**/api/orders", (route) => route.fulfill({ json: [] }));
+  await page.goto("/report/synthetic-pdf");
+  await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
+  await expect.poll(() => !!pending).toBe(true);
+  await page
+    .getByRole("link", { name: "내 운명서 다시 찾기", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/recover$/);
+  await expect(
+    page.getByText("이 이메일의 구매 내역이 없습니다.", { exact: false }),
+  ).toBeVisible();
+  await expect.poll(() => aborted).toBe(1);
+  await pending!
+    .fulfill({
+      contentType: "application/pdf",
+      body: "%PDF-1.4\nlate synthetic\n%%EOF",
+    })
+    .catch(() => {});
+  await page.waitForLoadState("networkidle");
+  expect(downloads).toBe(0);
+  await expect(
+    page.getByRole("alert").filter({ hasText: "PDF를 가져오지 못했습니다" }),
+  ).toHaveCount(0);
+});

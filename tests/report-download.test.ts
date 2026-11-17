@@ -98,3 +98,44 @@ describe("bounded PDF fetch without automatic retries", () => {
     );
   });
 });
+
+it("does not start a request when its view is already canceled", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  await expect(
+    reportDownload("synthetic", controller.signal),
+  ).rejects.toThrow();
+  expect(fetcher).not.toHaveBeenCalled();
+});
+it("rejects immediately on navigation even if transport ignores abort, and cancels a late body", async () => {
+  vi.useFakeTimers();
+  let finish: (response: Response) => void = () => {},
+    canceled = false;
+  const fetcher = vi.fn(
+    () =>
+      new Promise<Response>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  const controller = new AbortController(),
+    result = reportDownload("synthetic", controller.signal).catch((e) => e);
+  controller.abort();
+  expect((await result).message).toContain("PDF를 가져오지 못했습니다");
+  expect(vi.getTimerCount()).toBe(0);
+  finish(
+    new Response(
+      new ReadableStream({
+        cancel() {
+          canceled = true;
+        },
+      }),
+      { headers: { "content-type": "application/pdf" } },
+    ),
+  );
+  await vi.advanceTimersByTimeAsync(1);
+  expect(canceled).toBe(true);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
