@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
+import { merchantBuildInfo } from "./merchant-build-info.mjs";
+const info = merchantBuildInfo();
 // Public files only; no API key is needed or embedded in this domain build.
 rmSync("public/merchant-review", { recursive: true, force: true });
 const result = spawnSync(
@@ -17,3 +19,9 @@ const result = spawnSync(
   },
 );
 process.exitCode = result.status ?? 1;
+
+if (result.status === 0)
+  writeFileSync(
+    "public/merchant-review/build-info.json",
+    JSON.stringify(info) + "\n",
+  );

@@ -2,6 +2,7 @@ import http from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 const types = {
+  "build-info.json": "application/json; charset=utf-8",
   "index.html": "text/html; charset=utf-8",
   "refund.html": "text/html; charset=utf-8",
   "royal-v12.js": "text/javascript",
@@ -42,16 +43,22 @@ http
       res.end("Not found");
       return;
     }
+    let bytes;
+    try {
+      bytes = readFileSync(
+        resolve(process.env.PREVIEW_OUTPUT || "var/public-preview", f),
+      );
+    } catch {
+      res.writeHead(404);
+      res.end("Not found");
+      return;
+    }
     res.writeHead(200, {
       "Content-Type": types[f],
       "Cache-Control": "no-store",
       "X-Robots-Tag": "noindex,nofollow",
     });
-    res.end(
-      readFileSync(
-        resolve(process.env.PREVIEW_OUTPUT || "var/public-preview", f),
-      ),
-    );
+    res.end(bytes);
   })
   .listen(3200, "127.0.0.1", () =>
     console.log("Synthetic preview: http://127.0.0.1:3200/gumseotaehu/"),

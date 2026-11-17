@@ -19,6 +19,7 @@
     "landing": "tsx scripts/build-landing.tsx",
     "prebuild": "npm run landing && npm run build:merchant",
     "build:merchant": "node scripts/build-merchant-site.mjs",
+    "review:version": "node --use-env-proxy scripts/check-review-build.mjs",
     "predev": "npm run landing",
     "build:preview": "tsx scripts/build-public-preview.tsx",
     "preview:serve": "node scripts/serve-public-preview.mjs",
