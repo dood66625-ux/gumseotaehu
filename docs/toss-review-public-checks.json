@@ -14,5 +14,34 @@
   "cardOrAuthenticationInformationEnteredByAgent": false,
   "newPublicDomainApprovalVerified": false,
   "livePaymentEnabled": false,
-  "reviewerAcceptance": "not confirmed"
+  "reviewerAcceptance": "not confirmed",
+  "followUpBrowserAudit": {
+    "dateKst": "2026-11-17",
+    "viewports": [
+      390,
+      768,
+      1920
+    ],
+    "homeHorizontalOverflow": false,
+    "reviewCardCenteredOnPublicSite": true,
+    "refundLink": "/refund.html",
+    "refundReadableWithoutJavaScript": true,
+    "automatedAccessibility": {
+      "engine": "axe-core",
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag21aa"
+      ],
+      "pages": [
+        "https://gumseo.kr/",
+        "https://gumseo.kr/refund.html"
+      ],
+      "viewportWidth": 390,
+      "violations": 0,
+      "scope": "automated Chromium checks only; not full accessibility certification"
+    },
+    "githubChecksAndRuntimeBuild": "1998967 succeeded",
+    "exactServerCommit": "not independently read"
+  }
 }

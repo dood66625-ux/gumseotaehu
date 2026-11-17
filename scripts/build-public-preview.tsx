@@ -141,10 +141,12 @@ await build({
               )
               .replace('id="buyer-email"', 'id="buyer-email" readOnly');
           if (args.path.endsWith("EmailChange.tsx"))
-            s = s.replace(
-              'name="newEmail"',
-              'name="newEmail" defaultValue="preview-corrected@example.invalid" readOnly',
-            );
+            s = s
+              .replace(
+                "defaultValue={targetEmail}",
+                'defaultValue="preview-corrected@example.invalid"',
+              )
+              .replace('name="newEmail"', 'name="newEmail" readOnly');
           if (args.path.endsWith("Help.tsx"))
             s = s.replace(
               'name="message"',
@@ -164,12 +166,16 @@ let home = renderToStaticMarkup(
   <Shell>
     <Landing />
     {reviewEnabled && (
-      <section className="page" aria-label="심사용 테스트 결제" style={{ marginBottom: 40 }}>
+      <section
+        className="page"
+        aria-label="심사용 테스트 결제"
+        style={{ marginBottom: 40 }}
+      >
         <div className="card">
           <h2>심사용 토스 테스트 결제</h2>
           <p>
-            가상 주문으로 카드 결제창을 확인합니다. 실제 청구와 유료 운명서 제공은
-            활성화하지 않습니다.
+            가상 주문으로 카드 결제창을 확인합니다. 실제 청구와 유료 운명서
+            제공은 활성화하지 않습니다.
           </p>
           <a className="button" href={reviewTarget}>
             토스 카드 결제창 확인

@@ -1,13 +1,22 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ErrorBox } from "./client";
 export default function EmailChange({ orderId }: { orderId: string }) {
   const [changeId, setChangeId] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [done, setDone] = useState(false),
-    [code, setCode] = useState("");
+    [code, setCode] = useState(""),
+    [targetEmail, setTargetEmail] = useState(""),
+    [requestedAt, setRequestedAt] = useState(0),
+    [now, setNow] = useState(0);
+  useEffect(() => {
+    if (!requestedAt || done) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [requestedAt, done]);
+  const expired = !!requestedAt && now >= requestedAt + 15 * 60000;
   const suffix = orderId.slice(0, 8);
   return (
     <details className="card">
@@ -31,6 +40,7 @@ export default function EmailChange({ orderId }: { orderId: string }) {
         <form
           onSubmit={async (e) => {
             e.preventDefault();
+            if (busy || (changeId && expired)) return;
             setBusy(true);
             setError("");
             const f = new FormData(e.currentTarget);
@@ -40,7 +50,12 @@ export default function EmailChange({ orderId }: { orderId: string }) {
                   orderId,
                   email: f.get("newEmail"),
                 });
+                setTargetEmail(String(f.get("newEmail")).trim().toLowerCase());
                 setChangeId(r.changeId);
+                const time = Date.now();
+                setRequestedAt(time);
+                setNow(time);
+                setCode("");
               } else {
                 await api("email-change/confirm", {
                   changeId,
@@ -61,6 +76,8 @@ export default function EmailChange({ orderId }: { orderId: string }) {
               <input
                 id={"new-email-" + suffix}
                 name="newEmail"
+                defaultValue={targetEmail}
+                disabled={busy}
                 type="email"
                 autoComplete="email"
                 maxLength={254}
@@ -69,13 +86,41 @@ export default function EmailChange({ orderId }: { orderId: string }) {
             </div>
           ) : (
             <>
+              <p className="hint">
+                {targetEmail} 주소의 변경 인증번호입니다. 15분간 유효하며
+                5회까지 입력할 수 있습니다. 새로 요청하면 이전 변경 인증번호는
+                사용할 수 없습니다.
+              </p>
+              {expired && (
+                <p className="error" role="alert">
+                  변경 인증번호가 만료됐습니다. 주소를 확인한 뒤 새 번호를
+                  요청해주세요.
+                </p>
+              )}
+              <button
+                type="button"
+                className="text-button"
+                disabled={busy}
+                onClick={() => {
+                  setChangeId("");
+                  setCode("");
+                  setError("");
+                  setRequestedAt(0);
+                  setNow(0);
+                }}
+              >
+                새 이메일 수정 · 다시 요청
+              </button>
               <p className="notice">
                 로컬 검증판은 실제 이메일을 발송하지 않습니다.
               </p>
               <button
                 type="button"
                 className="text-button"
+                disabled={busy || expired}
                 onClick={async () => {
+                  setBusy(true);
+                  setError("");
                   try {
                     const r = await api("email-change/local-code", {
                       changeId,
@@ -83,6 +128,8 @@ export default function EmailChange({ orderId }: { orderId: string }) {
                     setCode(r.code);
                   } catch (e) {
                     setError((e as Error).message);
+                  } finally {
+                    setBusy(false);
                   }
                 }}
               >
@@ -100,6 +147,7 @@ export default function EmailChange({ orderId }: { orderId: string }) {
                 <input
                   id={"change-code-" + suffix}
                   name="changeCode"
+                  disabled={busy || expired}
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   pattern="[0-9]{6}"
@@ -110,7 +158,10 @@ export default function EmailChange({ orderId }: { orderId: string }) {
             </>
           )}
           <ErrorBox error={error} />
-          <button className="button secondary" disabled={busy}>
+          <button
+            className="button secondary"
+            disabled={busy || (!!changeId && expired)}
+          >
             {busy
               ? "확인 중…"
               : changeId
