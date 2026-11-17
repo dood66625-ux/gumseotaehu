@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, EmailAuth, ErrorBox } from "./client";
+import { api, ApiError, EmailAuth, ErrorBox, Loading } from "./client";
 import SupportGuide from "./SupportGuide";
 export default function Help() {
   const [verified, setVerified] = useState(false),
@@ -8,15 +8,29 @@ export default function Help() {
     [tickets, setTickets] = useState<any[]>([]),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true),
+    [loadError, setLoadError] = useState("");
   async function load() {
+    setLoading(true);
+    setLoadError("");
     try {
       const [o, t] = await Promise.all([api("orders"), api("tickets")]);
       setOrders(o);
       setTickets(t);
       setVerified(true);
-    } catch {
-      setVerified(false);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        setVerified(false);
+        setOrders([]);
+        setTickets([]);
+      } else {
+        setLoadError(
+          "주문·문의 내역을 불러오지 못했습니다. 다시 접수하지 말고 내역을 다시 확인해주세요.",
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   }
   useEffect(() => {
@@ -24,6 +38,7 @@ export default function Help() {
   }, []);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
     const form = e.currentTarget,
@@ -46,7 +61,21 @@ export default function Help() {
   return (
     <>
       <SupportGuide />
-      {!verified ? (
+      {message && (
+        <p className="success" role="status">
+          {message}
+        </p>
+      )}
+      {loading ? (
+        <Loading />
+      ) : loadError ? (
+        <div className="card">
+          <ErrorBox error={loadError} />
+          <button className="button secondary" onClick={load}>
+            주문·문의 내역 다시 확인
+          </button>
+        </div>
+      ) : !verified ? (
         <EmailAuth onVerified={load} />
       ) : (
         <>
@@ -95,11 +124,6 @@ export default function Help() {
               />
             </div>
             <ErrorBox error={error} />
-            {message && (
-              <p className="success" role="status">
-                {message}
-              </p>
-            )}
             <button className="button" disabled={busy}>
               문의 접수하기
             </button>

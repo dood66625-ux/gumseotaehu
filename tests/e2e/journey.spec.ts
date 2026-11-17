@@ -232,10 +232,12 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
       name: "대상 주문, 본인확인 및 법정 소비자 권리를 검토했습니다.",
     })
     .check();
-  await page.getByRole("button", { name: "선택 업무 실행" }).click();
-  await expect(page.getByRole("status")).toContainText(
-    "처리가 기록되었습니다.",
-  );
+  await page
+    .getByRole("button", { name: "선택 주문 모의 전액 환불", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "처리가 기록되었습니다." }),
+  ).toBeVisible();
   await page.screenshot({
     path: "docs/" + info.project.name + "-admin.png",
     fullPage: true,

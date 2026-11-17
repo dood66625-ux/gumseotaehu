@@ -7,6 +7,7 @@ export default function PaymentStatus({ id }: { id: string }) {
     [error, setError] = useState("");
   useEffect(() => {
     let active = true;
+    let timer: ReturnType<typeof setTimeout>;
     async function load() {
       try {
         const r = await api("orders/" + id);
@@ -16,13 +17,14 @@ export default function PaymentStatus({ id }: { id: string }) {
         }
       } catch (e) {
         if (active) setError((e as Error).message);
+      } finally {
+        if (active) timer = setTimeout(load, 2000);
       }
     }
     load();
-    const timer = setInterval(load, 2000);
     return () => {
       active = false;
-      clearInterval(timer);
+      clearTimeout(timer);
     };
   }, [id]);
   if (error)
@@ -83,8 +85,8 @@ export default function PaymentStatus({ id }: { id: string }) {
           </Link>
         ) : (
           <p className="notice">
-            검증판은 별도 터미널에서 <code>npm run worker</code>가 실행 중이어야
-            작성됩니다. 지연 시 고객센터에서 복구·환불을 요청하세요.
+            추가 결제 없이 저장된 주문 상태를 확인하고 있습니다. 오래 지연되면
+            아래 복구·환불 문의에서 주문번호와 함께 요청해주세요.
           </p>
         )}
       </div>
