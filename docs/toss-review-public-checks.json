@@ -1,0 +1,18 @@
+{
+  "dateKst": "2026-11-17",
+  "scope": "public synthetic review site; test payments only",
+  "https": {
+    "https://gumseo.kr/": 200,
+    "https://gumseo.kr/refund.html": 200,
+    "https://pay.gumseo.kr/": 200
+  },
+  "sellerAddressVisible": true,
+  "refundPolicyVisible": true,
+  "mobileBrowserRealSdkLoaded": true,
+  "realTestPaymentGatewayFrameOpened": true,
+  "gatewayHost": "payment-gateway-sandbox.tosspayments.com",
+  "cardOrAuthenticationInformationEnteredByAgent": false,
+  "newPublicDomainApprovalVerified": false,
+  "livePaymentEnabled": false,
+  "reviewerAcceptance": "not confirmed"
+}

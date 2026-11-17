@@ -12,7 +12,7 @@ export type SandboxBackend = {
   refund(): Promise<unknown>;
   pdf(): Promise<Buffer>;
 };
-const page = `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>금서태후 · 토스 테스트</title><link rel="stylesheet" href="/style.css"><main><p>禁書太后 · 개발자 전용</p><h1>테스트 결제 확인</h1><p>가상 주문 22,000원 · 실제 청구 없음</p><p>가상 고객만 사용합니다. 실제 개인정보나 카드번호를 입력하지 마세요.</p><p id="status" role="status" aria-live="polite">주문을 확인하고 있습니다.</p><pre id="order"></pre><button id="load">토스 테스트 결제수단 불러오기</button><div id="methods"></div><div id="agreement"></div><button id="pay" disabled>22,000원 테스트 결제</button><button id="recover">추가 결제 없이 상태 재조회</button><a href="/pdf">작성된 테스트 PDF 다운로드</a><hr><h2>관리자 · 테스트 전액 취소</h2><form id="login"><label>관리자 비밀번호<input id="password" type="password" maxlength="200" autocomplete="current-password" required></label><label>관리자 인증코드<input id="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></label><button>관리자 인증</button></form><button id="refund" disabled>이 가상 주문 전액 취소</button><p><a href="/">현재 주문 다시 확인</a></p></main><script type="module" src="/client.mjs"></script></html>`;
+const page = `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>금서태후 · 토스 테스트</title><link rel="stylesheet" href="/style.css"><main><p>禁書太后 · 개발자 전용</p><h1>테스트 결제 확인</h1><p>가상 주문 22,000원 · 실제 청구 없음</p><p>가상 고객만 사용합니다. 실제 개인정보나 카드번호를 입력하지 마세요.</p><p id="status" role="status" aria-live="polite">주문을 확인하고 있습니다.</p><pre id="order"></pre><button id="load" disabled>토스 테스트 결제수단 불러오기</button><div id="methods"></div><div id="agreement"></div><button id="pay" disabled>22,000원 테스트 결제</button><button id="recover">추가 결제 없이 상태 재조회</button><a href="/pdf">작성된 테스트 PDF 다운로드</a><hr><h2>관리자 · 테스트 전액 취소</h2><form id="login"><label>관리자 비밀번호<input id="password" type="password" maxlength="200" autocomplete="current-password" required></label><label>관리자 인증코드<input id="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></label><button>관리자 인증</button></form><button id="refund" disabled>이 가상 주문 전액 취소</button><p><a href="/">현재 주문 다시 확인</a></p></main><script type="module" src="/client.mjs"></script></html>`;
 const css = `*{box-sizing:border-box}body{margin:0;padding:24px;background:#171511;color:#f5ead3;font:16px/1.7 system-ui}main{max-width:620px;margin:auto}button,input{padding:14px;width:100%;margin:10px 0;font:inherit;border-radius:8px}button{background:#e2c38a;color:#171511;cursor:pointer}button:disabled{opacity:.5}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#e2c38a}#status{min-height:3em}`;
 export function createTossSandboxHandler(options: {
   origin: string;
@@ -76,7 +76,7 @@ export function createTossSandboxHandler(options: {
         const adminPage = url.pathname === "/admin";
         const content = adminPage
           ? page.replace(
-              /<button id="load">.*?<hr>/,
+              /<button id="load" disabled>.*?<hr>/,
               '<button id="recover">추가 결제 없이 상태 재조회</button><hr>',
             )
           : page.replace(
