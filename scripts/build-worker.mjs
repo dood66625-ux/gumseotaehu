@@ -5,6 +5,7 @@ await build({
   entryPoints: [
     "scripts/worker.ts",
     "scripts/runtime-health.ts",
+    "scripts/mail-status.ts",
     "scripts/runtime-backup.ts",
     "scripts/toss-sandbox.ts",
     "scripts/merchant-review.ts",
