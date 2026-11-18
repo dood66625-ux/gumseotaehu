@@ -15,7 +15,7 @@ export default function Landing() {
               src="/empress-royal-v2.webp"
               width="1200"
               height="1500"
-              alt="봉황 관과 자주색 비단 예복을 입고 오래된 금서를 든 금서태후의 AI 생성 창작 초상"
+              alt="봉황 관과 자주색 비단 예복을 입고 오래된 금서를 든 금서태후의 창작 초상"
               fetchPriority="high"
               loading="eager"
             />

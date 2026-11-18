@@ -230,7 +230,7 @@ export async function reportPdf(
       .fontSize(9)
       .fillColor(gold)
       .text(
-        "금서태후는 창작 캐릭터이며 초상은 AI 생성 이미지입니다. " +
+        "금서태후는 이야기를 안내하는 창작 캐릭터입니다. " +
           reportDisclosure(data.report.provider).description,
         { lineGap: 6 },
       );

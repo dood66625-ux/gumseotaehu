@@ -56,7 +56,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>
         </p>
         <p className="fine">
-          금서태후는 창작 캐릭터이며, 초상은 AI로 제작한 창작 이미지입니다.
+          금서태후는 이야기를 안내하는 창작 캐릭터입니다.
           <br />
           전통 명리학 해석은 미래의 사건을 확정하지 않으며 전문 조언을 대신하지
           않습니다.
