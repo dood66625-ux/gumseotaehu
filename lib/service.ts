@@ -1,3 +1,4 @@
+import { aiSpendReview, hasAiReservation } from "./ai-spend-review";
 import { PRODUCT_PRICE_KRW, isSupportedOrderAmount } from "./product";
 import { snapshotMailRecipient, snapshotTicketContact } from "./mail-records";
 import {
@@ -747,6 +748,7 @@ export function adminOverview(s: Session, query = "") {
   }));
   return {
     orders,
+    aiSpendReview: aiSpendReview(db()),
     tickets: all("SELECT * FROM tickets ORDER BY created DESC LIMIT 100").map(
       (t) => ({
         id: t.id,
@@ -814,6 +816,10 @@ export function adminRetry(s: Session, oid: string) {
       o.fulfillment === "ready"
     )
       throw new Fault("재처리 대상 주문이 아닙니다.");
+    if (hasAiReservation(db(), oid, o.version))
+      throw new Fault(
+        "AI 요청 기록이 있어 재시도를 중단했습니다. 제공자 처리 내역과 기존 보고서를 먼저 확인해 주세요.",
+      );
     run(
       "INSERT OR IGNORE INTO jobs(id,order_id,version,state,scheduled) VALUES(?,?,?,?,?)",
       id(),

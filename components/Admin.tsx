@@ -192,8 +192,9 @@ export default function Admin() {
       <h1>운영 현황</h1>
       <p className="notice">
         표시된 금액은 로컬 모의 원장 기준입니다. 실제 매출이 아니며 광고
-        플랫폼에는 전송하지 않습니다. 실 API 사용량·PG 수수료·광고비는 계정 연결
-        전 측정할 수 없습니다.
+        플랫폼에는 전송하지 않습니다. AI 비용은 저장된 사용량에 따른 추정치이며
+        실제 청구액은 제공자에서 확인해야 합니다. PG 수수료·광고비는 포함하지
+        않습니다.
       </p>
       <div className="metric-grid">
         <div className="metric">
@@ -385,6 +386,47 @@ export default function Admin() {
         <p className="muted">
           주문이 없습니다. 고객 여정으로 모의 주문을 만들어 주세요.
         </p>
+      )}
+      {data.aiSpendReview?.available && (
+        <section className="card" aria-labelledby="ai-review-title">
+          <h2 id="ai-review-title">AI 처리 확인이 필요한 주문</h2>
+          <p className="hint">
+            응답을 받지 못했거나 저장이 끝나지 않은 요청입니다. 제공자 처리
+            내역·사용량과 저장 보고서를 먼저 확인하세요. 재시도 버튼으로 비용
+            예약을 해제하거나 AI를 다시 호출할 수 없습니다.
+          </p>
+          {!data.aiSpendReview.entries.length && (
+            <p>확인이 필요한 기록이 없습니다.</p>
+          )}
+          <ul>
+            {data.aiSpendReview.entries.map((entry: any) => (
+              <li key={entry.orderId + ":" + entry.version}>
+                주문 {entry.orderId} · 버전 {entry.version} ·{" "}
+                {entry.state === "uncertain"
+                  ? "응답 또는 저장 결과 확인 필요"
+                  : entry.state === "reserved"
+                    ? "처리 중 또는 중단 기록"
+                    : "사용량 기록 후 보고서 미저장"}
+                <p className="hint">
+                  예약 ${(entry.reservedUsdMicros / 1000000).toFixed(4)} ·
+                  사용량 추정{" "}
+                  {entry.estimatedUsdMicros === null
+                    ? "미확인"
+                    : "$" +
+                      (entry.estimatedUsdMicros / 1000000).toFixed(4)}{" "}
+                  · 실제 청구액은 제공자에서 확인
+                </p>
+                <button
+                  className="small"
+                  disabled={busy}
+                  onClick={() => chooseOrder(entry.orderId)}
+                >
+                  주문 확인
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       <form className="card" onSubmit={act} ref={actionForm}>
         <h2>선택 주문 업무</h2>

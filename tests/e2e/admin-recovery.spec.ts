@@ -140,3 +140,45 @@ test("invalid order search can be corrected without repeating login or an action
   ).toBeVisible();
   await expect(page.getByLabel("운영자 비밀번호")).toHaveCount(0);
 });
+
+test("held AI costs are readable and selecting the order sends no retry or release command", async ({
+  page,
+}) => {
+  let writes = 0;
+  await page.route(/\/api\/admin(?:[/?]|$)/, (route) => {
+    if (route.request().method() !== "GET") {
+      writes++;
+      return route.fulfill({
+        status: 400,
+        json: { error: "Unexpected action" },
+      });
+    }
+    return route.fulfill({
+      json: {
+        ...overview(),
+        aiSpendReview: {
+          available: true,
+          entries: [
+            {
+              orderId: oid,
+              version: 1,
+              state: "uncertain",
+              reservedUsdMicros: 60000,
+              estimatedUsdMicros: null,
+            },
+          ],
+        },
+      },
+    });
+  });
+  await page.goto("/admin");
+  const review = page.getByRole("region", {
+    name: "AI 처리 확인이 필요한 주문",
+  });
+  await expect(review).toBeVisible();
+  await expect(review).toContainText("$0.0600");
+  await expect(review).toContainText("미확인");
+  await review.getByRole("button", { name: "주문 확인", exact: true }).click();
+  await expect(page.getByLabel("주문번호", { exact: true })).toHaveValue(oid);
+  expect(writes).toBe(0);
+});

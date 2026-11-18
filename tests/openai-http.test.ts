@@ -302,3 +302,56 @@ it("captures synthetic response evidence after usage, and fails closed if eviden
   );
   expect(events).toEqual(["usage", "response"]);
 });
+
+it("per-order transport rejects unapproved or mismatched requests before reservation/network", async () => {
+  const { createOrderOpenAiTransport } =
+    await import("../lib/integrations/openai-http");
+  const network = vi.fn(async () => response()),
+    reserve = vi.fn();
+  const options = {
+    chart: syntheticChart("known"),
+    apiKey: fakeKey,
+    reserve,
+    fetch: network as typeof fetch,
+  };
+  await expect(createOrderOpenAiTransport(options)(request())).rejects.toThrow(
+    "EXTERNAL_TRANSMISSION_NOT_APPROVED",
+  );
+  const transport = createOrderOpenAiTransport({
+    ...options,
+    approval: "customer-data-approved",
+  });
+  await expect(
+    transport({
+      ...request(),
+      body: buildAiRequest(syntheticChart("unknown"), syntheticModel),
+    }),
+  ).rejects.toThrow("AI_ORDER_REQUEST_MISMATCH");
+  expect(reserve).not.toHaveBeenCalled();
+  expect(network).not.toHaveBeenCalled();
+});
+it("per-order transport pins chart at construction and records usage before returning", async () => {
+  const { createOrderOpenAiTransport } =
+    await import("../lib/integrations/openai-http");
+  const chart = syntheticChart("known"),
+    events: string[] = [];
+  const transport = createOrderOpenAiTransport({
+    approval: "customer-data-approved",
+    chart,
+    apiKey: fakeKey,
+    reserve() {
+      events.push("reserved");
+    },
+    fetch: async () => {
+      events.push("network");
+      return response();
+    },
+    onUsage() {
+      events.push("usage");
+    },
+  });
+  chart.counts.木 = 99;
+  await transport(request());
+  events.push("returned");
+  expect(events).toEqual(["reserved", "network", "usage", "returned"]);
+});

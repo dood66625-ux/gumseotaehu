@@ -1,4 +1,5 @@
-/** Explicit, fixed-fixture live test only. Never imported by app routes or normal worker. */
+/** Pinned HTTP adapters. Normal routes and worker never register these transports. */
+import type { Chart } from "../astrology";
 import { buildAiRequest } from "./ai-contract";
 import {
   syntheticChart,
@@ -84,24 +85,54 @@ async function readBoundedJson(
     throw new AiHttpError("AI_INVALID_JSON");
   }
 }
-export function createSyntheticOpenAiTransport(options: {
-  approval?: "synthetic-only";
-  fixture: SyntheticFixture;
+type OpenAiHttpOptions = {
   apiKey: string;
   reserve: () => void;
   onUsage?: (usage: AiCallTelemetry) => void;
   onResponse?: (response: Record<string, any>) => void;
   fetch?: typeof fetch;
-}): Transport {
+};
+export const approvedOpenAiModel = syntheticModel;
+export function createSyntheticOpenAiTransport(
+  options: OpenAiHttpOptions & {
+    approval?: "synthetic-only";
+    fixture: SyntheticFixture;
+  },
+): Transport {
+  return pinnedTransport(
+    options,
+    () => options.approval === "synthetic-only",
+    () => buildAiRequest(syntheticChart(options.fixture), syntheticModel),
+    "SYNTHETIC_REQUEST_MISMATCH",
+  );
+}
+/** Explicit future opt-in only. Approval is supplied by trusted integration, never request input. */
+export function createOrderOpenAiTransport(
+  options: OpenAiHttpOptions & {
+    approval?: "customer-data-approved";
+    chart: Chart;
+  },
+): Transport {
+  const chart = structuredClone(options.chart);
+  return pinnedTransport(
+    options,
+    () => options.approval === "customer-data-approved",
+    () => buildAiRequest(chart, approvedOpenAiModel),
+    "AI_ORDER_REQUEST_MISMATCH",
+  );
+}
+function pinnedTransport(
+  options: OpenAiHttpOptions,
+  approved: () => boolean,
+  expectedRequest: () => ReturnType<typeof buildAiRequest>,
+  mismatch: string,
+): Transport {
   return async (request) => {
-    if (options.approval !== "synthetic-only")
+    if (!approved())
       throw new AiHttpError("EXTERNAL_TRANSMISSION_NOT_APPROVED");
     if (!/^sk-[A-Za-z0-9_-]{20,}$/.test(options.apiKey))
       throw new AiHttpError("AI_CREDENTIAL_REQUIRED");
-    const expected = buildAiRequest(
-      syntheticChart(options.fixture),
-      syntheticModel,
-    );
+    const expected = expectedRequest();
     if (
       request.method !== "POST" ||
       request.path !== "/v1/responses" ||
@@ -109,7 +140,7 @@ export function createSyntheticOpenAiTransport(options: {
       JSON.stringify(request.headers) !==
         JSON.stringify({ "Content-Type": "application/json" })
     )
-      throw new AiHttpError("SYNTHETIC_REQUEST_MISMATCH");
+      throw new AiHttpError(mismatch);
     const body = JSON.stringify(expected);
     if (Buffer.byteLength(body) > 24000)
       throw new AiHttpError("AI_INPUT_TOO_LARGE");
