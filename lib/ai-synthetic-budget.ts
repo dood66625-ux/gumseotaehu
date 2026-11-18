@@ -7,7 +7,10 @@ import type { AiCallTelemetry } from "./integrations/openai-http";
 export const syntheticCallLimit = 3;
 // 24KB maximum request + 9k output tokens => conservative $0.06 list-price reservation.
 export const syntheticReservationUsdMicros = 60000;
-export function openSyntheticBudget(path: string) {
+export function openSyntheticBudget(
+  path: string,
+  options: { fundedResume?: boolean } = {},
+) {
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
   try {
     if (lstatSync(path).isSymbolicLink() || !lstatSync(path).isFile())
@@ -20,13 +23,25 @@ export function openSyntheticBudget(path: string) {
   db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
     CREATE TABLE IF NOT EXISTS calls(id TEXT PRIMARY KEY,state TEXT NOT NULL,created INTEGER NOT NULL,
     code TEXT,input_tokens INTEGER,output_tokens INTEGER,cached_tokens INTEGER,request_id TEXT,estimated_usd_micros INTEGER);`);
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS test_allowances(name TEXT PRIMARY KEY CHECK(name='funded-resume-v1'),created INTEGER NOT NULL,calls INTEGER NOT NULL CHECK(calls=1))",
+  );
+  if (options.fundedResume === true)
+    db.prepare(
+      "INSERT OR IGNORE INTO test_allowances VALUES('funded-resume-v1',?,1)",
+    ).run(Date.now());
+  const callLimit = () =>
+    syntheticCallLimit +
+    Number(
+      db.prepare("SELECT COALESCE(sum(calls),0) n FROM test_allowances").get()!
+        .n,
+    );
   return {
     reserve() {
       db.exec("BEGIN IMMEDIATE");
       try {
         const n = db.prepare("SELECT count(*) n FROM calls").get()!.n as number;
-        if (n >= syntheticCallLimit)
-          throw Error("AI_SYNTHETIC_BUDGET_EXHAUSTED");
+        if (n >= callLimit()) throw Error("AI_SYNTHETIC_BUDGET_EXHAUSTED");
         const id = randomUUID();
         db.prepare(
           "INSERT INTO calls(id,state,created) VALUES(?,'reserved',?)",
@@ -76,7 +91,9 @@ export function openSyntheticBudget(path: string) {
           Number(row.calls) - Number(row.usage_known_calls ?? 0),
         estimatedUsdMicros: Number(row.estimatedUsdMicros),
         uncertain: Number(row.uncertain ?? 0),
-        callLimit: syntheticCallLimit,
+        baseCallLimit: syntheticCallLimit,
+        fundedResumeCalls: callLimit() - syntheticCallLimit,
+        callLimit: callLimit(),
         reservedUsdMicros: Number(row.calls) * syntheticReservationUsdMicros,
       };
     },

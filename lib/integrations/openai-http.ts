@@ -90,6 +90,7 @@ export function createSyntheticOpenAiTransport(options: {
   apiKey: string;
   reserve: () => void;
   onUsage?: (usage: AiCallTelemetry) => void;
+  onResponse?: (response: Record<string, any>) => void;
   fetch?: typeof fetch;
 }): Transport {
   return async (request) => {
@@ -184,6 +185,11 @@ export function createSyntheticOpenAiTransport(options: {
         options.onUsage?.(usage);
       } catch {
         throw new AiHttpError("AI_USAGE_PERSIST_FAILED");
+      }
+      try {
+        options.onResponse?.(raw);
+      } catch {
+        throw new AiHttpError("AI_EVIDENCE_PERSIST_FAILED");
       }
       return raw;
     } catch (error) {

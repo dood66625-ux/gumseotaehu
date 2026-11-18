@@ -254,3 +254,51 @@ it("stops when usage persistence fails, rather than losing the cost record silen
   });
   await expect(transport(request())).rejects.toThrow("AI_USAGE_PERSIST_FAILED");
 });
+
+it("allows one durable funded-resume slot without resetting original calls or granting twice", () => {
+  const dir = mkdtempSync(join(tmpdir(), "ai-resume-")),
+    path = join(dir, "budget.sqlite");
+  let ledger = openSyntheticBudget(path);
+  try {
+    for (let i = 0; i < 3; i++) ledger.reserve();
+    expect(() => ledger.reserve()).toThrow("BUDGET_EXHAUSTED");
+    ledger.close();
+    ledger = openSyntheticBudget(path, { fundedResume: true });
+    ledger.reserve();
+    expect(ledger.summary()).toMatchObject({
+      calls: 4,
+      baseCallLimit: 3,
+      fundedResumeCalls: 1,
+      callLimit: 4,
+      reservedUsdMicros: 240000,
+    });
+    ledger.close();
+    ledger = openSyntheticBudget(path, { fundedResume: true });
+    expect(() => ledger.reserve()).toThrow("BUDGET_EXHAUSTED");
+    expect(ledger.summary().fundedResumeCalls).toBe(1);
+  } finally {
+    ledger.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+it("captures synthetic response evidence after usage, and fails closed if evidence cannot persist", async () => {
+  const events: string[] = [];
+  const transport = createSyntheticOpenAiTransport({
+    approval: "synthetic-only",
+    fixture: "known",
+    apiKey: fakeKey,
+    reserve() {},
+    onUsage() {
+      events.push("usage");
+    },
+    onResponse() {
+      events.push("response");
+      throw Error("private filesystem detail");
+    },
+    fetch: vi.fn(async () => response()),
+  });
+  await expect(transport(request())).rejects.toThrow(
+    "AI_EVIDENCE_PERSIST_FAILED",
+  );
+  expect(events).toEqual(["usage", "response"]);
+});

@@ -22,15 +22,18 @@ import { reportPdf } from "../lib/pdf";
 import * as svc from "../lib/service";
 import { one, closeDb } from "../lib/db";
 import { config } from "../lib/config";
+import { encryptJson } from "../lib/crypto";
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 const args = process.argv.slice(2);
 if (
-  args.length !== 2 ||
+  ![2, 3].includes(args.length) ||
+  (args.length === 3 &&
+    (args[2] !== "--funded-resume" || args[1] !== "unknown")) ||
   args[0] !== "--live" ||
   !["known", "unknown"].includes(args[1])
 ) {
   console.error(
-    "Usage: npm run ai:synthetic -- --live known|unknown (fixed synthetic data only; up to 3 calls total)",
+    "Usage: npm run ai:synthetic -- --live known|unknown (fixed synthetic data only; base 3 calls, one funded-resume slot)",
   );
   process.exit(1);
 }
@@ -45,7 +48,9 @@ try {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw Error("AI_CREDENTIAL_REQUIRED");
   mkdirSync("var/ai-synthetic", { recursive: true, mode: 0o700 });
-  budget = openSyntheticBudget("var/ai-synthetic/budget.sqlite");
+  budget = openSyntheticBudget("var/ai-synthetic/budget.sqlite", {
+    fundedResume: args[2] === "--funded-resume",
+  });
   const before = Number(budget.summary().calls);
   const { session: initial } = svc.newSession();
   const challenge = svc.requestOtp(
@@ -85,6 +90,14 @@ try {
           apiKey: key,
           reserve() {
             callId = budget!.reserve();
+          },
+          onResponse(raw) {
+            if (!callId) throw Error("AI_CALL_RECORD_REQUIRED");
+            writeFileSync(
+              `var/ai-synthetic/${fixture}-${callId}-response.enc`,
+              encryptJson(raw, cfg.key),
+              { mode: 0o600, flag: "wx" },
+            );
           },
           onUsage(data) {
             usage = data;
@@ -135,6 +148,11 @@ try {
     provider: first.report.provider,
     model: first.report.generation?.model,
     reportId: first.id,
+    orderId: order.id,
+    chapterCharacters: first.report.chapters.map((c) => c.text.length),
+    meetsCurrentMinimumLength: first.report.chapters.every(
+      (c) => c.text.length >= 350,
+    ),
     chapters: first.report.chapters.length,
     reportDigest: createHash("sha256")
       .update(JSON.stringify(first.report))

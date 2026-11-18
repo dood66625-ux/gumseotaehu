@@ -1,0 +1,82 @@
+{
+  "dateKst": "2026-11-18",
+  "scope": "fixed invented fixtures only",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "known": {
+    "provider": "openai",
+    "promptVersion": "taehou-ai-1",
+    "chapterCharacters": [
+      233,
+      267,
+      261,
+      258,
+      252,
+      240,
+      235,
+      302,
+      262
+    ],
+    "meetsCurrentMinimum": false,
+    "sourceUncertaintyPreserved": true,
+    "allTwelveMonthsPresent": true,
+    "qualityDisposition": "historical short draft; not a production-quality pass"
+  },
+  "unknown": {
+    "provider": "openai",
+    "promptVersion": "taehou-ai-2",
+    "chapterCharacters": [
+      363,
+      368,
+      377,
+      367,
+      378,
+      355,
+      359,
+      448,
+      364
+    ],
+    "meetsCurrentMinimum": true,
+    "sourceUncertaintyPreserved": true,
+    "allTwelveMonthsPresent": true,
+    "hourPillar": null,
+    "cyclesAbsent": true,
+    "basicGatePassed": true,
+    "professionalQualityApproved": false,
+    "pdfPages": 12,
+    "pdfTextAndChapterPageChecked": true
+  },
+  "liveResponsesAfterFunding": 3,
+  "storedReportsAfterFunding": 2,
+  "safetyRejectedResponsesAfterFunding": 1,
+  "rejectedOriginalTextCaptured": false,
+  "subsequentResponseEvidenceEncrypted": true,
+  "lifetimeCalls": 4,
+  "baseCallAllowance": 3,
+  "fundedResumeAllowance": 1,
+  "estimatedUsdForKnownUsage": 0.035572,
+  "pricingBasis": "configured list-price estimate; not a verified invoice",
+  "priorAttemptsWithoutUsage": 1,
+  "storedReopenAdditionalCalls": 0,
+  "browser": {
+    "fixture": "unknown",
+    "browser": "mobile Chromium",
+    "copiedSyntheticDatabase": true,
+    "sameSavedReport": true,
+    "visibleAiLabel": true,
+    "pdfDownload": true,
+    "apiCallsDuringBrowserCheck": 0,
+    "livePayments": false,
+    "realMail": false
+  },
+  "customerDataTransmitted": false,
+  "livePayments": false,
+  "realMail": false,
+  "customerAiWorkerEnabled": false,
+  "remaining": [
+    "normal-time fixture with v2 length gate",
+    "expert content and astrology review",
+    "production model and durable spend controls",
+    "production adapter and worker registration",
+    "customer data transfer authorization"
+  ]
+}

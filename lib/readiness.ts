@@ -9,6 +9,7 @@ export function launchReadiness() {
       "server-price-and-payment-state-checks",
       "portable-local-runtime-and-container-restart-persistence-checks",
       "isolated-synthetic-openai-adapter-with-durable-call-budget",
+      "owner-funded-fixed-synthetic-ai-generation-storage-reopen-pdf",
       "async-report-publication-with-lease-and-order-revalidation",
       "durable-job-and-refund-reconciliation",
       "offline-toss-order-integration-and-notification-recovery",
@@ -43,7 +44,7 @@ export function launchReadiness() {
         id: "ai",
         kind: "implementation-and-provider",
         detail:
-          "Fixed-fixture OpenAI HTTP adapter, 3-call persistent test budget and async publication core are implemented. The live synthetic attempt returned HTTP 429; successful AI generation, customer-data authorization, production worker registration, production spend limits and expert quality evaluation remain incomplete. Rule mock cannot be sold.",
+          "Owner-funded fixed synthetic generation stored real OpenAI reports and verified unchanged reopens/PDF with zero regeneration. The first known-time draft was under the requested chapter length; v2 enforces 350 characters and a time-unknown sample passed basic gates. One response was rejected by the safety filter. Original three reservations remain, with one explicitly recorded funded-resume slot (four lifetime calls). Professional and normal-time v2 quality review, customer-data authorization, production adapter/worker registration and production spend limits remain incomplete. Rule mock cannot be sold.",
       },
       {
         id: "mail",

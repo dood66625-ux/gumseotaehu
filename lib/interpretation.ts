@@ -9,7 +9,13 @@ const section = z.object({
 });
 export const reportSchema = z.object({
   provider: z.enum(["local-rule-mock", "openai"]),
-  promptVersion: z.enum(["taehou-1", "taehou-2", "taehou-3", "taehou-ai-1"]),
+  promptVersion: z.enum([
+    "taehou-1",
+    "taehou-2",
+    "taehou-3",
+    "taehou-ai-1",
+    "taehou-ai-2",
+  ]),
   intro: z.string().min(20).max(800),
   chapters: z.array(section).length(9),
   notes: z.array(z.string().max(500)).max(20),

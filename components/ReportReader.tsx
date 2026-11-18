@@ -76,7 +76,9 @@ export default function ReportReader({ id }: { id: string }) {
   if (!d) return <Loading />;
   return (
     <>
-      <p className="eyebrow">YOUR SEALED ARCHIVE · 예시 운명서</p>
+      <p className="eyebrow">
+        YOUR SEALED ARCHIVE · {reportDisclosure(d.report.provider).label}
+      </p>
       <h1>
         {d.name} 님의
         <br />
