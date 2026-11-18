@@ -15,6 +15,7 @@ export const reportSchema = z.object({
     "taehou-3",
     "taehou-ai-1",
     "taehou-ai-2",
+    "taehou-ai-3",
   ]),
   intro: z.string().min(20).max(800),
   chapters: z.array(section).length(9),

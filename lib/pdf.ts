@@ -178,24 +178,28 @@ export async function reportPdf(
     doc
       .moveDown()
       .fontSize(10)
-      .text("나의 성향을 이해하고 일상에 가져갈 작은 실천", { lineGap: 6 });
+      .text("그대의 결을 이해하고, 오늘의 작은 선택으로 이어가 보거라.", {
+        lineGap: 6,
+      });
     doc.image(path.resolve("public" + guide.artwork), 178, doc.y + 12, {
       width: 240,
     });
     doc.y += 265;
-    doc.fontSize(13).fillColor(gold).text("내 성향, 한눈에 보기");
+    doc.fontSize(13).fillColor(gold).text("그대의 결을 다시 짚어 보거라");
     doc.moveDown().fontSize(11).fillColor(ink).text(guide.lead, { lineGap: 7 });
-    doc.moveDown().text("오늘의 작은 실천 · " + guide.action, { lineGap: 7 });
+    doc
+      .moveDown()
+      .text("오늘은 이 한 가지를 해보거라 · " + guide.action, { lineGap: 7 });
     doc
       .moveDown()
       .fontSize(9)
       .fillColor(gold)
       .text(
-        "계산 정보에 따른 쉬운 풀이와 공통 실천 안내입니다. 개별 장의 모든 해석을 대신하지는 않습니다.",
+        "그대의 계산 기록에 쉬운 풀이와 함께 해볼 일을 곁들였느니라. 아홉 장의 해석도 함께 돌아보거라.",
         { lineGap: 5 },
       );
     doc.addPage();
-    doc.fontSize(20).fillColor(ink).text("그래서, 어떻게 해볼까요?");
+    doc.fontSize(20).fillColor(ink).text("이제, 무엇부터 해보겠느냐?");
     for (const point of guide.points) {
       doc.moveDown().fontSize(12).fillColor(gold).text(point.title);
       doc
@@ -205,7 +209,7 @@ export async function reportPdf(
         .text(point.text, { lineGap: 6 });
     }
     doc.addPage();
-    doc.fontSize(20).fillColor(ink).text("어려웠던 말, 쉽게 풀어보기");
+    doc.fontSize(20).fillColor(ink).text("낯선 말이 있었느냐?");
     for (const [term, meaning] of guide.glossary) {
       doc.moveDown().fontSize(12).fillColor(gold).text(term);
       doc

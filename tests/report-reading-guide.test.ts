@@ -7,7 +7,7 @@ it("keeps missing cycles explicit and does not rewrite the saved report", () => 
   const report = generate(syntheticChart("unknown"));
   const before = JSON.stringify(report);
   const guide = readingGuide(report);
-  expect(guide.points[3].text).toContain("구간을 제시하지 않았어요");
+  expect(guide.points[3].text).toContain("그 구간을 담지 않았느니라");
   expect(guide.glossary).toHaveLength(4);
   expect(JSON.stringify(report)).toBe(before);
 });

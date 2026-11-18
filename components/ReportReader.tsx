@@ -184,7 +184,8 @@ export default function ReportReader({
         <p className="eyebrow">IN EVERYDAY WORDS</p>
         <h2 id="reading-guide-title">쉽게 읽는 내 운명서</h2>
         <p className="hint">
-          아홉 장을 읽은 뒤, 일상에 가져갈 핵심을 쉬운 말로 정리했어요.
+          아홉 장의 이야기가 마음에 닿았느냐? 이제 그대의 일상에 가져갈 말을
+          쉬이 풀어 주겠노라.
         </p>
         <figure>
           <img
@@ -198,16 +199,16 @@ export default function ReportReader({
             나를 읽는 출발점 · {d.report.chart.element}의 상징
           </figcaption>
         </figure>
-        <h3>내 성향, 한눈에 보기</h3>
+        <h3>그대의 결을 다시 짚어 보거라</h3>
         <p>{guide.lead}</p>
-        <p className="quote">오늘의 작은 실천 · {guide.action}</p>
+        <p className="quote">오늘은 이 한 가지를 해보거라 · {guide.action}</p>
         {guide.points.map((point) => (
           <div key={point.title}>
             <h3>{point.title}</h3>
             <p>{point.text}</p>
           </div>
         ))}
-        <h3>어려웠던 말, 이렇게 읽으세요</h3>
+        <h3>낯선 말이 있었느냐?</h3>
         <dl>
           {guide.glossary.map(([term, meaning]) => (
             <div key={term}>

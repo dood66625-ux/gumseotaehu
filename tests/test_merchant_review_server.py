@@ -16,7 +16,7 @@ class MerchantReviewTests(unittest.TestCase):
         root = Path(__file__).parents[1]
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory)
-            for name in ('scripts','assets','db'):
+            for name in ('scripts','assets','db','public'):
                 (temporary/name).symlink_to(root/name, target_is_directory=True)
             bootstrap = temporary/'provider.mjs'
             bootstrap.write_text("""const records=new Map(); globalThis.fetch=async(url,options)=>{

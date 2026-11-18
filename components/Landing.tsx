@@ -142,7 +142,8 @@ export default function Landing() {
           <p>
             나를 이해하는 아홉 장의 이야기.
             <br />
-            그림과 함께 읽고, 쉬운 풀이로 마음에 남기세요.
+            그림을 따라 천천히 읽어 보거라. 쉬운 말로 그대의 마음에 남겨
+            주겠노라.
           </p>
         </div>
         <div className="archive-gallery">
