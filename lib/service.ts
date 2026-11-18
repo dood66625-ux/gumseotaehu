@@ -584,14 +584,25 @@ export function workOnce(failGeneration = false) {
  * The live synthetic harness supplies a chart-pinned transport in an isolated DB.
  */
 export async function workOnceWithGenerator(
-  generator: (chart: Chart) => Promise<Report>,
+  generator: (
+    chart: Chart,
+    context: Readonly<{ orderId: string; version: number }>,
+  ) => Promise<Report>,
   orderId?: string,
 ) {
   const job = claimReportJob(orderId);
   if (!job) return false;
   try {
     const { order, chart } = reportJobContext(job);
-    publishReportJob(job, order, chart, await generator(chart));
+    publishReportJob(
+      job,
+      order,
+      chart,
+      await generator(
+        chart,
+        Object.freeze({ orderId: order.id, version: order.version }),
+      ),
+    );
   } catch {
     failReportJob(job);
   }

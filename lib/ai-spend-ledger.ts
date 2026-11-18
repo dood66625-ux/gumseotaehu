@@ -115,15 +115,18 @@ export function aiSpendLedger(
     summary(now = Date.now()) {
       const day = dayOf(now),
         totals = usage(day);
+      const counts = db
+        .prepare(
+          "SELECT count(*) calls,COALESCE(sum(state='reserved'),0) pending,COALESCE(sum(state='uncertain'),0) uncertain FROM ai_spend_calls",
+        )
+        .get()!;
       return {
         dayUtc: day,
         dailyReservedOrActualUsdMicros: totals.daily,
         lifetimeReservedOrActualUsdMicros: totals.lifetime,
-        ...db
-          .prepare(
-            "SELECT count(*) calls,COALESCE(sum(state='reserved'),0) pending,COALESCE(sum(state='uncertain'),0) uncertain FROM ai_spend_calls",
-          )
-          .get(),
+        calls: Number(counts.calls),
+        pending: Number(counts.pending),
+        uncertain: Number(counts.uncertain),
       };
     },
   };

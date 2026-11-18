@@ -1,4 +1,7 @@
 import { beforeAll, beforeEach, afterAll, expect, it } from "vitest";
+import { DatabaseSync } from "node:sqlite";
+import { aiSpendLedger } from "../lib/ai-spend-ledger";
+import { runBudgetedAiJob } from "../lib/ai-generation-worker";
 import { rmSync } from "node:fs";
 import { closeDb, db, one, run } from "../lib/db";
 import * as svc from "../lib/service";
@@ -217,4 +220,207 @@ it("an old failed attempt cannot mark a newer completed job as retrying", async 
     "done",
   );
   expect(svc.getReport(o.session, o.order).report.chapters).toHaveLength(9);
+});
+
+function testLedger() {
+  const database = new DatabaseSync(":memory:");
+  return {
+    database,
+    ledger: aiSpendLedger(database, {
+      dailyUsdMicros: 60000,
+      lifetimeUsdMicros: 60000,
+      reservationUsdMicros: 60000,
+    }),
+  };
+}
+it("budgeted candidate is inactive by default and leaves the selected job untouched", async () => {
+  const order = paid();
+  const { database, ledger } = testLedger();
+  try {
+    let calls = 0;
+    expect(
+      await runBudgetedAiJob({
+        orderId: order.order,
+        ledger,
+        generate: async (chart) => {
+          calls++;
+          return generate(chart);
+        },
+      }),
+    ).toBe(false);
+    expect(calls).toBe(0);
+    expect(
+      one("SELECT state FROM jobs WHERE order_id=?", order.order)?.state,
+    ).toBe("queued");
+    expect(ledger.summary().calls).toBe(0);
+  } finally {
+    database.close();
+  }
+});
+it("reserves the authoritative order version before generation and reopens without another call", async () => {
+  const order = paid();
+  const { database, ledger } = testLedger();
+  let calls = 0;
+  try {
+    const invoke = () =>
+      runBudgetedAiJob({
+        enabled: true,
+        orderId: order.order,
+        ledger,
+        generate: async (chart, usage) => {
+          calls++;
+          expect(ledger.summary()).toMatchObject({ calls: 1, pending: 1 });
+          usage(12000);
+          return { ...generate(chart), provider: "openai" };
+        },
+      });
+    await invoke();
+    expect(svc.getReport(order.session, order.order).report.provider).toBe(
+      "openai",
+    );
+    expect(
+      svc.getReport(order.session, order.order).report.usage.estimatedUsdMicros,
+    ).toBe(12000);
+    expect(await invoke()).toBe(false);
+    expect(calls).toBe(1);
+    expect(
+      database
+        .prepare("SELECT order_id,version,state,actual FROM ai_spend_calls")
+        .get(),
+    ).toMatchObject({
+      order_id: order.order,
+      version: 1,
+      state: "completed",
+      actual: 12000,
+    });
+  } finally {
+    database.close();
+  }
+});
+it("a lost response stays reserved and a scheduled retry cannot call the generator again", async () => {
+  const order = paid();
+  const { database, ledger } = testLedger();
+  let calls = 0;
+  try {
+    const invoke = () =>
+      runBudgetedAiJob({
+        enabled: true,
+        orderId: order.order,
+        ledger,
+        generate: async () => {
+          calls++;
+          throw Error("private provider detail");
+        },
+      });
+    await invoke();
+    run("UPDATE jobs SET scheduled=0 WHERE order_id=?", order.order);
+    await invoke();
+    expect(calls).toBe(1);
+    expect(ledger.summary()).toMatchObject({ calls: 1, uncertain: 1 });
+    expect(one("SELECT count(*) n FROM reports")?.n).toBe(0);
+    expect(
+      JSON.stringify(
+        one("SELECT error FROM jobs WHERE order_id=?", order.order),
+      ),
+    ).not.toContain("private provider detail");
+  } finally {
+    database.close();
+  }
+});
+it("insufficient budget blocks a new order before its generator runs", async () => {
+  const first = paid("first@example.invalid"),
+    second = paid("second@example.invalid");
+  const { database, ledger } = testLedger();
+  let calls = 0;
+  try {
+    for (const order of [first, second])
+      await runBudgetedAiJob({
+        enabled: true,
+        orderId: order.order,
+        ledger,
+        generate: async (chart, usage) => {
+          calls++;
+          usage(1000);
+          return { ...generate(chart), provider: "openai" };
+        },
+      });
+    expect(calls).toBe(1);
+    expect(one("SELECT count(*) n FROM reports")?.n).toBe(1);
+    expect(
+      one("SELECT fulfillment FROM orders WHERE id=?", second.order)
+        ?.fulfillment,
+    ).toBe("retrying");
+  } finally {
+    database.close();
+  }
+});
+it("missing usage or malformed content never publishes a ready report and retains cost exposure", async () => {
+  for (const mode of [
+    "missing-usage",
+    "bad-content",
+    "cost-mismatch",
+    "bad-provider",
+  ]) {
+    const order = paid(mode + "@example.invalid");
+    const { database, ledger } = testLedger();
+    try {
+      await runBudgetedAiJob({
+        enabled: true,
+        orderId: order.order,
+        ledger,
+        generate: async (chart, usage) => {
+          if (mode !== "missing-usage") usage(2000);
+          const report = generate(chart);
+          return {
+            ...report,
+            provider: mode === "bad-provider" ? "local-rule-mock" : "openai",
+            year: mode === "bad-content" ? 1900 : chart.target,
+            usage: {
+              ...report.usage,
+              estimatedUsdMicros: mode === "cost-mismatch" ? 1 : undefined,
+            },
+          };
+        },
+      });
+      expect(ledger.summary()).toMatchObject({
+        calls: 1,
+        uncertain: 1,
+        lifetimeReservedOrActualUsdMicros: 60000,
+      });
+      expect(
+        one("SELECT count(*) n FROM reports WHERE order_id=?", order.order)?.n,
+      ).toBe(0);
+    } finally {
+      database.close();
+    }
+  }
+});
+
+it("a refund during generation prevents publication without releasing the spent reservation", async () => {
+  const order = paid();
+  const { database, ledger } = testLedger();
+  try {
+    await runBudgetedAiJob({
+      enabled: true,
+      orderId: order.order,
+      ledger,
+      generate: async (chart, usage) => {
+        usage(9000);
+        run(
+          "UPDATE orders SET payment_status='refunded' WHERE id=?",
+          order.order,
+        );
+        return { ...generate(chart), provider: "openai" };
+      },
+    });
+    expect(
+      one("SELECT count(*) n FROM reports WHERE order_id=?", order.order)?.n,
+    ).toBe(0);
+    expect(ledger.summary()).toMatchObject({
+      calls: 1,
+      lifetimeReservedOrActualUsdMicros: 60000,
+    });
+  } finally {
+    database.close();
+  }
 });
