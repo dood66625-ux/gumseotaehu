@@ -5,7 +5,6 @@ import { reportDisclosure } from "./report-disclosure";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import type { getReport } from "./service";
-import { factText } from "./interpretation";
 export async function reportPdf(
   data: ReturnType<typeof getReport>,
 ): Promise<Buffer> {
@@ -161,15 +160,6 @@ export async function reportPdf(
         .fontSize(10.5)
         .fillColor(ink)
         .text(c.text, { lineGap: 7, align: "left" });
-      doc
-        .moveDown(1.4)
-        .fontSize(8)
-        .fillColor(gold)
-        .text(
-          "계산 기록  " +
-            c.claimIds.map((id) => factText(data.report.chart, id)).join(" "),
-          { lineGap: 5 },
-        );
     });
     const guide = readingGuide(data.report);
     doc.addPage();
@@ -234,6 +224,15 @@ export async function reportPdf(
           reportDisclosure(data.report.provider).description,
         { lineGap: 6 },
       );
+    doc.addPage();
+    doc.fontSize(9).fillColor(gold).text("CALCULATION RECORDS");
+    doc.moveDown().fontSize(21).fillColor(ink).text("풀이의 계산 기록");
+    doc
+      .moveDown()
+      .fontSize(10)
+      .text(data.report.chart.claims.map((claim) => claim.text).join("\n\n"), {
+        lineGap: 7,
+      });
     doc.switchToPage(tocPage);
     starts.forEach((page, i) => {
       doc

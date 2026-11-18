@@ -87,6 +87,13 @@ try {
         await image.decode();
       }
     });
+  const evidence = page.locator(".chapter-evidence").first();
+  if ((await evidence.getAttribute("open")) !== null)
+    throw Error("Chapter evidence should start collapsed");
+  await evidence.locator("summary").click();
+  if (!(await evidence.locator("small").isVisible()))
+    throw Error("Chapter evidence cannot be opened");
+  await page.locator(".report-method summary").click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PDF 다운로드" }).click();
   await (await download).saveAs("var/public-preview-proof.pdf");
@@ -130,6 +137,17 @@ try {
     .filter({ hasText: "컬러픽쳐스" })
     .waitFor();
   await page.getByText("567-15-01262", { exact: true }).waitFor();
+  await go("content");
+  await page
+    .getByRole("heading", { name: "운명서와 콘텐츠 안내", exact: true })
+    .waitFor();
+  await page
+    .getByRole("heading", { name: "현재 체험 서비스", exact: true })
+    .waitFor();
+  await page
+    .getByRole("link", { name: "환불 및 취소 규정", exact: true })
+    .first()
+    .waitFor();
   await go("admin");
   await page.getByRole("heading", { name: "관리자 접근 제한" }).waitFor();
   if (errors.length || apiRequests.length)

@@ -165,16 +165,18 @@ export default function ReportReader({
             <figcaption>{chapterArt[i].title}</figcaption>
           </figure>
           <p>{c.text}</p>
-          <small className="chapter-fact">
-            계산 기록:{" "}
-            {c.claimIds
-              .map(
-                (id: string) =>
-                  d.report.chart.claims.find((f: any) => f.id === id)?.text ??
-                  id,
-              )
-              .join(" ")}
-          </small>
+          <details className="chapter-evidence">
+            <summary>풀이 근거 살펴보기</summary>
+            <small className="chapter-fact">
+              {c.claimIds
+                .map(
+                  (id: string) =>
+                    d.report.chart.claims.find((f: any) => f.id === id)?.text ??
+                    id,
+                )
+                .join(" ")}
+            </small>
+          </details>
         </article>
       ))}
       <section
@@ -218,12 +220,15 @@ export default function ReportReader({
           ))}
         </dl>
         <p className="hint">
-          계산 정보에 따른 쉬운 풀이와 공통 실천 안내입니다. 개별 장의 모든
-          해석을 대신하지는 않아요.
+          <a
+            href={assetBase ? assetBase + "/?screen=content" : "/legal/content"}
+          >
+            이 풀이의 제공 안내
+          </a>
         </p>
       </section>
-      <section className="card">
-        <h2>계산 기준과 해석의 범위</h2>
+      <details className="card report-method">
+        <summary>계산 기준과 해석의 범위</summary>
         {d.report.notes.map((n: string) => (
           <p className="hint" key={n}>
             {n}
@@ -233,7 +238,7 @@ export default function ReportReader({
           {d.report.chart.meta.engine} · {d.report.chart.meta.rules} ·{" "}
           {d.report.promptVersion}
         </p>
-      </section>
+      </details>
       <div className="actions">
         <Link className="button secondary" href="/recover">
           내 운명서 다시 찾기

@@ -27,14 +27,6 @@ export default function BusinessInfo() {
         </div>
       </dl>
       <section className="card">
-        <h2>캐릭터와 그림 안내</h2>
-        <p>
-          금서태후는 창작 캐릭터입니다. 캐릭터 초상과 운명서의 공통 그림은 AI를
-          활용해 제작했습니다. 그림은 각 장의 주제를 표현한 상징이며 개인의
-          미래를 예측한 이미지가 아닙니다.
-        </p>
-      </section>
-      <section className="card">
         <h2>출시 전 추가 고지</h2>
         <p className="hint">
           연락 전화번호, 통신판매업 신고 정보(해당 시), 호스팅 제공자 등은 확인

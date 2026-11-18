@@ -80,6 +80,7 @@ const route = (s: string) => {
     "/legal/terms": base + "/?v=royal-12&screen=terms",
     "/legal/privacy": base + "/?v=royal-12&screen=privacy",
     "/legal/refund": base + "/refund.html",
+    "/legal/content": base + "/?v=royal-12&screen=content",
     "/legal/business": base + "/?v=royal-12&screen=business",
     "/reading/preview?id=": base + "/?v=royal-12&screen=preview&id=",
     "/checkout?id=": base + "/?v=royal-12&screen=checkout&id=",

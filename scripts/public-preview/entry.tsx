@@ -9,6 +9,7 @@ import PaymentStatus from "../../components/PaymentStatus";
 import ReportReader from "../../components/ReportReader";
 import Recover from "../../components/Recover";
 import Help from "../../components/Help";
+import ContentGuide from "../../components/ContentGuide";
 import BusinessInfo from "../../components/BusinessInfo";
 import RefundPolicy from "../../components/RefundPolicy";
 const snapshot = JSON.parse(
@@ -223,6 +224,8 @@ if (screen !== "home") {
       </>
     ) : screen === "refund" ? (
       <RefundPolicy />
+    ) : screen === "content" ? (
+      <ContentGuide />
     ) : screen === "business" ? (
       <>
         <h1>사업자 정보</h1>

@@ -1,3 +1,4 @@
+import ContentGuide from "@/components/ContentGuide";
 import { PRODUCT_PRICE_TEXT } from "@/lib/product";
 import Link from "next/link";
 import BusinessInfo from "@/components/BusinessInfo";
@@ -101,7 +102,7 @@ const policies: Record<
   },
 };
 export function generateStaticParams() {
-  return Object.keys(policies).map((slug) => ({ slug }));
+  return [...Object.keys(policies), "content"].map((slug) => ({ slug }));
 }
 export default async function Page({
   params,
@@ -109,6 +110,7 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const slug = (await params).slug;
+  if (slug === "content") return <ContentGuide />;
   if (slug === "refund") return <RefundPolicy />;
   const p = policies[slug];
   if (!p) notFound();

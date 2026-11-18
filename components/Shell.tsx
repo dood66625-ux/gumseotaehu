@@ -43,6 +43,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <a href="/legal/privacy">개인정보 처리방침</a>
           <a href="/legal/refund">환불 및 취소 규정</a>
           <a href="/legal/business">사업자 정보</a>
+          <a href="/legal/content">콘텐츠 안내</a>
           <a href="/help">구매·환불 요청</a>
           <a href="/admin">관리자</a>
         </div>
@@ -56,14 +57,10 @@ export default function Shell({ children }: { children: ReactNode }) {
           연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>
         </p>
         <p className="fine">
-          금서태후는 이야기를 안내하는 창작 캐릭터입니다.
+          가상 정보로 둘러보는 체험판입니다. 실제 구매는 제공하지 않습니다.
           <br />
-          전통 명리학 해석은 미래의 사건을 확정하지 않으며 전문 조언을 대신하지
-          않습니다.
-          <br />
-          현재는 가상 정보·규칙 기반 콘텐츠를 사용하는 체험판으로 실제 구매·AI
-          호출·이메일 발송은 없습니다. 운영 서비스는 별도 검증·승인 후
-          제공됩니다.
+          풀이의 제공 방식과 해석 범위는{" "}
+          <a href="/legal/content">콘텐츠 안내</a>에서 확인할 수 있습니다.
         </p>
         <div className="footer-bottom">
           <span>© 2026 GEUMSEO TAEHOU. ALL RIGHTS RESERVED.</span>

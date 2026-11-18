@@ -2829,3 +2829,27 @@ body {
 .chapter-illustration {
   box-shadow: 0 4px 18px #5c3e2210;
 }
+
+.chapter-evidence {
+  margin-top: 26px;
+  border-top: 1px solid #bba68870;
+  padding-top: 12px;
+  color: #715c3e;
+  font-size: 12px;
+}
+.chapter-evidence summary,
+.report-method summary {
+  cursor: pointer;
+  min-height: 36px;
+}
+.chapter-evidence .chapter-fact {
+  display: block;
+  padding-top: 12px;
+}
+.report-method summary {
+  font: 17px/1.8 var(--serif);
+  color: var(--gold);
+}
+.report-method[open] summary {
+  margin-bottom: 20px;
+}
