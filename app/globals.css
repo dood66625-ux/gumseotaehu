@@ -2585,3 +2585,33 @@ button.small.danger {
     animation: none;
   }
 }
+
+.reading-guide figure {
+  margin: 24px auto;
+  max-width: 440px;
+}
+.reading-guide figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.reading-guide figcaption {
+  text-align: center;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+.reading-guide h3 {
+  margin-top: 28px;
+}
+.reading-guide p,
+.reading-guide dd {
+  line-height: 1.9;
+}
+.reading-guide dt {
+  font-weight: 700;
+  margin-top: 16px;
+}
+.reading-guide dd {
+  margin: 4px 0 0;
+}

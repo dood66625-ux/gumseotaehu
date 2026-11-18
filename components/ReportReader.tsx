@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { readingGuide } from "../lib/report-reading-guide";
 import { reportDisclosure } from "../lib/report-disclosure";
 import { useLayoutEffect, useRef, useState } from "react";
 import { reportDownload } from "../lib/report-download";
@@ -74,6 +75,7 @@ export default function ReportReader({ id }: { id: string }) {
       </>
     );
   if (!d) return <Loading />;
+  const guide = readingGuide(d.report);
   return (
     <>
       <p className="eyebrow">
@@ -139,6 +141,7 @@ export default function ReportReader({ id }: { id: string }) {
             {i + 1}. {c.title}
           </a>
         ))}
+        <a href="#reading-guide-title">쉽게 읽는 내 운명서</a>
       </nav>
       {d.report.chapters.map((c: any, i: number) => (
         <article id={"chapter-" + i} key={c.title} className="report-chapter">
@@ -157,6 +160,50 @@ export default function ReportReader({ id }: { id: string }) {
           </small>
         </article>
       ))}
+      <section
+        className="card reading-guide"
+        aria-labelledby="reading-guide-title"
+      >
+        <p className="eyebrow">IN EVERYDAY WORDS</p>
+        <h2 id="reading-guide-title">쉽게 읽는 내 운명서</h2>
+        <p className="hint">
+          아홉 장을 읽은 뒤, 일상에 가져갈 핵심을 쉬운 말로 정리했어요.
+        </p>
+        <figure>
+          <img
+            src={guide.artwork}
+            alt={guide.artworkAlt}
+            width="640"
+            height="460"
+            loading="lazy"
+          />
+          <figcaption>
+            나를 읽는 출발점 · {d.report.chart.element}의 상징
+          </figcaption>
+        </figure>
+        <h3>내 성향, 한눈에 보기</h3>
+        <p>{guide.lead}</p>
+        <p className="quote">오늘의 작은 실천 · {guide.action}</p>
+        {guide.points.map((point) => (
+          <div key={point.title}>
+            <h3>{point.title}</h3>
+            <p>{point.text}</p>
+          </div>
+        ))}
+        <h3>어려웠던 말, 이렇게 읽으세요</h3>
+        <dl>
+          {guide.glossary.map(([term, meaning]) => (
+            <div key={term}>
+              <dt>{term}</dt>
+              <dd>{meaning}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="hint">
+          계산 정보에 따른 쉬운 풀이와 공통 실천 안내입니다. 개별 장의 모든
+          해석을 대신하지는 않아요.
+        </p>
+      </section>
       <section className="card">
         <h2>계산 기준과 해석의 범위</h2>
         {d.report.notes.map((n: string) => (

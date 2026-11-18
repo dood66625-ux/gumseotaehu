@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { readingGuide } from "./report-reading-guide";
 import { reportDisclosure } from "./report-disclosure";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -152,6 +153,49 @@ export async function reportPdf(
           { lineGap: 5 },
         );
     });
+    const guide = readingGuide(data.report);
+    doc.addPage();
+    doc.fontSize(9).fillColor(gold).text("IN EVERYDAY WORDS");
+    doc.moveDown().fontSize(23).fillColor(ink).text("쉽게 읽는 내 운명서");
+    doc
+      .moveDown()
+      .fontSize(10)
+      .text("나의 성향을 이해하고 일상에 가져갈 작은 실천", { lineGap: 6 });
+    doc.image(path.resolve("public" + guide.artwork), 178, doc.y + 12, {
+      width: 240,
+    });
+    doc.y += 200;
+    doc.fontSize(13).fillColor(gold).text("내 성향, 한눈에 보기");
+    doc.moveDown().fontSize(11).fillColor(ink).text(guide.lead, { lineGap: 7 });
+    doc.moveDown().text("오늘의 작은 실천 · " + guide.action, { lineGap: 7 });
+    doc
+      .moveDown()
+      .fontSize(9)
+      .fillColor(gold)
+      .text(
+        "계산 정보에 따른 쉬운 풀이와 공통 실천 안내입니다. 개별 장의 모든 해석을 대신하지는 않습니다.",
+        { lineGap: 5 },
+      );
+    doc.addPage();
+    doc.fontSize(20).fillColor(ink).text("그래서, 어떻게 해볼까요?");
+    for (const point of guide.points) {
+      doc.moveDown().fontSize(12).fillColor(gold).text(point.title);
+      doc
+        .moveDown(0.5)
+        .fontSize(10.5)
+        .fillColor(ink)
+        .text(point.text, { lineGap: 6 });
+    }
+    doc.addPage();
+    doc.fontSize(20).fillColor(ink).text("어려웠던 말, 쉽게 풀어보기");
+    for (const [term, meaning] of guide.glossary) {
+      doc.moveDown().fontSize(12).fillColor(gold).text(term);
+      doc
+        .moveDown(0.5)
+        .fontSize(11)
+        .fillColor(ink)
+        .text(meaning, { lineGap: 7 });
+    }
     doc.addPage();
     doc.fontSize(9).fillColor(gold).text("METHOD & NOTES");
     doc.moveDown().fontSize(21).fillColor(ink).text("계산 기준과 해석의 범위");
