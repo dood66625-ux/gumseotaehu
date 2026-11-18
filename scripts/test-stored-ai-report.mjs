@@ -101,6 +101,51 @@ try {
   await page
     .getByText("AI 생성 해석 · 가상 정보 검증본", { exact: false })
     .waitFor();
+  const screenshots = [];
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const chapter = page.locator(".report-chapter").first();
+    await chapter.scrollIntoViewIfNeeded();
+    await page
+      .locator(".chapter-illustration img")
+      .evaluateAll(async (images) => {
+        for (const image of images) {
+          image.loading = "eager";
+          await image.decode();
+        }
+      });
+    if ((await page.locator(".chapter-illustration img").count()) !== 9)
+      throw Error("CHAPTER_ART_MISSING");
+    if (
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      )
+    )
+      throw Error("REPORT_HORIZONTAL_OVERFLOW");
+    const file = `illustrated-report-${width}.png`;
+    await chapter.screenshot({ path: join(root, file) });
+    screenshots.push(file);
+    await page.goto(origin);
+    await page.locator(".archive-gallery img").evaluateAll(async (images) => {
+      for (const image of images) {
+        image.loading = "eager";
+        await image.decode();
+      }
+    });
+    if (
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      )
+    )
+      throw Error("LANDING_HORIZONTAL_OVERFLOW");
+    await page
+      .locator(".illustrated-archive")
+      .screenshot({ path: join(root, `illustrated-landing-${width}.png`) });
+    await page.goto(origin + "/report/" + orderId);
+    await page
+      .getByRole("button", { name: "PDF 다운로드", exact: true })
+      .waitFor();
+  }
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
   await (await download).saveAs(join(root, "unknown-browser-report.pdf"));
@@ -117,6 +162,9 @@ try {
     sameSavedReport: true,
     visibleAiLabel: true,
     pdfDownload: true,
+    chapterIllustrationsLoaded: 9,
+    checkedWidths: [390, 1440],
+    screenshots,
     apiCallsDuringBrowserCheck: calls() - before,
     livePayments: false,
     realMail: false,

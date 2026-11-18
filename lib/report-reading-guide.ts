@@ -36,7 +36,7 @@ export function readingGuide(report: Report) {
   if (!element) throw Error("UNKNOWN_REPORT_ELEMENT");
   return {
     artwork: `/report-art/${element.key}.png`,
-    artworkAlt: `${element.name}의 모습을 단순화한 오행 상징 도해`,
+    artworkAlt: `${element.name}을 모티프로 한 오행 상징 그림`,
     lead: `이 운명서에서 나를 읽는 출발점은 ‘${element.name}’입니다. 전통적으로 ${element.meaning}에 빗댑니다. 정해진 성격이 아니라 나의 경험과 비교해 볼 관점이에요.`,
     action: element.action,
     points: [

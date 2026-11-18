@@ -30,6 +30,10 @@ const types = {
   "empress.webp": "image/webp",
   "sample-report.pdf": "application/pdf",
 };
+for (let i = 1; i <= 9; i++)
+  types[`report-art/chapter-${String(i).padStart(2, "0")}.jpg`] = "image/jpeg";
+for (const key of ["wood", "fire", "earth", "metal", "water", "garden"])
+  types[`report-art/${key}.png`] = "image/png";
 http
   .createServer((req, res) => {
     const u = new URL(req.url, "http://127.0.0.1:3200");

@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { chapterArt } from "./report-art";
 import { readingGuide } from "./report-reading-guide";
 import { reportDisclosure } from "./report-disclosure";
 import path from "node:path";
@@ -139,9 +140,26 @@ export async function reportPdf(
         .fontSize(23)
         .fillColor(ink)
         .text(c.title, { lineGap: 5 });
+      const artY = doc.y + 18;
+      doc.image(path.resolve("public" + chapterArt[i].src), 58, artY, {
+        width: W - 116,
+        height: 170,
+        fit: [W - 116, 170],
+        align: "center",
+        valign: "center",
+      });
+      doc.y = artY + 180;
+      doc
+        .fontSize(8)
+        .fillColor(gold)
+        .text(chapterArt[i].title, 58, doc.y, {
+          align: "center",
+          width: W - 116,
+        });
       doc
         .moveDown(1.3)
         .fontSize(10.5)
+        .fillColor(ink)
         .text(c.text, { lineGap: 7, align: "left" });
       doc
         .moveDown(1.4)
@@ -164,7 +182,7 @@ export async function reportPdf(
     doc.image(path.resolve("public" + guide.artwork), 178, doc.y + 12, {
       width: 240,
     });
-    doc.y += 200;
+    doc.y += 265;
     doc.fontSize(13).fillColor(gold).text("내 성향, 한눈에 보기");
     doc.moveDown().fontSize(11).fillColor(ink).text(guide.lead, { lineGap: 7 });
     doc.moveDown().text("오늘의 작은 실천 · " + guide.action, { lineGap: 7 });

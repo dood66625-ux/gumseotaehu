@@ -1,11 +1,18 @@
 "use client";
 import Link from "next/link";
+import { chapterArt } from "../lib/report-art";
 import { readingGuide } from "../lib/report-reading-guide";
 import { reportDisclosure } from "../lib/report-disclosure";
 import { useLayoutEffect, useRef, useState } from "react";
 import { reportDownload } from "../lib/report-download";
 import { api, useLoad, ErrorBox, Loading } from "./client";
-export default function ReportReader({ id }: { id: string }) {
+export default function ReportReader({
+  id,
+  assetBase = "",
+}: {
+  id: string;
+  assetBase?: string;
+}) {
   const { data: d, error: loadError } = useLoad<any>("reports/" + id),
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
@@ -95,7 +102,7 @@ export default function ReportReader({ id }: { id: string }) {
         })}
         까지
       </p>
-      <div className="report-cover">
+      <div className="report-cover illustrated-cover">
         <p className="eyebrow">A PRIVATE ARCHIVE · 一人一書</p>
         <strong>禁書</strong>
         <p>{d.name} 님을 위해 펼친 아홉 장의 이야기</p>
@@ -122,7 +129,7 @@ export default function ReportReader({ id }: { id: string }) {
       <div className="card gold">
         <img
           className="mini-portrait"
-          src="/empress-avatar-v2.webp"
+          src={assetBase + "/empress-avatar-v2.webp"}
           width="85"
           height="108"
           alt="금서태후"
@@ -147,6 +154,16 @@ export default function ReportReader({ id }: { id: string }) {
         <article id={"chapter-" + i} key={c.title} className="report-chapter">
           <p className="eyebrow">CHAPTER {String(i + 1).padStart(2, "0")}</p>
           <h2>{c.title}</h2>
+          <figure className="chapter-illustration">
+            <img
+              src={assetBase + chapterArt[i].src}
+              alt={chapterArt[i].alt}
+              width="508"
+              height="337"
+              loading="lazy"
+            />
+            <figcaption>{chapterArt[i].title}</figcaption>
+          </figure>
           <p>{c.text}</p>
           <small className="chapter-fact">
             계산 기록:{" "}
@@ -171,7 +188,7 @@ export default function ReportReader({ id }: { id: string }) {
         </p>
         <figure>
           <img
-            src={guide.artwork}
+            src={assetBase + guide.artwork}
             alt={guide.artworkAlt}
             width="640"
             height="460"

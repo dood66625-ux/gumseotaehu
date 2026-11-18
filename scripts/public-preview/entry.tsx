@@ -215,7 +215,7 @@ if (screen !== "home") {
     ) : screen === "success" ? (
       <PaymentStatus id={id} />
     ) : screen === "report" ? (
-      <ReportReader id={id} />
+      <ReportReader id={id} assetBase={base} />
     ) : screen === "recover" ? (
       <>
         <h1>가상 운명서 다시 찾기</h1>

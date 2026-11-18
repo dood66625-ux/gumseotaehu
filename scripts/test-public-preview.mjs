@@ -78,6 +78,15 @@ try {
   await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await page.getByRole("link", { name: "운명서 전체 읽기" }).click();
   await page.getByRole("heading", { name: "가온 님의 종합 운명서" }).waitFor();
+  await page
+    .locator(".chapter-illustration img")
+    .evaluateAll(async (images) => {
+      if (images.length !== 9) throw Error("Chapter artwork missing");
+      for (const image of images) {
+        image.loading = "eager";
+        await image.decode();
+      }
+    });
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PDF 다운로드" }).click();
   await (await download).saveAs("var/public-preview-proof.pdf");

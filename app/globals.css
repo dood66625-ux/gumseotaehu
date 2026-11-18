@@ -2615,3 +2615,217 @@ button.small.danger {
 .reading-guide dd {
   margin: 4px 0 0;
 }
+
+/* Illustrated archive: shared artwork, quiet typography, clear reading hierarchy. */
+body {
+  background-image: radial-gradient(
+    ellipse at 85% 5%,
+    #30453818,
+    transparent 45%
+  );
+}
+.button {
+  border-radius: 3px;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.button:hover:not(:disabled) {
+  box-shadow: 0 5px 24px #d4b7821a;
+}
+.illustrated-archive {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 48px 96px;
+}
+.archive-gallery-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 36px;
+  margin-bottom: 32px;
+}
+.archive-gallery-heading h2 {
+  font: 34px/1.6 var(--serif);
+  margin: 12px 0 0;
+  color: var(--gold);
+}
+.archive-gallery-heading > p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 2;
+}
+.archive-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+.archive-gallery figure {
+  margin: 0;
+  border: 1px solid #8c71494d;
+  padding: 8px;
+  background: #211c15;
+}
+.archive-gallery img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.5;
+  object-fit: cover;
+}
+.archive-gallery figcaption {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 18px 8px 12px;
+  font: 15px/1.7 var(--serif);
+  color: #e4cfaa;
+}
+.archive-gallery figcaption span {
+  font: 10px/1 var(--sans);
+  color: var(--gold);
+  letter-spacing: 0.14em;
+}
+.gallery-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+.illustrated-cover {
+  background:
+    linear-gradient(0deg, #100f0eeb, #100f0e80),
+    url("/report-art/garden.png") center/cover;
+  padding-block: 58px;
+  border: 1px solid #ac8b56;
+  box-shadow: 0 16px 52px #0004;
+}
+.report-cover.illustrated-cover > strong {
+  text-shadow: 0 4px 24px #0009;
+}
+.report-nav {
+  gap: 7px;
+  padding-block: 8px;
+}
+.report-nav > a {
+  border-radius: 3px;
+}
+.report-chapter {
+  padding: 48px;
+}
+.chapter-illustration {
+  margin: 0 0 30px;
+  padding: 7px;
+  border: 1px solid #bca27880;
+  background: #f6eedf;
+}
+.chapter-illustration img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.85;
+  object-fit: cover;
+}
+.chapter-illustration figcaption {
+  color: #715a38;
+  font: 13px/1.8 var(--serif);
+  text-align: center;
+  padding: 13px 8px 7px;
+  letter-spacing: 0.04em;
+}
+.reading-guide {
+  background: linear-gradient(135deg, #272c25, #1d201b 65%, #292219);
+  border: 1px solid #8e805a;
+  padding: 40px;
+}
+.reading-guide h2 {
+  color: #eed8af;
+  font-family: var(--serif);
+}
+.reading-guide figure {
+  max-width: 380px;
+  padding: 8px;
+  border: 1px solid #bca27870;
+  background: #eadcc2;
+}
+.reading-guide figure img {
+  border-radius: 0;
+}
+.reading-guide figcaption {
+  color: #59452d;
+  padding: 8px;
+}
+.reading-guide h3 {
+  color: #e2c593;
+  font-size: 17px;
+}
+.reading-guide dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.reading-guide dl > div {
+  border-top: 1px solid #8e805a55;
+  padding-top: 5px;
+}
+@media (max-width: 700px) {
+  .illustrated-archive {
+    padding: 16px 24px 60px;
+  }
+  .archive-gallery-heading {
+    display: block;
+    margin-bottom: 24px;
+  }
+  .archive-gallery-heading h2 {
+    font-size: 27px;
+  }
+  .archive-gallery {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .archive-gallery img {
+    aspect-ratio: 1.85;
+  }
+  .archive-gallery figcaption {
+    padding-block: 12px 8px;
+  }
+  .report-chapter {
+    padding: 32px 22px;
+  }
+  .chapter-illustration {
+    margin-bottom: 24px;
+    padding: 5px;
+  }
+  .chapter-illustration img {
+    aspect-ratio: 1.5;
+  }
+  .reading-guide {
+    padding: 28px 22px;
+  }
+  .reading-guide dl {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}
+
+/* Cinnabar seals echo the Chinese imperial painting direction. */
+.seal {
+  background: #6e302a;
+  color: #f1dbac;
+  border-color: #b98b59;
+  box-shadow: inset 0 0 0 3px #5c2724;
+}
+.section-flourish {
+  color: #d9b77e;
+  background: radial-gradient(circle, #793b2a35, transparent 65%);
+}
+.archive-gallery-heading .eyebrow {
+  color: #cbb88e;
+}
+.chapter-illustration {
+  box-shadow: 0 4px 18px #5c3e2210;
+}

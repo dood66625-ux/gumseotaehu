@@ -1,3 +1,4 @@
+import { chapterArt } from "../lib/report-art";
 import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Intro from "@/components/Intro";
 export default function Landing() {
@@ -125,6 +126,47 @@ export default function Landing() {
           </article>
         </div>
       </section>
+      <section
+        className="illustrated-archive"
+        aria-labelledby="illustrated-archive-title"
+      >
+        <div className="archive-gallery-heading">
+          <div>
+            <p className="eyebrow">NINE CHAPTERS, ONE PERSONAL STORY</p>
+            <h2 id="illustrated-archive-title">
+              읽는 순간도,
+              <br />
+              간직하는 시간도 아름답게.
+            </h2>
+          </div>
+          <p>
+            나를 이해하는 아홉 장의 이야기.
+            <br />
+            그림과 함께 읽고, 쉬운 풀이로 마음에 남기세요.
+          </p>
+        </div>
+        <div className="archive-gallery">
+          {[0, 3, 7].map((index) => (
+            <figure key={index}>
+              <img
+                src={chapterArt[index].src}
+                alt={chapterArt[index].alt}
+                width="508"
+                height="337"
+                loading="lazy"
+              />
+              <figcaption>
+                <span>0{index + 1}</span>
+                {chapterArt[index].title}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+        <p className="gallery-note">
+          공통 일러스트 미리보기 · 그림은 각 장의 주제를 표현한 상징
+          이미지입니다.
+        </p>
+      </section>
       <section className="empress-quote">
         <span className="quote-mark" aria-hidden="true">
           “
@@ -194,7 +236,7 @@ export default function Landing() {
             무료 풀이부터 시작하기 <span aria-hidden="true">→</span>
           </a>
           <p className="fine">
-            웹 전체 열람 · PDF 저장 · 구매 후 1년 무료 재열람
+            웹 전체 열람 · 그림이 담긴 PDF · 쉬운 풀이 · 1년 무료 재열람
             <br />
             출생시간 미상·대운 계산 구분 미선택 시 관련 분석은 제한됩니다.
           </p>

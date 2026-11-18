@@ -1,7 +1,13 @@
 import { PRODUCT_PRICE_KRW } from "../lib/product";
 import { build } from "esbuild";
 import { renderToStaticMarkup } from "react-dom/server";
-import { mkdirSync, writeFileSync, readFileSync, copyFileSync } from "node:fs";
+import {
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  copyFileSync,
+  cpSync,
+} from "node:fs";
 import { resolve } from "node:path";
 const reviewEnabled = process.env.PREVIEW_TOSS_TEST_REVIEW === "1";
 const reviewTarget = "https://pay.gumseo.kr/";
@@ -218,6 +224,7 @@ for (const file of [
   "intro.js",
 ])
   copyFileSync("public/" + file, resolve(out, file));
+cpSync("public/report-art", resolve(out, "report-art"), { recursive: true });
 writeFileSync(
   resolve(out, "royal-v2.css"),
   readFileSync("app/globals.css", "utf8").replace(
