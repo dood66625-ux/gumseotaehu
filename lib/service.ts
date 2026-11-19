@@ -1,3 +1,4 @@
+import type { GenerationLane } from "./order-generation";
 import { aiSpendReview, hasAiReservation } from "./ai-spend-review";
 import { PRODUCT_PRICE_KRW, isSupportedOrderAmount } from "./product";
 import { snapshotMailRecipient, snapshotTicketContact } from "./mail-records";
@@ -430,13 +431,19 @@ export function reconcile() {
   });
 }
 type ReportJob = Record<string, any>;
-function claimReportJob(orderId?: string): ReportJob | null {
+function claimReportJob(
+  orderId?: string,
+  lane: GenerationLane = "mock",
+): ReportJob | null {
+  if (!["mock", "openai"].includes(lane))
+    throw Error("INVALID_GENERATION_LANE");
   workerHeartbeat();
   reconcile();
   return tx(() => {
     const now = Date.now();
     const j = one(
-      "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id WHERE o.payment_status='paid' AND o.content_deleted=0 AND o.expires>? AND (? IS NULL OR o.id=?) AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
+      "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id LEFT JOIN order_generation_lanes l ON l.order_id=o.id WHERE COALESCE(l.provider,'mock')=? AND o.payment_status='paid' AND o.content_deleted=0 AND o.expires>? AND (? IS NULL OR o.id=?) AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
+      lane,
       now,
       orderId ?? null,
       orderId ?? null,
@@ -590,8 +597,9 @@ export async function workOnceWithGenerator(
     context: Readonly<{ orderId: string; version: number }>,
   ) => Promise<Report>,
   orderId?: string,
+  lane: GenerationLane = "mock",
 ) {
-  const job = claimReportJob(orderId);
+  const job = claimReportJob(orderId, lane);
   if (!job) return false;
   try {
     const { order, chart } = reportJobContext(job);

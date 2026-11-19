@@ -49,3 +49,4 @@ INSERT OR IGNORE INTO schema_migrations VALUES(7,unixepoch()*1000);
 CREATE TABLE IF NOT EXISTS privacy_checkpoint_source(id INTEGER PRIMARY KEY CHECK(id=1),source_id TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS privacy_checkpoint_health(id INTEGER PRIMARY KEY CHECK(id=1),generated_at INTEGER NOT NULL,last_failure INTEGER);
 INSERT OR IGNORE INTO schema_migrations VALUES(9,unixepoch()*1000);
+CREATE TABLE IF NOT EXISTS order_generation_lanes(order_id TEXT PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,provider TEXT NOT NULL CHECK(provider='openai'),assigned_version INTEGER NOT NULL CHECK(assigned_version>0),created INTEGER NOT NULL);

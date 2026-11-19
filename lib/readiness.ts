@@ -14,6 +14,7 @@ export function launchReadiness() {
       "offline-durable-ai-spend-ledger-and-budgeted-generation",
       "offline-opt-in-per-order-openai-http-storage-and-reopen",
       "admin-review-of-held-ai-reservations-with-retry-block",
+      "persistent-mock-ai-queue-isolation-across-restart-and-version-change",
       "durable-job-and-refund-reconciliation",
       "offline-toss-order-integration-and-notification-recovery",
       "disabled-by-default-signed-test-webhook-receipt",
@@ -47,7 +48,7 @@ export function launchReadiness() {
         id: "ai",
         kind: "implementation-and-provider",
         detail:
-          "Owner-funded fixed synthetic generation stored real OpenAI reports and verified unchanged reopens/PDF with zero regeneration. The first known-time draft was under the requested chapter length; v2 enforces 350 characters and a time-unknown sample passed basic gates. One response was rejected by the safety filter. Original three reservations remain, with one explicitly recorded funded-resume slot (four lifetime calls). Professional and normal-time v3 quality review and customer-data authorization remain required. An opt-in per-order HTTP adapter and spend-ledger pipeline passed offline HTTP/storage/reopen tests; they are unregistered. Production activation, queue separation/recovery, approved spend policy and worker registration remain incomplete. Rule mock cannot be sold.",
+          "Owner-funded fixed synthetic generation stored real OpenAI reports and verified unchanged reopens/PDF with zero regeneration. The first known-time draft was under the requested chapter length; v2 enforces 350 characters and a time-unknown sample passed basic gates. One response was rejected by the safety filter. Original three reservations remain, with one explicitly recorded funded-resume slot (four lifetime calls). Professional and normal-time v3 quality review and customer-data authorization remain required. An opt-in per-order HTTP adapter and spend-ledger pipeline passed offline HTTP/storage/reopen tests; they are unregistered. Persistent queue separation passed offline tests. Production activation/cutover and recovery, approved spend policy and worker registration remain incomplete. Rule mock cannot be sold.",
       },
       {
         id: "mail",

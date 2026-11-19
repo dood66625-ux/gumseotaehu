@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, afterAll, expect, it } from "vitest";
 import { DatabaseSync } from "node:sqlite";
 import { aiSpendLedger } from "../lib/ai-spend-ledger";
+import { prepareAiOrder } from "../lib/order-generation";
 import { runOrderOpenAiJob } from "../lib/ai-order-runner";
 import { approvedOpenAiModel } from "../lib/integrations/openai-http";
 import { runBudgetedAiJob } from "../lib/ai-generation-worker";
@@ -224,6 +225,11 @@ it("an old failed attempt cannot mark a newer completed job as retrying", async 
   expect(svc.getReport(o.session, o.order).report.chapters).toHaveLength(9);
 });
 
+function aiPaid(email?: string) {
+  const order = paid(email);
+  prepareAiOrder(order.order);
+  return order;
+}
 function testLedger() {
   const database = new DatabaseSync(":memory:");
   return {
@@ -236,7 +242,7 @@ function testLedger() {
   };
 }
 it("budgeted candidate is inactive by default and leaves the selected job untouched", async () => {
-  const order = paid();
+  const order = aiPaid();
   const { database, ledger } = testLedger();
   try {
     let calls = 0;
@@ -260,7 +266,7 @@ it("budgeted candidate is inactive by default and leaves the selected job untouc
   }
 });
 it("reserves the authoritative order version before generation and reopens without another call", async () => {
-  const order = paid();
+  const order = aiPaid();
   const { database, ledger } = testLedger();
   let calls = 0;
   try {
@@ -300,7 +306,7 @@ it("reserves the authoritative order version before generation and reopens witho
   }
 });
 it("a lost response stays reserved and a scheduled retry cannot call the generator again", async () => {
-  const order = paid();
+  const order = aiPaid();
   const { database, ledger } = testLedger();
   let calls = 0;
   try {
@@ -330,8 +336,8 @@ it("a lost response stays reserved and a scheduled retry cannot call the generat
   }
 });
 it("insufficient budget blocks a new order before its generator runs", async () => {
-  const first = paid("first@example.invalid"),
-    second = paid("second@example.invalid");
+  const first = aiPaid("first@example.invalid"),
+    second = aiPaid("second@example.invalid");
   const { database, ledger } = testLedger();
   let calls = 0;
   try {
@@ -363,7 +369,7 @@ it("missing usage or malformed content never publishes a ready report and retain
     "cost-mismatch",
     "bad-provider",
   ]) {
-    const order = paid(mode + "@example.invalid");
+    const order = aiPaid(mode + "@example.invalid");
     const { database, ledger } = testLedger();
     try {
       await runBudgetedAiJob({
@@ -399,7 +405,7 @@ it("missing usage or malformed content never publishes a ready report and retain
 });
 
 it("a refund during generation prevents publication without releasing the spent reservation", async () => {
-  const order = paid();
+  const order = aiPaid();
   const { database, ledger } = testLedger();
   try {
     await runBudgetedAiJob({
@@ -428,7 +434,7 @@ it("a refund during generation prevents publication without releasing the spent 
 });
 
 it("the complete HTTP adapter path reserves first, validates and stores once without network on reopen", async () => {
-  const order = paid();
+  const order = aiPaid();
   const { database, ledger } = testLedger();
   let calls = 0;
   try {
@@ -489,7 +495,7 @@ it("the complete HTTP adapter path reserves first, validates and stores once wit
   }
 });
 it("the HTTP path stays off without opt-in and rejects missing approval before claiming a job", async () => {
-  const order = paid();
+  const order = aiPaid();
   const { database, ledger } = testLedger();
   let calls = 0;
   const options = {
@@ -523,7 +529,7 @@ it("the HTTP path stays off without opt-in and rejects missing approval before c
   }
 });
 it("provider quota rejection is held without repeated HTTP calls or a partial report", async () => {
-  const order = paid();
+  const order = aiPaid();
   const { database, ledger } = testLedger();
   let calls = 0;
   try {
@@ -561,7 +567,7 @@ it("provider quota rejection is held without repeated HTTP calls or a partial re
 });
 
 it("operations can inspect an unresolved reservation but cannot reset the same order into another AI attempt", () => {
-  const order = paid();
+  const order = aiPaid();
   const ledger = aiSpendLedger(db(), {
     dailyUsdMicros: 60000,
     lifetimeUsdMicros: 60000,
@@ -594,4 +600,85 @@ it("operations can inspect an unresolved reservation but cannot reset the same o
   expect(
     one("SELECT attempts FROM jobs WHERE order_id=?", order.order)?.attempts,
   ).toBe(0);
+});
+
+it("mock and AI workers cannot consume each other's orders", async () => {
+  const ai = aiPaid("lane-ai@example.invalid"),
+    mock = paid("lane-mock@example.invalid");
+  const { database, ledger } = testLedger();
+  let calls = 0;
+  try {
+    expect(
+      await runBudgetedAiJob({
+        enabled: true,
+        orderId: mock.order,
+        ledger,
+        generate: async (chart) => {
+          calls++;
+          return { ...generate(chart), provider: "openai" };
+        },
+      }),
+    ).toBe(false);
+    expect(calls).toBe(0);
+    expect(ledger.summary().calls).toBe(0);
+    expect(svc.workOnce()).toBe(true);
+    expect(svc.getReport(mock.session, mock.order).report.provider).toBe(
+      "local-rule-mock",
+    );
+    expect(svc.workOnce()).toBe(false);
+    expect(
+      one("SELECT fulfillment FROM orders WHERE id=?", ai.order)?.fulfillment,
+    ).toBe("queued");
+    expect(() => prepareAiOrder(mock.order)).toThrow(
+      "AI_ORDER_ALREADY_STARTED",
+    );
+  } finally {
+    database.close();
+  }
+});
+it("a failed AI order is never filled with a mock report on retry or restart", async () => {
+  const order = aiPaid();
+  const { database, ledger } = testLedger();
+  try {
+    await runBudgetedAiJob({
+      enabled: true,
+      orderId: order.order,
+      ledger,
+      generate: async () => {
+        throw Error("lost response");
+      },
+    });
+    run("UPDATE jobs SET scheduled=0 WHERE order_id=?", order.order);
+    closeDb();
+    db();
+    expect(svc.workOnce()).toBe(false);
+    expect(
+      one("SELECT fulfillment FROM orders WHERE id=?", order.order)
+        ?.fulfillment,
+    ).toBe("retrying");
+    expect(
+      one("SELECT count(*) n FROM reports WHERE order_id=?", order.order)?.n,
+    ).toBe(0);
+  } finally {
+    database.close();
+  }
+});
+it("AI lane is retained when the current job is repaired or the order version changes", () => {
+  const order = aiPaid();
+  expect(prepareAiOrder(order.order)).toBe(false);
+  run("DELETE FROM jobs WHERE order_id=?", order.order);
+  expect(svc.workOnce()).toBe(false);
+  expect(
+    one("SELECT state FROM jobs WHERE order_id=?", order.order)?.state,
+  ).toBe("queued");
+  run("UPDATE orders SET version=2 WHERE id=?", order.order);
+  run(
+    "INSERT INTO jobs(id,order_id,version,state,scheduled) VALUES(?, ?,2,'queued',0)",
+    "lane-version-two",
+    order.order,
+  );
+  expect(svc.workOnce()).toBe(false);
+  expect(
+    one("SELECT version FROM orders WHERE id=?", order.order)?.version,
+  ).toBe(2);
 });
