@@ -1,13 +1,20 @@
-/** Inactive scheduler. No provider imports, implicit enrollment, or normal-worker registration. */
+/** Default-disabled scheduler. Runtime enrollment is checked by ai-worker-runtime. */
 import type { DatabaseSync } from "node:sqlite";
 import type { AiSpendPolicy } from "./ai-spend-ledger";
 export function inspectAiWorkerQueue(
   db: DatabaseSync,
   policy: AiSpendPolicy,
   limit = 1,
+  createdAtOrAfter = 0,
 ) {
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 10)
     throw Error("AI_WORKER_BATCH_INVALID");
+  if (
+    !Number.isSafeInteger(createdAtOrAfter) ||
+    createdAtOrAfter < 0 ||
+    createdAtOrAfter > Date.now()
+  )
+    throw Error("AI_WORKER_CUTOFF_INVALID");
   for (const name of [
     "orders",
     "jobs",
@@ -46,10 +53,11 @@ export function inspectAiWorkerQueue(
     JOIN order_generation_lanes l ON l.order_id=o.id AND l.provider='openai'
     WHERE o.payment_status='paid' AND o.content_deleted=0 AND o.expires>? AND j.version=o.version
     AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?))
+    AND o.created>=?
     AND NOT EXISTS(SELECT 1 FROM ai_spend_calls c WHERE c.order_id=o.id AND c.version=j.version)
     ORDER BY j.scheduled,j.id LIMIT ?`,
     )
-    .all(now, now, now, limit) as { orderId: string }[];
+    .all(now, now, now, createdAtOrAfter, limit) as { orderId: string }[];
   const held = Number(
     db
       .prepare(
@@ -86,6 +94,7 @@ export async function runAiWorkerCycle(
     policy: AiSpendPolicy;
     runJob: (orderId: string) => Promise<boolean>;
     limit?: number;
+    createdAtOrAfter?: number;
     stopping?: () => boolean;
   },
 ) {
@@ -93,18 +102,28 @@ export async function runAiWorkerCycle(
     return { state: "disabled" as const, processed: 0 };
   if (db.isTransaction) throw Error("AI_WORKER_TOP_LEVEL_REQUIRED");
   const limit = options.limit ?? 1;
-  let queue = inspectAiWorkerQueue(db, options.policy, limit);
+  let queue = inspectAiWorkerQueue(
+    db,
+    options.policy,
+    limit,
+    options.createdAtOrAfter,
+  );
   if (queue.state === "blocked") return { ...queue, processed: 0 };
   let processed = 0;
   for (let i = 0; i < limit; i++) {
     // Refresh after every job: another worker, refund, or higher actual cost can change eligibility.
-    queue = inspectAiWorkerQueue(db, options.policy, 1);
+    queue = inspectAiWorkerQueue(
+      db,
+      options.policy,
+      1,
+      options.createdAtOrAfter,
+    );
     if (queue.state === "blocked") return { ...queue, processed };
     if (options.stopping?.() || !queue.eligible.length) break;
     if (!(await options.runJob(queue.eligible[0].orderId))) break;
     processed++;
   }
-  queue = inspectAiWorkerQueue(db, options.policy, 1);
+  queue = inspectAiWorkerQueue(db, options.policy, 1, options.createdAtOrAfter);
   return queue.state === "blocked"
     ? { ...queue, processed }
     : { state: "ready" as const, processed, held: queue.held };

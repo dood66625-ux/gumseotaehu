@@ -48,7 +48,8 @@
     "private:serve": "node --use-env-proxy --import tsx scripts/private-reader-server.ts --serve-live",
     "test:private-history": "npm run private:build && node scripts/test-private-reader-history.mjs",
     "progress": "node scripts/launch-progress.mjs",
-    "progress:write": "node scripts/launch-progress.mjs --write"
+    "progress:write": "node scripts/launch-progress.mjs --write",
+    "ai:worker:control": "tsx scripts/ai-worker-control.ts"
   },
   "keywords": [],
   "author": "",

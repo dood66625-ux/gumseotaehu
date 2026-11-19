@@ -139,6 +139,8 @@ export function restoreEncryptedBackup(
           restored.exec(
             "UPDATE mail_queue SET state=CASE WHEN state IN ('accepted','delivered','bounced','complained') THEN state ELSE 'review' END,recovery_hold=1,needs_check=0,lease_until=0,last_error='RESTORED_REQUIRES_RECONCILIATION'",
           );
+        if (has("ai_worker_enrollment"))
+          restored.exec("UPDATE ai_worker_enrollment SET recovery_hold=1");
         restored.exec("COMMIT;");
       } catch (error) {
         restored.exec("ROLLBACK;");

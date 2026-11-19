@@ -442,6 +442,15 @@ function claimReportJob(
   workerHeartbeat();
   reconcile();
   return tx(() => {
+    // A restored AI enrollment also blocks mock fallback while orders/usage are reconciled.
+    if (
+      one(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ai_worker_enrollment'",
+      ) &&
+      one("SELECT recovery_hold FROM ai_worker_enrollment WHERE id=1")
+        ?.recovery_hold !== 0
+    )
+      return null;
     const now = Date.now();
     const j = one(
       "SELECT j.* FROM jobs j JOIN orders o ON o.id=j.order_id LEFT JOIN order_generation_lanes l ON l.order_id=o.id WHERE COALESCE(l.provider,'mock')=? AND o.payment_status='paid' AND o.content_deleted=0 AND o.expires>? AND (? IS NULL OR o.id=?) AND j.version=o.version AND ((j.state IN ('queued','retrying') AND j.scheduled<=?) OR (j.state='running' AND j.lease_until<?)) ORDER BY j.scheduled LIMIT 1",
@@ -590,7 +599,7 @@ export function workOnce(failGeneration = false) {
   }
   return true;
 }
-/** Injectable asynchronous generation. Normal routes/worker still use only workOnce's rule mock.
+/** Injectable asynchronous generation. Normal routes do not invoke providers; the enrolled worker can select the AI lane.
  * The live synthetic harness supplies a chart-pinned transport in an isolated DB.
  */
 export async function workOnceWithGenerator(

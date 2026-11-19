@@ -1,4 +1,4 @@
-/** Opt-in per-order orchestration. Not registered in any public route or general worker. */
+/** Opt-in per-order orchestration. Used by the explicitly enrolled worker, never by public request data. */
 import { runBudgetedAiJob } from "./ai-generation-worker";
 import type { aiSpendLedger } from "./ai-spend-ledger";
 import { generateAiReport } from "./integrations/ai-contract";
@@ -16,7 +16,7 @@ export async function runOrderOpenAiJob(options: {
   fetch?: typeof fetch;
 }) {
   if (options.enabled !== true) return false;
-  // Reject prior to claiming a job or reserving costs. No environment variable enables this.
+  // Reject prior to claiming a job or reserving costs. The trusted runtime must separately approve customer transmission.
   if (options.approval !== "customer-data-approved")
     throw Error("EXTERNAL_TRANSMISSION_NOT_APPROVED");
   if (!/^sk-[A-Za-z0-9_-]{20,}$/.test(options.apiKey))

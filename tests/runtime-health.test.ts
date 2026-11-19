@@ -1,3 +1,4 @@
+import { externalEffectsStatus } from "../lib/effects-status";
 import {
   mkdtempSync,
   rmSync,
@@ -60,4 +61,23 @@ it("fails the runtime probe when an existing deletion checkpoint reports failure
     db.close();
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+it("health reports scoped configuration rather than promising all external effects are disabled", () => {
+  expect(externalEffectsStatus({})).toBe("disabled");
+  expect(
+    externalEffectsStatus({
+      AI_WORKER_MODE: "disabled",
+      MAIL_WORKER_MODE: "disabled",
+    }),
+  ).toBe("disabled");
+  expect(externalEffectsStatus({ AI_WORKER_MODE: "openai" })).toBe(
+    "scoped-opt-in",
+  );
+  expect(externalEffectsStatus({ MAIL_WORKER_MODE: "resend" })).toBe(
+    "scoped-opt-in",
+  );
+  expect(externalEffectsStatus({ AI_WORKER_MODE: "typo" })).toBe(
+    "scoped-opt-in",
+  );
 });

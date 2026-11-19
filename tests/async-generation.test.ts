@@ -1,4 +1,20 @@
-import { beforeAll, beforeEach, afterAll, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
+import {
+  enrollAiWorker,
+  readAiWorkerEnrollment,
+} from "../lib/ai-worker-enrollment";
+import { createEncryptedBackup, restoreEncryptedBackup } from "../lib/backup";
+import { config } from "../lib/config";
+import { runConfiguredAiCycle } from "../lib/ai-worker-runtime";
+import {
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { DatabaseSync } from "node:sqlite";
 import { aiSpendLedger } from "../lib/ai-spend-ledger";
 import { inspectAiWorkerQueue, runAiWorkerCycle } from "../lib/ai-worker-cycle";
@@ -6,11 +22,14 @@ import { prepareAiOrder } from "../lib/order-generation";
 import { runOrderOpenAiJob } from "../lib/ai-order-runner";
 import { approvedOpenAiModel } from "../lib/integrations/openai-http";
 import { runBudgetedAiJob } from "../lib/ai-generation-worker";
-import { rmSync } from "node:fs";
+import { rmSync, mkdtempSync } from "node:fs";
 import { closeDb, db, one, run } from "../lib/db";
 import * as svc from "../lib/service";
 import { generate } from "../lib/interpretation";
-import { syntheticBirths } from "../lib/integrations/ai-synthetic-fixtures";
+import {
+  syntheticChart,
+  syntheticBirths,
+} from "../lib/integrations/ai-synthetic-fixtures";
 const path = "./var/async-generation-test.sqlite";
 process.env.APP_MODE = "local";
 process.env.EXTERNAL_EFFECTS = "disabled";
@@ -23,7 +42,12 @@ beforeAll(() => {
   rmSync(path, { force: true });
   db();
 });
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
 beforeEach(() => {
+  db().exec("DROP TABLE IF EXISTS ai_worker_enrollment;");
   if (
     one(
       "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ai_spend_calls'",
@@ -849,4 +873,246 @@ it("a higher recorded cost pauses the batch before another job spends retry atte
   expect(
     one("SELECT count(*) n FROM jobs WHERE state='queued' AND attempts=0")?.n,
   ).toBe(1);
+});
+
+const runtimePolicy = {
+  dailyUsdMicros: 120000,
+  lifetimeUsdMicros: 180000,
+  reservationUsdMicros: 60000,
+};
+function runtimeSettings(file: string) {
+  vi.stubEnv("APP_ORIGIN", "https://runtime.example.invalid");
+  vi.stubEnv("AI_WORKER_MODE", "openai");
+  vi.stubEnv("CUSTOMER_AI_APPROVAL", "customer-data-approved");
+  vi.stubEnv("AI_DAILY_USD_MICROS", "120000");
+  vi.stubEnv("AI_LIFETIME_USD_MICROS", "180000");
+  vi.stubEnv("AI_RESERVATION_USD_MICROS", "60000");
+  vi.stubEnv("AI_CUTOVER_FILE", file);
+  vi.stubEnv("OPENAI_API_KEY", "sk-offline_test_key_012345678901234567890");
+}
+function runtimeEnroll(file: string, now: number) {
+  db().exec(
+    "CREATE TABLE IF NOT EXISTS privacy_checkpoint_source(id INTEGER PRIMARY KEY,source_id TEXT NOT NULL)",
+  );
+  run(
+    "INSERT OR IGNORE INTO privacy_checkpoint_source VALUES(1,?)",
+    "11111111-1111-4111-8111-111111111111",
+  );
+  return enrollAiWorker(db(), {
+    policy: runtimePolicy,
+    origin: config().origin,
+    file,
+    key: config().key,
+    approval: "customer-data-approved",
+    now,
+  });
+}
+function successfulAiResponse() {
+  const report = generate(syntheticChart("known"));
+  for (const chapter of report.chapters)
+    while (chapter.text.length < 350)
+      chapter.text += " 오늘의 경험을 기록하고 작은 실천을 차분히 정해 보거라.";
+  return Response.json({
+    model: approvedOpenAiModel,
+    status: "completed",
+    usage: { input_tokens: 100, output_tokens: 200 },
+    output_text: JSON.stringify({
+      intro: report.intro,
+      chapters: report.chapters,
+      notes: report.notes,
+    }),
+  });
+}
+it("runtime remains disabled by default and rejects unapproved mode before any provider call", async () => {
+  const send = vi.fn<typeof fetch>();
+  vi.stubEnv("AI_WORKER_MODE", "");
+  expect(await runConfiguredAiCycle({ fetch: send })).toMatchObject({
+    state: "disabled",
+    processed: 0,
+  });
+  vi.stubEnv("AI_WORKER_MODE", "typo");
+  await expect(runConfiguredAiCycle({ fetch: send })).rejects.toThrow(
+    "INVALID_AI_WORKER_MODE",
+  );
+  vi.stubEnv("AI_WORKER_MODE", "openai");
+  vi.stubEnv("CUSTOMER_AI_APPROVAL", "");
+  await expect(runConfiguredAiCycle({ fetch: send })).rejects.toThrow(
+    "EXTERNAL_TRANSMISSION_NOT_APPROVED",
+  );
+  expect(send).not.toHaveBeenCalled();
+});
+it("enrolled runtime excludes historical queues and persists one generated report across cycles", async () => {
+  const directory = mkdtempSync("var/ai-runtime-");
+  try {
+    const file = directory + "/cutover.json";
+    const old = aiPaid("old-runtime@example.invalid");
+    const now = Date.now();
+    runtimeSettings(file);
+    runtimeEnroll(file, now);
+    vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+    const fresh = aiPaid("fresh-runtime@example.invalid");
+    const send = vi.fn(async () => successfulAiResponse());
+    expect(await runConfiguredAiCycle({ fetch: send })).toMatchObject({
+      processed: 1,
+    });
+    expect(svc.getReport(fresh.session, fresh.order).report.provider).toBe(
+      "openai",
+    );
+    expect(
+      one("SELECT state FROM jobs WHERE order_id=?", old.order)?.state,
+    ).toBe("queued");
+    closeDb(); // Reopen the actual app DB, not only a new coordinator instance.
+    expect(await runConfiguredAiCycle({ fetch: send })).toMatchObject({
+      processed: 0,
+    });
+    expect(send).toHaveBeenCalledOnce();
+    expect(one("SELECT count(*) n FROM ai_spend_calls")?.n).toBe(1);
+    await expect(
+      runConfiguredAiCycle({ fetch: send, stopping: () => true }),
+    ).resolves.toMatchObject({ processed: 0 });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("runtime refuses changed policy, invalid credential and recovery hold before consuming jobs", async () => {
+  const directory = mkdtempSync("var/ai-runtime-gates-");
+  try {
+    const file = directory + "/cutover.json",
+      now = Date.now();
+    runtimeSettings(file);
+    runtimeEnroll(file, now);
+    vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+    const order = aiPaid();
+    const send = vi.fn<typeof fetch>();
+    vi.stubEnv("AI_DAILY_USD_MICROS", "60000");
+    await expect(runConfiguredAiCycle({ fetch: send })).rejects.toThrow(
+      "AI_ENROLLMENT_BINDING_MISMATCH",
+    );
+    vi.stubEnv("AI_DAILY_USD_MICROS", "120000");
+    vi.stubEnv("OPENAI_API_KEY", "invalid");
+    await expect(runConfiguredAiCycle({ fetch: send })).rejects.toThrow(
+      "AI_CREDENTIAL_REQUIRED",
+    );
+    vi.stubEnv("OPENAI_API_KEY", "sk-offline_test_key_012345678901234567890");
+    run("UPDATE ai_worker_enrollment SET recovery_hold=1");
+    await expect(runConfiguredAiCycle({ fetch: send })).rejects.toThrow(
+      "AI_RESTORE_RECONCILIATION_REQUIRED",
+    );
+    expect(() => runtimeEnroll(file, now)).toThrow(
+      "AI_WORKER_ALREADY_ENROLLED",
+    );
+    expect(send).not.toHaveBeenCalled();
+    expect(
+      one("SELECT attempts FROM jobs WHERE order_id=?", order.order)?.attempts,
+    ).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("lost provider response remains reserved across runtime restarts without another HTTP request", async () => {
+  const directory = mkdtempSync("var/ai-runtime-lost-");
+  try {
+    const now = Date.now();
+    runtimeSettings(directory + "/cutover.json");
+    runtimeEnroll(directory + "/cutover.json", now);
+    vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+    const order = aiPaid();
+    const send = vi.fn(async () => {
+      throw Error("private lost response");
+    });
+    await runConfiguredAiCycle({ fetch: send });
+    run("UPDATE jobs SET scheduled=0 WHERE order_id=?", order.order);
+    expect(await runConfiguredAiCycle({ fetch: send })).toMatchObject({
+      processed: 0,
+      held: 1,
+    });
+    expect(send).toHaveBeenCalledOnce();
+    expect(one("SELECT state FROM ai_spend_calls")?.state).toBe("uncertain");
+    expect(one("SELECT count(*) n FROM reports")?.n).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("encrypted restore holds the AI runtime even when the signed file and policy match", async () => {
+  const directory = mkdtempSync("var/ai-runtime-restore-");
+  try {
+    const now = Date.now(),
+      file = directory + "/cutover.json";
+    runtimeSettings(file);
+    runtimeEnroll(file, now);
+    vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+    aiPaid();
+    paid("restore-mock-queue@example.invalid");
+    const archive = directory + "/backup.gsb",
+      target = directory + "/restored.sqlite";
+    await createEncryptedBackup(db(), archive, config().key);
+    restoreEncryptedBackup(archive, target, config().key);
+    const copy = new DatabaseSync(target);
+    try {
+      expect(() =>
+        readAiWorkerEnrollment(copy, {
+          policy: runtimePolicy,
+          origin: config().origin,
+          file,
+          key: config().key,
+        }),
+      ).toThrow("AI_RESTORE_RECONCILIATION_REQUIRED");
+      expect(
+        copy.prepare("SELECT count(*) n FROM ai_spend_calls").get()?.n,
+      ).toBe(0);
+    } finally {
+      copy.close();
+    }
+    closeDb();
+    vi.stubEnv("DATABASE_PATH", target);
+    const send = vi.fn<typeof fetch>();
+    await expect(runConfiguredAiCycle({ fetch: send })).rejects.toThrow(
+      "AI_RESTORE_RECONCILIATION_REQUIRED",
+    );
+    expect(send).not.toHaveBeenCalled();
+    vi.stubEnv("AI_WORKER_MODE", "disabled");
+    expect(svc.workOnce()).toBe(false);
+    expect(one("SELECT count(*) n FROM reports")?.n).toBe(0);
+    expect(one("SELECT sum(attempts) n FROM jobs")?.n).toBe(0);
+  } finally {
+    closeDb();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it("offline operator CLI selects one post-cutover order without generating or printing its ID", () => {
+  const directory = mkdtempSync("var/ai-runtime-cli-");
+  try {
+    const now = Date.now();
+    runtimeSettings(directory + "/cutover.json");
+    runtimeEnroll(directory + "/cutover.json", now);
+    vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+    const fresh = paid("cli-runtime@example.invalid");
+    const invoke = (...args: string[]) =>
+      execFileSync(
+        process.execPath,
+        ["--import", "tsx", "scripts/ai-worker-control.ts", ...args],
+        {
+          env: { ...process.env },
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+    const result = invoke("--select-order", fresh.order);
+    expect(JSON.parse(result)).toMatchObject({
+      state: "selected",
+      generationEnabledByCommand: false,
+    });
+    expect(result).not.toContain(fresh.order);
+    expect(JSON.parse(invoke("--select-order", fresh.order)).state).toBe(
+      "already-selected",
+    );
+    expect(JSON.parse(invoke("--status")).state).toBe("ready");
+    expect(one("SELECT count(*) n FROM ai_spend_calls")?.n).toBe(0);
+    expect(
+      one("SELECT attempts FROM jobs WHERE order_id=?", fresh.order)?.attempts,
+    ).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });

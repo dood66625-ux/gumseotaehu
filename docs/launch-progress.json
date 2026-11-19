@@ -144,9 +144,9 @@
             },
             {
               "title": "본 서비스 AI worker 등록·복원 보류/전환 연결",
-              "status": "pending",
-              "remainingKind": "development",
-              "id": "2.2.5"
+              "status": "done",
+              "id": "2.2.5",
+              "evidence": "docs/ai-worker-operations.md"
             }
           ],
           "id": "2.2"

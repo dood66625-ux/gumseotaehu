@@ -1,3 +1,4 @@
+import { runConfiguredAiCycle } from "../lib/ai-worker-runtime";
 import { runConfiguredMailCycle } from "../lib/mail-worker-runtime";
 import { db } from "../lib/db";
 import { config } from "../lib/config";
@@ -8,7 +9,7 @@ import {
 } from "../lib/privacy-checkpoint";
 import { workOnce, reconcileRefunds, purgeExpired } from "../lib/service";
 console.log(
-  "Local durable worker started. Payment/AI effects disabled; mail requires separate enrollment.",
+  "Local durable worker started. Payment effects disabled; AI/mail require separate enrollment.",
 );
 let stopped = false;
 process.on("SIGINT", () => {
@@ -22,9 +23,14 @@ while (!stopped) {
   try {
     workOnce();
     reconcileRefunds();
+    try {
+      await runConfiguredAiCycle({ stopping: () => stopped });
+    } catch {
+      console.error("AI_WORKER_CYCLE_FAILED (no customer data logged)");
+    }
     // Sequential await: never overlap sends; stop prevents another cycle.
     try {
-      await runConfiguredMailCycle();
+      if (!stopped) await runConfiguredMailCycle();
     } catch {
       console.error("MAIL_WORKER_CYCLE_FAILED (no customer data logged)");
     }

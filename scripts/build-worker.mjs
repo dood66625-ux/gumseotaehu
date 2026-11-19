@@ -4,6 +4,7 @@ mkdirSync("dist", { recursive: true });
 await build({
   entryPoints: [
     "scripts/worker.ts",
+    "scripts/ai-worker-control.ts",
     "scripts/runtime-health.ts",
     "scripts/mail-status.ts",
     "scripts/runtime-backup.ts",

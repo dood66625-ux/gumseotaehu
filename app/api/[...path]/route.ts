@@ -1,3 +1,4 @@
+import { externalEffectsStatus } from "@/lib/effects-status";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
@@ -49,7 +50,7 @@ async function handler(
     if (p === "health" && req.method === "GET")
       return json({
         status: "local-mock",
-        externalEffects: "disabled",
+        externalEffects: externalEffectsStatus(),
         launchReady: false,
       });
     config();

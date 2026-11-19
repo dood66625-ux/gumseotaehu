@@ -1,4 +1,4 @@
-/** Pinned HTTP adapters. Normal routes and worker never register these transports. */
+/** Pinned HTTP adapters. Customer transport is registered only by explicitly enrolled workers. */
 import type { Chart } from "../astrology";
 import { buildAiRequest } from "./ai-contract";
 import {

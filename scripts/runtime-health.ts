@@ -1,3 +1,4 @@
+import { externalEffectsStatus } from "../lib/effects-status";
 /** Aggregate-only probes. Never initialize/migrate a database or contact a provider. */
 import { DatabaseSync } from "node:sqlite";
 import { lstatSync } from "node:fs";
@@ -65,7 +66,7 @@ async function main() {
     if (
       !response.ok ||
       state.status !== "local-mock" ||
-      state.externalEffects !== "disabled" ||
+      state.externalEffects !== externalEffectsStatus() ||
       state.launchReady !== false
     )
       throw Error("WEB_UNHEALTHY");

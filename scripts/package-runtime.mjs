@@ -63,6 +63,7 @@ export function packageRuntime(source, destination, secrets = []) {
       throw Error("BUILD_REQUIRED");
   for (const name of [
     "dist/worker.js",
+    "dist/ai-worker-control.js",
     "dist/runtime-health.js",
     "db/001-init.sql",
   ])
@@ -79,10 +80,16 @@ export function packageRuntime(source, destination, secrets = []) {
       });
     // Reviewed public browser code needed only by the isolated payment QA server.
     const sandboxClient = path.join(root, "scripts/toss-sandbox-client.mjs");
-    if (!fs.lstatSync(sandboxClient).isFile() || fs.lstatSync(sandboxClient).isSymbolicLink())
+    if (
+      !fs.lstatSync(sandboxClient).isFile() ||
+      fs.lstatSync(sandboxClient).isSymbolicLink()
+    )
       throw Error("UNSAFE_SANDBOX_CLIENT_SOURCE");
     fs.mkdirSync(path.join(out, "scripts"), { recursive: true });
-    fs.copyFileSync(sandboxClient, path.join(out, "scripts/toss-sandbox-client.mjs"));
+    fs.copyFileSync(
+      sandboxClient,
+      path.join(out, "scripts/toss-sandbox-client.mjs"),
+    );
     for (const name of [
       "Caddyfile.private",
       "compose.private.yml",

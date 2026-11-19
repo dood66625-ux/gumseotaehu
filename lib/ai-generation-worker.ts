@@ -1,4 +1,4 @@
-/** Explicitly injected, inactive candidate. No provider transport or normal-worker registration. */
+/** Budgeted per-order execution used by the explicitly enrolled worker. */
 import type { Chart } from "./astrology";
 import type { aiSpendLedger } from "./ai-spend-ledger";
 import { validateReport, type Report } from "./interpretation";
