@@ -43,7 +43,6 @@ export default function Landing() {
               →
             </span>
           </a>
-          <p className="cta-note">무료 풀이 먼저 · 회원가입 없이 시작</p>
           <Intro />
         </div>
         <div className="hero-bottom">
@@ -234,88 +233,13 @@ export default function Landing() {
             </p>
           </div>
           <a className="button secondary" href="/start">
-            무료 풀이부터 시작하기 <span aria-hidden="true">→</span>
+            금서 펼치기 <span aria-hidden="true">→</span>
           </a>
           <p className="fine">
             웹 전체 열람 · 그림이 담긴 PDF · 쉬운 풀이 · 1년 무료 재열람
             <br />
             출생시간 미상·대운 계산 구분 미선택 시 관련 분석은 제한됩니다.
           </p>
-        </div>
-      </section>
-      <section className="section journey-section">
-        <p className="eyebrow">FROM THE FIRST MOMENT TO YOUR OWN BOOK</p>
-        <h2>그대의 금서를 여는 방법</h2>
-        <div className="journey-cards">
-          <article>
-            <span>一</span>
-            <h3>태어난 순간</h3>
-            <p>
-              출생정보를 알려주세요.
-              <br />
-              만세력 계산에서 이야기가 시작됩니다.
-            </p>
-          </article>
-          <article>
-            <span>二</span>
-            <h3>첫 번째 해석</h3>
-            <p>
-              일간과 오행에 담긴 기운을
-              <br />
-              무료 풀이로 먼저 만나보세요.
-            </p>
-          </article>
-          <article>
-            <span>三</span>
-            <h3>그대만의 한 권</h3>
-            <p>
-              전체 운명서를 펼치고,
-              <br />
-              PDF로 오래 간직하세요.
-            </p>
-          </article>
-        </div>
-      </section>
-      <section className="section faq">
-        <p className="eyebrow">BEFORE THE SEAL IS BROKEN</p>
-        <h2>펼치기 전, 궁금한 이야기.</h2>
-        <details>
-          <summary>무료로 어디까지 볼 수 있나요?</summary>
-          <p>
-            출생정보로 계산한 일간·오행과 두 가지 기초 풀이를 제공합니다. 무료
-            풀이를 본 뒤 전체 운명서 구매 여부를 결정할 수 있습니다.
-          </p>
-        </details>
-        <details>
-          <summary>출생시간을 몰라도 되나요?</summary>
-          <p>
-            시간 미상으로 입력할 수 있습니다. 시주와 대운 시작시각은 생성하지
-            않으며 해석의 범위를 함께 안내합니다. 절입일에는 년·월주의
-            불확실성이 추가될 수 있습니다.
-          </p>
-        </details>
-        <details>
-          <summary>보고서를 잃어버리면 다시 결제해야 하나요?</summary>
-          <p>
-            구매 후 1년 동안 이메일 인증으로 같은 운명서를 다시 볼 수 있습니다.
-            PDF도 추가 결제 없이 다시 내려받을 수 있습니다.
-          </p>
-        </details>
-        <details>
-          <summary>AI가 미래를 예측하나요?</summary>
-          <p>
-            명리학 해석은 미래의 사건을 확정하지 않으며 의료·법률·투자 조언을
-            대신하지 않습니다. 금서태후는 창작 캐릭터입니다. 정식 서비스는 AI
-            생성 사실을 표시하며, 현재 체험판은 가상 정보와 규칙 기반 예시를
-            사용합니다.
-          </p>
-        </details>
-        <div className="faq-final">
-          <span aria-hidden="true">禁</span>
-          <p>이제, 그대의 이야기를 들려주거라.</p>
-          <a className="button" href="/start">
-            그대의 사주 시작하기 <span aria-hidden="true">→</span>
-          </a>
         </div>
       </section>
     </>
