@@ -1,3 +1,4 @@
+import { bookText } from "./book";
 export {};
 type SavedReading = {
   id: string;
@@ -213,6 +214,60 @@ function el(tag: string, text?: string, cls?: string) {
   if (cls) node.className = cls;
   return node;
 }
+let bookPage = 0;
+function pageKey() {
+  return (
+    "gumseo-book-page:" +
+    (new URL(location.href).searchParams.get("reading") ?? "current")
+  );
+}
+function turnPage(index: number, scroll = true) {
+  const pages = [
+    ...document.querySelectorAll<HTMLElement>("#chapters article"),
+    $("book-ending"),
+  ];
+  bookPage = Math.max(0, Math.min(pages.length - 1, index));
+  pages.forEach((page, i) => {
+    page.hidden = i !== bookPage;
+    page.classList.remove("turning");
+  });
+  const current = pages[bookPage];
+  void current.offsetWidth;
+  current.classList.add("turning");
+  $("book-position").textContent = `${bookPage + 1} / ${pages.length}`;
+  ($("book-prev") as HTMLButtonElement).disabled = bookPage === 0;
+  ($("book-next") as HTMLButtonElement).disabled =
+    bookPage === pages.length - 1;
+  document.querySelectorAll("#toc a").forEach((a, i) => {
+    if (i === bookPage) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+  try {
+    sessionStorage.setItem(pageKey(), String(bookPage));
+  } catch {}
+  if (scroll) {
+    current.tabIndex = -1;
+    current.focus({ preventScroll: true });
+    $("book").scrollIntoView({ block: "start", behavior: "auto" });
+  }
+}
+$("book-prev").addEventListener("click", () => turnPage(bookPage - 1));
+$("book-next").addEventListener("click", () => turnPage(bookPage + 1));
+$("book").addEventListener("keydown", (event) => {
+  if (
+    (event.target as HTMLElement).matches(
+      "input,textarea,select,button,a,summary",
+    ) ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey
+  )
+    return;
+  if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+    event.preventDefault();
+    turnPage(bookPage + (event.key === "ArrowRight" ? 1 : -1));
+  }
+});
 function draw(report: any) {
   const c = copy[locale];
   $("result").hidden = false;
@@ -228,11 +283,19 @@ function draw(report: any) {
   });
   $("chapters").replaceChildren();
   $("toc").replaceChildren();
+  const sharedNotes = [
+    ...new Set<string>([
+      ...(report.notes ?? []),
+      ...(report.chart.notes ?? []),
+    ]),
+  ];
+  const movedNotes: string[] = [];
   report.chapters.forEach((chapter: any, i: number) => {
     const article = el("article");
     article.id = "chapter-" + i;
+    article.className = "book-page";
     article.append(
-      el("p", "CHAPTER " + String(i + 1).padStart(2, "0"), "eyebrow"),
+      el("p", "第 " + "一二三四五六七八九"[i] + " 卷", "eyebrow"),
       el("h2", c.titles[i]),
     );
     const image = el("img") as HTMLImageElement;
@@ -242,10 +305,18 @@ function draw(report: any) {
     image.width = 508;
     image.height = 337;
     image.loading = "lazy";
-    article.append(image, el("p", chapter.text));
+    const cleaned = bookText(chapter.text, sharedNotes);
+    movedNotes.push(...cleaned.moved);
+    article.append(image);
+    for (const paragraph of cleaned.text.split(/\n\s*\n/).filter(Boolean))
+      article.append(el("p", paragraph, "chapter-copy"));
     $("chapters").append(article);
     const a = el("a", i + 1 + ". " + c.titles[i]) as HTMLAnchorElement;
     a.href = "#" + article.id;
+    a.addEventListener("click", (event) => {
+      event.preventDefault();
+      turnPage(i);
+    });
     $("toc").append(a);
   });
   const element = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" }[
@@ -260,7 +331,7 @@ function draw(report: any) {
   set(
     "notes",
     locale === "ko"
-      ? report.notes.join("\n\n")
+      ? [...new Set([...sharedNotes, ...movedNotes])].join("\n\n")
       : [
           report.chart.pillars[3]
             ? "出生時辰已填寫，以當地標準時間計算。"
@@ -270,8 +341,36 @@ function draw(report: any) {
             : "資料不足，未計算大運。",
           "以午夜換日，不校正真太陽時；月度干支採每月15日代表時點，並非整個節氣月份的邊界。",
           "臺灣使用UTC+8；韓國使用UTC+9。曆法與節氣尚未完成獨立專家審核。五行數量不等於強弱或用神判定。",
+          ...movedNotes.filter((note) => !sharedNotes.includes(note)),
         ].join("\n\n"),
   );
+  const closing =
+    locale === "ko" ? "마지막 장 · 그대에게 남기는 말" : "終章・留給你的話";
+  const closingLink = el("a", closing) as HTMLAnchorElement;
+  closingLink.href = "#book-ending";
+  closingLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    turnPage(report.chapters.length);
+  });
+  $("toc").append(closingLink);
+  $("book-prev").textContent = locale === "ko" ? "← 이전 장" : "← 上一章";
+  $("book-next").textContent = locale === "ko" ? "다음 장 →" : "下一章 →";
+  const noteLine =
+    locale === "ko"
+      ? "표준시 기준의 참고용 풀이이니, 계산 기준과 검수 범위는 아래에서 살펴보거라."
+      : "解讀以當地標準時間為基準，供自我探索參考；計算方式與審核範圍詳見下方。";
+  let noteSummary = document.getElementById("book-note-line");
+  if (!noteSummary) {
+    noteSummary = el("p", undefined, "book-note-line");
+    noteSummary.id = "book-note-line";
+    $("notes").parentElement!.before(noteSummary);
+  }
+  noteSummary.textContent = noteLine;
+  let remembered = 0;
+  try {
+    remembered = Number(sessionStorage.getItem(pageKey())) || 0;
+  } catch {}
+  turnPage(Number.isInteger(remembered) ? remembered : 0, false);
   status(c.ready);
   $("birth-form").hidden = true;
   $("new-reading").hidden = false;
@@ -403,6 +502,21 @@ $("locale").addEventListener("change", () => {
 $("place").addEventListener("change", updatePlace);
 $("unknown").addEventListener("change", () => {
   input("time").disabled = input("unknown").checked;
+});
+let printDetails: [HTMLDetailsElement, boolean][] = [];
+window.addEventListener("beforeprint", () => {
+  printDetails = [
+    ...document.querySelectorAll<HTMLDetailsElement>("#book-ending details"),
+  ].map((node) => [node, node.open]);
+  printDetails.forEach(([node]) => {
+    node.open = true;
+  });
+});
+window.addEventListener("afterprint", () => {
+  printDetails.forEach(([node, open]) => {
+    node.open = open;
+  });
+  printDetails = [];
 });
 $("print").addEventListener("click", () => window.print());
 $("birth-form").addEventListener("submit", async (event) => {

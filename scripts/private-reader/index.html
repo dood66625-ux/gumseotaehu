@@ -85,16 +85,25 @@
         <div id="pillars" class="pillars"></div>
         <p id="intro" class="quote"></p>
         <nav id="toc" aria-label="Contents"></nav>
-        <div id="chapters"></div>
-        <section class="guide">
-          <h2 id="summary-title"></h2>
-          <p id="summary"></p>
-        </section>
-        <details>
-          <summary id="notes-title"></summary>
-          <p id="notes"></p>
-        </details>
-        <button id="print" type="button"></button>
+        <div id="book" tabindex="0" aria-label="Reading book">
+          <div id="chapters"></div>
+          <article id="book-ending" class="book-page" hidden>
+            <section class="guide">
+              <h2 id="summary-title"></h2>
+              <p id="summary"></p>
+            </section>
+            <details>
+              <summary id="notes-title"></summary>
+              <p id="notes"></p>
+            </details>
+            <button id="print" type="button"></button>
+          </article>
+          <nav id="book-controls" aria-label="Book navigation">
+            <button id="book-prev" type="button"></button>
+            <span id="book-position" role="status" aria-live="polite"></span>
+            <button id="book-next" type="button"></button>
+          </nav>
+        </div>
       </section>
       <footer>
         <details>
