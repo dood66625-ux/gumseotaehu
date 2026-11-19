@@ -15,6 +15,8 @@ const secretNames = [
   "RESEND_WEBHOOK_SECRET",
   "TOSS_TEST_CLIENT_KEY",
   "TOSS_TEST_SECRET_KEY",
+  "TOSS_LIVE_SECRET_KEY",
+  "TOSS_LIVE_WEBHOOK_SECURITY_KEY",
   "TOSS_TEST_WEBHOOK_SECURITY_KEY",
 ];
 function inspect(root, secrets) {
@@ -64,6 +66,7 @@ export function packageRuntime(source, destination, secrets = []) {
   for (const name of [
     "dist/worker.js",
     "dist/ai-worker-control.js",
+    "dist/toss-live-enroll.js",
     "dist/runtime-health.js",
     "db/001-init.sql",
   ])

@@ -77,6 +77,9 @@ it("health reports scoped configuration rather than promising all external effec
   expect(externalEffectsStatus({ MAIL_WORKER_MODE: "resend" })).toBe(
     "scoped-opt-in",
   );
+  expect(externalEffectsStatus({ TOSS_PAYMENT_MODE: "live" })).toBe(
+    "scoped-opt-in",
+  );
   expect(externalEffectsStatus({ AI_WORKER_MODE: "typo" })).toBe(
     "scoped-opt-in",
   );

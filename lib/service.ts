@@ -1,3 +1,4 @@
+import { requireMockPayment } from "./toss-mode";
 import { requireLocalMailAccess } from "./local-mail-access";
 import type { GenerationLane } from "./order-generation";
 import { aiSpendReview, hasAiReservation } from "./ai-spend-review";
@@ -327,6 +328,7 @@ export function mockAuthenticate(
   scenario = "success",
 ) {
   const o = ownOrder(s, oid);
+  requireMockPayment(oid);
   if (o.content_deleted)
     throw new Fault("삭제된 주문은 결제할 수 없습니다.", 409);
   if (one("SELECT order_id FROM toss_attempts WHERE order_id=?", oid))
@@ -357,6 +359,7 @@ export function confirmPayment(
   failAfterPg = false,
 ) {
   const o = ownOrder(s, oid);
+  requireMockPayment(oid);
   if (one("SELECT order_id FROM toss_attempts WHERE order_id=?", oid))
     throw new Fault("테스트 PG 주문은 전용 승인 경로로 확인해야 합니다.", 409);
   if (!isSupportedOrderAmount(o.amount) || amount !== o.amount)
@@ -448,6 +451,14 @@ function claimReportJob(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ai_worker_enrollment'",
       ) &&
       one("SELECT recovery_hold FROM ai_worker_enrollment WHERE id=1")
+        ?.recovery_hold !== 0
+    )
+      return null;
+    if (
+      one(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='toss_live_enrollment'",
+      ) &&
+      one("SELECT recovery_hold FROM toss_live_enrollment WHERE id=1")
         ?.recovery_hold !== 0
     )
       return null;
@@ -864,6 +875,7 @@ export function refund(
   pgFailure = false,
 ) {
   requireRecentAdmin(s, ["operations", "finance"]);
+  requireMockPayment(oid);
   if (one("SELECT order_id FROM toss_attempts WHERE order_id=?", oid))
     throw new Fault("테스트 PG 주문은 전용 취소 경로로 처리해야 합니다.", 409);
   if (reason.trim().length < 5)

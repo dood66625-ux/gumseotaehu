@@ -1,3 +1,5 @@
+import { createTossLiveTransport } from "../lib/integrations/toss-http";
+import { TossLiveContract } from "../lib/integrations/toss-live";
 import { describe, expect, it, vi } from "vitest";
 import { createTossTestTransport } from "../lib/integrations/toss-http";
 import { TossTestContract } from "../lib/integrations/toss";
@@ -177,4 +179,32 @@ describe("Toss HTTP test transport, all requests intercepted", () => {
       t.confirm(paid.orderId, paid.paymentKey, 22000),
     ).rejects.toThrow("PG_RESPONSE_MISMATCH");
   });
+});
+
+it("live adapter requires approval, refuses test keys and cannot send a cancellation", async () => {
+  const send = vi.fn<typeof fetch>();
+  expect(() => createTossLiveTransport({ enabled: true, fetch: send })).toThrow(
+    "LIVE_PAYMENTS_NOT_APPROVED",
+  );
+  const t = createTossLiveTransport({
+    enabled: true,
+    approval: "live-payments-approved",
+    fetch: send,
+  });
+  await expect(t(request)).rejects.toThrow("ONLY_TOSS_LIVE_KEYS_ALLOWED");
+  const headers = {
+    Authorization:
+      "Basic " +
+      Buffer.from("live_sk_synthetic_fixture_key:").toString("base64"),
+  };
+  await expect(
+    t({ ...request, headers, path: "/v1/payments/key/cancel" }),
+  ).rejects.toThrow("TOSS_LIVE_CANCEL_NOT_ENABLED");
+  await expect(
+    t({ ...request, headers, path: "//other.invalid" }),
+  ).rejects.toThrow();
+  expect(send).not.toHaveBeenCalled();
+  expect(() => new TossLiveContract("test_sk_fake", "synthetic-mid")).toThrow(
+    "ONLY_TOSS_LIVE_KEYS_ALLOWED",
+  );
 });

@@ -1,5 +1,5 @@
 import { isSupportedOrderAmount } from "../product";
-/** Durable test-PG/order integration. No runtime route, SDK or worker registers this adapter. */
+/** Durable PG/order coordination. Test and enrolled live transports remain separate. */
 import { z } from "zod";
 import { all, one, run, tx } from "../db";
 import { audit, event, Fault, hash, id, limit, open, seal } from "../security";
@@ -52,6 +52,7 @@ export class TossOrderCoordinator {
   constructor(
     private gateway: Gateway,
     private merchantId: string,
+    private environment: "test" | "live" = "test",
   ) {
     z.string().min(1).max(100).parse(merchantId);
   }
@@ -71,7 +72,7 @@ export class TossOrderCoordinator {
     if (!old && order.content_deleted)
       throw new Fault("삭제된 주문은 결제할 수 없습니다.", 409);
     if (!old && order.payment_status !== "pending")
-      throw new Fault("테스트 결제 승인 대상 주문이 아닙니다.", 409);
+      throw new Fault("결제 승인 대상 주문이 아닙니다.", 409);
     if (
       old?.state === "verified" &&
       order.payment_status === "paid" &&
@@ -256,7 +257,7 @@ export class TossOrderCoordinator {
             live.amount,
             seal({
               reason: "독립 결제 조회에서 확인된 전액 취소",
-              actor: "toss-test-reconciliation",
+              actor: "toss-" + this.environment + "-reconciliation",
             }),
             "pending",
             Date.now(),
@@ -297,7 +298,11 @@ export class TossOrderCoordinator {
             live.id,
             claim.notificationId,
           );
-        audit("toss-test", "provider_evidence_" + state, live.id);
+        audit(
+          "toss-" + this.environment,
+          "provider_evidence_" + state,
+          live.id,
+        );
         return { state };
       });
       // A crash here leaves independently verified ledger evidence for the regular worker.
@@ -341,7 +346,7 @@ export class TossOrderCoordinator {
         attempt.merchant_id !== this.merchantId ||
         order.payment_key !== attempt.payment_key
       )
-        throw new Fault("테스트 결제 환불 대상을 확인해 주세요.", 409);
+        throw new Fault("결제 환불 대상을 확인해 주세요.", 409);
       if (
         !["paid", "refund_pending", "refunded"].includes(order.payment_status)
       )
@@ -463,7 +468,7 @@ export class TossOrderCoordinator {
   }
   /** Untrusted body only queues lookup of an already-bound order; it never settles payment. */
   notify(body: unknown) {
-    limit("toss-test-notification", 100, 60000);
+    limit("toss-" + this.environment + "-notification", 100, 60000);
     const n = z
       .object({
         orderId: z.string().uuid(),

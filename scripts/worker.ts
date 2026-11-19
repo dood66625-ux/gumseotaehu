@@ -1,3 +1,4 @@
+import { recoverLiveToss } from "../lib/toss-live-runtime";
 import { runConfiguredAiCycle } from "../lib/ai-worker-runtime";
 import { runConfiguredMailCycle } from "../lib/mail-worker-runtime";
 import { db } from "../lib/db";
@@ -9,7 +10,7 @@ import {
 } from "../lib/privacy-checkpoint";
 import { workOnce, reconcileRefunds, purgeExpired } from "../lib/service";
 console.log(
-  "Local durable worker started. Payment effects disabled; AI/mail require separate enrollment.",
+  "Local durable worker started. Payment/AI/mail require separate enrollment; default disabled.",
 );
 let stopped = false;
 process.on("SIGINT", () => {
@@ -23,6 +24,11 @@ while (!stopped) {
   try {
     workOnce();
     reconcileRefunds();
+    try {
+      if (!stopped) await recoverLiveToss(undefined, () => stopped);
+    } catch {
+      console.error("TOSS_LIVE_RECOVERY_FAILED (no customer data logged)");
+    }
     try {
       await runConfiguredAiCycle({ stopping: () => stopped });
     } catch {

@@ -2,7 +2,7 @@ import { tossTestSecretKind } from "./toss-key-profile.mjs";
 import { PRODUCT_PRICE_KRW, isSupportedOrderAmount } from "../product";
 import { z } from "zod";
 import { blockedTransport, type Transport } from "./contracts";
-const payment = z.object({
+export const tossPaymentSchema = z.object({
   paymentKey: z.string(),
   orderId: z.string(),
   mId: z.string().optional(),
@@ -31,7 +31,7 @@ const payment = z.object({
     )
     .nullish(),
 });
-export type VerifiedPayment = z.infer<typeof payment>;
+export type VerifiedPayment = z.infer<typeof tossPaymentSchema>;
 /** Test-key contract only. Must not be enabled until owner approves a separately reviewed transport. */
 export class TossTestContract {
   constructor(
@@ -54,7 +54,7 @@ export class TossTestContract {
     amount: number,
     key?: string,
   ) {
-    const p = payment.parse(raw);
+    const p = tossPaymentSchema.parse(raw);
     if (
       p.orderId !== orderId ||
       p.totalAmount !== amount ||

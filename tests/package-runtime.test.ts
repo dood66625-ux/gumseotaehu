@@ -29,6 +29,7 @@ function fixture() {
     ".next/standalone/server.js",
     "dist/worker.js",
     "dist/ai-worker-control.js",
+    "dist/toss-live-enroll.js",
     "dist/runtime-health.js",
     "db/001-init.sql",
     "scripts/toss-sandbox-client.mjs",
@@ -44,7 +45,7 @@ it("packages only runtime files with hashes and preserves safe relative links; r
     writeFileSync(join(f.source, "var", "private.sqlite"), "private");
     symlinkSync("server.js", join(f.source, ".next/standalone", "link.js"));
     const result = packageRuntime(f.source, f.out);
-    expect(result.files).toBe(7);
+    expect(result.files).toBe(8);
     expect(existsSync(join(f.out, "dist/ai-worker-control.js"))).toBe(true);
     expect(existsSync(join(f.out, ".env.local"))).toBe(false);
     expect(existsSync(join(f.out, "var"))).toBe(false);

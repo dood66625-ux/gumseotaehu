@@ -1,3 +1,5 @@
+import { confirmLiveToss } from "@/lib/toss-live-runtime";
+import { requireMockPayment } from "@/lib/toss-mode";
 import { externalEffectsStatus } from "@/lib/effects-status";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -194,6 +196,18 @@ async function handler(
       });
     }
     if (p === "payments/confirm") {
+      if (
+        process.env.TOSS_PAYMENT_MODE &&
+        process.env.TOSS_PAYMENT_MODE !== "disabled"
+      )
+        return json(
+          await confirmLiveToss(
+            s,
+            z.string().uuid().parse(b.orderId),
+            z.string().max(200).parse(b.paymentKey),
+            z.number().int().parse(b.amount),
+          ),
+        );
       svc.confirmPayment(
         s,
         z.string().uuid().parse(b.orderId),
@@ -203,6 +217,7 @@ async function handler(
       return json({ ok: true });
     }
     if (p === "payments/webhook") {
+      requireMockPayment();
       // Treat body as untrusted notification; reconcile against independent local PG ledger.
       limit("webhook-global", 100);
       svc.reconcile();

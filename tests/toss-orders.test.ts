@@ -1,3 +1,13 @@
+import { POST as tossWebhookPost } from "../app/api/toss/webhook/route";
+import { createHmac } from "node:crypto";
+import {
+  enrollLiveToss,
+  confirmLiveToss,
+  recoverLiveToss,
+  liveTossReceiptCoordinator,
+} from "../lib/toss-live-runtime";
+import { receiveTossWebhook } from "../lib/integrations/toss-webhook";
+import { createEncryptedBackup, restoreEncryptedBackup } from "../lib/backup";
 import { createTossTestTransport } from "../lib/integrations/toss-http";
 import { mkdtempSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -8,6 +18,7 @@ import {
   beforeAll,
   beforeEach,
   afterAll,
+  afterEach,
   describe,
   expect,
   it,
@@ -47,7 +58,14 @@ beforeAll(() => {
     rmSync(path + suffix, { force: true });
   db();
 });
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
 beforeEach(() => {
+  db().exec(
+    "DROP TABLE IF EXISTS toss_live_orders;DROP TABLE IF EXISTS toss_live_enrollment;",
+  );
   db().exec(
     "DELETE FROM toss_notifications;DELETE FROM toss_attempts;DELETE FROM session_auth;DELETE FROM email_changes;DELETE FROM admin_auth;DELETE FROM admin_totp_replay;DELETE FROM deletion_tombstones;DELETE FROM worker_heartbeat;DELETE FROM refunds;DELETE FROM reports;DELETE FROM jobs;DELETE FROM orders;DELETE FROM readings;DELETE FROM pg_ledger;DELETE FROM tickets;DELETE FROM outbox;DELETE FROM challenges;DELETE FROM sessions;DELETE FROM events;DELETE FROM audit;DELETE FROM rate_limits;",
   );
@@ -708,4 +726,262 @@ it("validates the stored sandbox fixture after restart with a new authenticated 
   expect(() => assertTossSyntheticOrder(restarted, order)).toThrow(
     "SYNTHETIC_ORDER_REQUIRED",
   );
+});
+
+function liveSetup(directory: string) {
+  vi.stubEnv("APP_ORIGIN", "https://live.example.invalid");
+  vi.stubEnv("TOSS_PAYMENT_MODE", "live");
+  vi.stubEnv("LIVE_PAYMENTS_APPROVAL", "live-payments-approved");
+  vi.stubEnv("TOSS_LIVE_MERCHANT_ID", "synthetic-mid");
+  vi.stubEnv("TOSS_LIVE_SECRET_KEY", "live_sk_synthetic_fixture_key");
+  vi.stubEnv("TOSS_LIVE_CUTOVER_FILE", directory + "/cutover.json");
+  db().exec(
+    "CREATE TABLE IF NOT EXISTS privacy_checkpoint_source(id INTEGER PRIMARY KEY,source_id TEXT NOT NULL)",
+  );
+  run(
+    "INSERT OR IGNORE INTO privacy_checkpoint_source VALUES(1,?)",
+    "11111111-1111-4111-8111-111111111111",
+  );
+  const now = Date.now();
+  enrollLiveToss(now);
+  vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+}
+it("live enrollment refuses missing approval and default recovery has no provider effects", async () => {
+  vi.stubEnv("TOSS_PAYMENT_MODE", "");
+  const send = vi.fn<typeof fetch>();
+  expect(await recoverLiveToss(send)).toMatchObject({
+    state: "disabled",
+    processed: 0,
+  });
+  vi.stubEnv("TOSS_PAYMENT_MODE", "live");
+  vi.stubEnv("LIVE_PAYMENTS_APPROVAL", "");
+  expect(() => enrollLiveToss()).toThrow("LIVE_PAYMENTS_NOT_APPROVED");
+  expect(send).not.toHaveBeenCalled();
+});
+it("live confirmation records one provider approval, prevents mock fulfillment and survives duplicate callbacks", async () => {
+  const directory = mkdtempSync("var/toss-live-");
+  try {
+    liveSetup(directory);
+    const f = fixture();
+    const send = vi.fn(async () => Response.json(f.payment));
+    expect(
+      await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send),
+    ).toEqual({ state: "verified" });
+    expect(
+      await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send),
+    ).toEqual({ state: "verified" });
+    expect(send).toHaveBeenCalledOnce();
+    expect(svc.workOnce()).toBe(false);
+    expect(
+      one("SELECT payment_status FROM orders WHERE id=?", f.oid)
+        ?.payment_status,
+    ).toBe("paid");
+    expect(
+      one("SELECT provider FROM order_generation_lanes WHERE order_id=?", f.oid)
+        ?.provider,
+    ).toBe("openai");
+    expect(() => svc.mockAuthenticate(f.s, f.oid)).toThrow(
+      "MOCK_PAYMENT_DISABLED",
+    );
+    vi.stubEnv("TOSS_PAYMENT_MODE", "disabled");
+    expect(() => svc.mockAuthenticate(f.s, f.oid)).toThrow(
+      "LIVE_ORDER_REQUIRES_LIVE_VERIFICATION",
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("live lost approval response uses only bound GET recovery and never another confirm POST", async () => {
+  const directory = mkdtempSync("var/toss-live-lost-");
+  try {
+    liveSetup(directory);
+    const f = fixture();
+    const methods: string[] = [];
+    const send = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      methods.push(init?.method ?? "");
+      if (init?.method === "POST") throw Error("private provider detail");
+      return Response.json(f.payment);
+    });
+    await expect(
+      confirmLiveToss(
+        f.s,
+        f.oid,
+        f.payment.paymentKey,
+        22000,
+        send as typeof fetch,
+      ),
+    ).rejects.toThrow("같은 주문");
+    run("UPDATE toss_attempts SET next_check=0 WHERE order_id=?", f.oid);
+    closeDb();
+    expect(await recoverLiveToss(send as typeof fetch)).toMatchObject({
+      processed: 1,
+    });
+    expect(methods).toEqual(["POST", "GET"]);
+    expect(
+      one("SELECT payment_status FROM orders WHERE id=?", f.oid)
+        ?.payment_status,
+    ).toBe("paid");
+    expect(await recoverLiveToss(send as typeof fetch)).toMatchObject({
+      processed: 0,
+    });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("live response merchant/amount mismatch remains pending and profile changes cannot process the order", async () => {
+  const directory = mkdtempSync("var/toss-live-mismatch-");
+  try {
+    liveSetup(directory);
+    const f = fixture();
+    const send = vi.fn(async () =>
+      Response.json({ ...f.payment, mId: "wrong-merchant" }),
+    );
+    await expect(
+      confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send),
+    ).rejects.toThrow();
+    expect(
+      one("SELECT payment_status FROM orders WHERE id=?", f.oid)
+        ?.payment_status,
+    ).toBe("pending");
+    vi.stubEnv("TOSS_LIVE_MERCHANT_ID", "other-mid");
+    await expect(recoverLiveToss(send)).rejects.toThrow(
+      "TOSS_LIVE_PROFILE_MISMATCH",
+    );
+    expect(send).toHaveBeenCalledOnce();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("signed live webhook is receipt only, deduplicates and waits for independent bound lookup", async () => {
+  const directory = mkdtempSync("var/toss-live-webhook-");
+  try {
+    liveSetup(directory);
+    const f = fixture();
+    const send = vi.fn(async () => Response.json(f.payment));
+    await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send);
+    const key = Buffer.alloc(32, 8),
+      time = new Date(Date.now()).toISOString();
+    const raw = JSON.stringify({
+      eventType: "PAYMENT_STATUS_CHANGED",
+      eventId: "synthetic-live-event",
+      createdAt: time,
+      data: {
+        orderId: f.oid,
+        paymentKey: f.payment.paymentKey,
+        mId: "synthetic-mid",
+        status: "CANCELED",
+      },
+    });
+    const sig =
+      "v1:" +
+      createHmac("sha256", key)
+        .update(raw)
+        .update(":")
+        .update(time)
+        .digest("base64");
+    const receive = () => {
+      const coordinator = liveTossReceiptCoordinator();
+      return receiveTossWebhook(
+        new Request("https://live.example.invalid/api/toss/webhook", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "tosspayments-webhook-transmission-time": time,
+            "tosspayments-webhook-signature": sig,
+          },
+          body: raw,
+        }),
+        { securityKey: key, merchantId: coordinator.merchantId, coordinator },
+      );
+    };
+    expect(await receive()).toMatchObject({ queued: true });
+    vi.stubEnv("TOSS_LIVE_WEBHOOK_MODE", "signed-live-only");
+    vi.stubEnv("TOSS_LIVE_WEBHOOK_SECURITY_KEY", key.toString("hex"));
+    const routed = await tossWebhookPost(
+      new Request("https://live.example.invalid/api/toss/webhook", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "tosspayments-webhook-transmission-time": time,
+          "tosspayments-webhook-signature": sig,
+        },
+        body: raw,
+      }),
+    );
+    expect(routed.status).toBe(200);
+    expect(await routed.json()).toMatchObject({
+      accepted: true,
+      queued: false,
+    });
+    expect(await receive()).toMatchObject({ queued: false });
+    expect(send).toHaveBeenCalledOnce();
+    expect(
+      one("SELECT payment_status FROM orders WHERE id=?", f.oid)
+        ?.payment_status,
+    ).toBe("paid");
+    expect(await recoverLiveToss(send)).toMatchObject({ processed: 1 });
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(await recoverLiveToss(send)).toMatchObject({ processed: 0 });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("restored live database cannot query, charge or generate mock content", async () => {
+  const directory = mkdtempSync("var/toss-live-restore-");
+  try {
+    liveSetup(directory);
+    const f = fixture();
+    await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, async () =>
+      Response.json(f.payment),
+    );
+    const target = directory + "/restored.sqlite",
+      archive = directory + "/backup.gsb";
+    await createEncryptedBackup(db(), archive, config().key);
+    restoreEncryptedBackup(archive, target, config().key);
+    closeDb();
+    vi.stubEnv("DATABASE_PATH", target);
+    const send = vi.fn<typeof fetch>();
+    await expect(recoverLiveToss(send)).rejects.toThrow(
+      "TOSS_LIVE_RESTORE_REVIEW_REQUIRED",
+    );
+    expect(send).not.toHaveBeenCalled();
+    expect(svc.workOnce()).toBe(false);
+  } finally {
+    closeDb();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it("live gate refuses historical orders, wrong amount, test credentials and unconfigured webhook without HTTP", async () => {
+  const directory = mkdtempSync("var/toss-live-gates-");
+  try {
+    const old = fixture();
+    liveSetup(directory);
+    const f = fixture();
+    const send = vi.fn<typeof fetch>();
+    await expect(
+      confirmLiveToss(old.s, old.oid, old.payment.paymentKey, 22000, send),
+    ).rejects.toThrow("운영 결제 대상");
+    await expect(
+      confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 1, send),
+    ).rejects.toThrow("운영 결제 대상");
+    vi.stubEnv("TOSS_LIVE_SECRET_KEY", "test_sk_fake_fixture");
+    await expect(
+      confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send),
+    ).rejects.toThrow("TOSS_LIVE_CONFIG_REQUIRED");
+    vi.stubEnv("TOSS_LIVE_WEBHOOK_MODE", "");
+    expect(
+      (
+        await tossWebhookPost(
+          new Request("https://live.example.invalid/api/toss/webhook", {
+            method: "POST",
+          }),
+        )
+      ).status,
+    ).toBe(503);
+    expect(send).not.toHaveBeenCalled();
+    expect(one("SELECT count(*) n FROM toss_attempts")?.n).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });

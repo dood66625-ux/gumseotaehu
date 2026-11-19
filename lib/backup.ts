@@ -141,6 +141,8 @@ export function restoreEncryptedBackup(
           );
         if (has("ai_worker_enrollment"))
           restored.exec("UPDATE ai_worker_enrollment SET recovery_hold=1");
+        if (has("toss_live_enrollment"))
+          restored.exec("UPDATE toss_live_enrollment SET recovery_hold=1");
         restored.exec("COMMIT;");
       } catch (error) {
         restored.exec("ROLLBACK;");

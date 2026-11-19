@@ -1,3 +1,4 @@
+import { liveTossReceiptCoordinator } from "@/lib/toss-live-runtime";
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { Fault } from "@/lib/security";
@@ -12,6 +13,31 @@ const headers = {
 export async function POST(request: Request) {
   try {
     config();
+    if (
+      process.env.TOSS_PAYMENT_MODE &&
+      process.env.TOSS_PAYMENT_MODE !== "disabled"
+    ) {
+      if (process.env.TOSS_LIVE_WEBHOOK_MODE !== "signed-live-only")
+        return NextResponse.json(
+          { error: "TOSS_LIVE_WEBHOOK_DISABLED" },
+          { status: 503, headers },
+        );
+      const key = process.env.TOSS_LIVE_WEBHOOK_SECURITY_KEY ?? "";
+      if (!/^[a-fA-F0-9]{64}$/.test(key))
+        return NextResponse.json(
+          { error: "TOSS_LIVE_WEBHOOK_CONFIG_REQUIRED" },
+          { status: 503, headers },
+        );
+      const coordinator = liveTossReceiptCoordinator();
+      return NextResponse.json(
+        await receiveTossWebhook(request, {
+          securityKey: Buffer.from(key, "hex"),
+          merchantId: coordinator.merchantId,
+          coordinator,
+        }),
+        { headers },
+      );
+    }
     if (process.env.TOSS_TEST_WEBHOOK_MODE !== "signed-test-only")
       return NextResponse.json(
         { error: "TOSS_TEST_WEBHOOK_DISABLED" },

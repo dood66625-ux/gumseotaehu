@@ -6,15 +6,44 @@ export function createTossTestTransport(options: {
   enabled: boolean;
   fetch?: typeof fetch;
 }): Transport {
+  return tossTransport(options, false);
+}
+export function createTossLiveTransport(options: {
+  enabled: boolean;
+  approval?: "live-payments-approved";
+  fetch?: typeof fetch;
+}): Transport {
+  if (options.approval !== "live-payments-approved")
+    throw Error("LIVE_PAYMENTS_NOT_APPROVED");
+  return tossTransport(options, true);
+}
+function tossTransport(
+  options: { enabled: boolean; fetch?: typeof fetch },
+  live: boolean,
+): Transport {
   const send = options.fetch ?? globalThis.fetch;
   return async (request) => {
-    if (!options.enabled) throw Error("TOSS_TEST_TRANSPORT_DISABLED");
+    if (!options.enabled)
+      throw Error(
+        live ? "TOSS_LIVE_TRANSPORT_DISABLED" : "TOSS_TEST_TRANSPORT_DISABLED",
+      );
     const auth = request.headers.Authorization;
     const credential = auth?.startsWith("Basic ")
       ? Buffer.from(auth.slice(6), "base64").toString("utf8")
       : "";
-    if (!credential.endsWith(":")) throw Error("ONLY_TOSS_TEST_KEYS_ALLOWED");
-    const kind = tossTestSecretKind(credential.slice(0, -1));
+    if (!credential.endsWith(":"))
+      throw Error(
+        live ? "ONLY_TOSS_LIVE_KEYS_ALLOWED" : "ONLY_TOSS_TEST_KEYS_ALLOWED",
+      );
+    const secret = credential.slice(0, -1);
+    let kind: string;
+    if (live) {
+      if (!/^live_(?:gsk|sk)_[A-Za-z0-9_]{8,500}$/.test(secret))
+        throw Error("ONLY_TOSS_LIVE_KEYS_ALLOWED");
+      kind = secret.startsWith("live_gsk_") ? "widget" : "individual";
+      if (request.method === "POST" && request.path !== "/v1/payments/confirm")
+        throw Error("TOSS_LIVE_CANCEL_NOT_ENABLED");
+    } else kind = tossTestSecretKind(secret);
     const orderLookup = /^\/v1\/payments\/orders\/[A-Za-z0-9_%.-]+$/.test(
       request.path,
     );
