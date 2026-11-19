@@ -29,6 +29,13 @@
           이야기를 펼쳐 주겠노라.
         </p>
       </section>
+      <section id="saved-readings" hidden aria-labelledby="saved-title">
+        <h2 id="saved-title"></h2>
+        <p id="saved-note" class="hint"></p>
+        <button id="refresh-saved" type="button"></button>
+        <div id="saved-list"></div>
+      </section>
+      <button id="new-reading" type="button" hidden></button>
       <form id="birth-form">
         <div class="form-heading">
           <span>01</span>
@@ -73,6 +80,7 @@
         <div class="result-heading">
           <p class="eyebrow">YOUR PRIVATE ARCHIVE</p>
           <h2 id="result-title"></h2>
+          <button id="show-saved" type="button"></button>
         </div>
         <div id="pillars" class="pillars"></div>
         <p id="intro" class="quote"></p>

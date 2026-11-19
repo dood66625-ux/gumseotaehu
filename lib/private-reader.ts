@@ -162,6 +162,18 @@ export function createPrivateReader(options: {
       );
       if (
         request.method === "GET" &&
+        url.pathname === "/private-reading/history"
+      ) {
+        return json({
+          readings: db
+            .prepare(
+              "SELECT id,locale,state,created FROM private_readings WHERE session_hash=? ORDER BY created DESC,id DESC LIMIT 10",
+            )
+            .all(owner),
+        });
+      }
+      if (
+        request.method === "GET" &&
         url.pathname === "/private-reading/latest"
       ) {
         const row = db

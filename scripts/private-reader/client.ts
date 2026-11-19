@@ -1,9 +1,31 @@
 export {};
+type SavedReading = {
+  id: string;
+  locale: "ko" | "zh-TW";
+  state: string;
+  created: number;
+};
+let savedReadings: SavedReading[] = [],
+  viewVersion = 0,
+  pollTimer: ReturnType<typeof setTimeout> | undefined;
 type Locale = "ko" | "zh-TW";
 const $ = (id: string) => document.getElementById(id)!;
 const input = (id: string) => $(id) as HTMLInputElement;
 const copy = {
   ko: {
+    showSaved: "내 금서 목록 보기",
+    savedTitle: "내가 펼친 금서",
+    savedNote:
+      "같은 브라우저에서 생성 후 24시간 이내 저장본을 다시 볼 수 있느니라. 다시 열기는 추가 AI 호출이나 비용을 만들지 않느니라.",
+    refresh: "저장본 목록 새로고침",
+    reopen: "다시 펼치기",
+    newReading: "다른 정보로 새 금서 펼치기",
+    loadingSaved:
+      "저장된 금서를 불러오고 있느니라. 새 AI 생성은 하지 않느니라.",
+    noSaved:
+      "이 브라우저에서 볼 수 있는 저장본이 없느니라. 처음 이용한 브라우저와 초대 링크를 확인해 보거라.",
+    pendingSaved: "작성 중",
+    heldSaved: "확인 필요",
     title: "그대의 이야기를 들려주겠느냐.",
     lead: "태어난 날과 시각을 알려주거라. 그대의 기운을 헤아려 한 권의 이야기를 펼쳐 주겠노라.",
     eyebrow: "PRIVATE AUDIENCE · 비공개 AI 풀이",
@@ -51,6 +73,17 @@ const copy = {
     ],
   },
   "zh-TW": {
+    showSaved: "查看我的命書列表",
+    savedTitle: "我已展開的命書",
+    savedNote:
+      "同一瀏覽器可在產生後24小時內重開儲存結果，不會再次呼叫 AI 或增加費用。",
+    refresh: "重新整理儲存列表",
+    reopen: "再次展開",
+    newReading: "以其他資料展開新命書",
+    loadingSaved: "正在讀取已儲存的命書，不會重新產生 AI 解讀。",
+    noSaved: "此瀏覽器沒有可讀取的儲存結果，請確認原先使用的瀏覽器與邀請連結。",
+    pendingSaved: "撰寫中",
+    heldSaved: "待確認",
     title: "且將你的故事，道與本宮聽。",
     lead: "告訴本宮你出生的日子與時辰，且讓本宮循著命盤的線索，為你展開一卷故事。",
     eyebrow: "PRIVATE AUDIENCE · 私密 AI 命書",
@@ -142,6 +175,12 @@ function language() {
       .replace("10次", limit + "次")
       .replace("0.60", (limit * 0.06).toFixed(2)),
   );
+  set("show-saved", c.showSaved);
+  set("saved-title", c.savedTitle);
+  set("saved-note", c.savedNote);
+  set("refresh-saved", c.refresh);
+  set("new-reading", c.newReading);
+  renderSaved();
   updatePlace();
 }
 function updatePlace() {
@@ -234,9 +273,19 @@ function draw(report: any) {
         ].join("\n\n"),
   );
   status(c.ready);
+  $("birth-form").hidden = true;
+  $("new-reading").hidden = false;
+  $("result").scrollIntoView({ block: "start", behavior: "auto" });
 }
-async function showResponse(response: Response) {
+async function showResponse(response: Response, version = viewVersion) {
   const data = await response.json();
+  if (version !== viewVersion) return true;
+  if (typeof data.id === "string" && /^[a-f0-9-]{36}$/.test(data.id)) {
+    const address = new URL(location.href);
+    address.searchParams.set("reading", data.id);
+    address.hash = "";
+    history.replaceState(null, "", address.pathname + address.search);
+  }
   if (data.state === "ready") {
     if (data.locale) {
       locale = data.locale;
@@ -251,18 +300,103 @@ async function showResponse(response: Response) {
   }
   throw Error(data.code || "FAILED");
 }
-async function recover() {
-  const response = await fetch("/private-reading/latest", {
+function renderSaved() {
+  $("saved-readings").hidden = !savedReadings.length;
+  $("saved-list").replaceChildren();
+  for (const row of savedReadings) {
+    const item = el("div", undefined, "saved-item");
+    const label =
+      (row.locale === "ko" ? "한국어" : "繁體中文") +
+      " · " +
+      new Date(row.created).toLocaleString(locale);
+    item.append(el("p", label));
+    const button = el(
+      "button",
+      copy[locale].reopen +
+        (row.state === "running"
+          ? " · " + copy[locale].pendingSaved
+          : row.state === "held"
+            ? " · " + copy[locale].heldSaved
+            : ""),
+    ) as HTMLButtonElement;
+    button.type = "button";
+    button.disabled = busy;
+    button.addEventListener("click", () => {
+      if (!busy) loadSaved(row.id);
+    });
+    item.append(button);
+    $("saved-list").append(item);
+  }
+}
+async function refreshSaved() {
+  const response = await fetch("/private-reading/history", {
     cache: "no-store",
   });
-  if (response.status === 404) return;
-  if (!(await showResponse(response)))
-    setTimeout(() => recover().catch((e) => status(error(e.message))), 2500);
+  if (!response.ok)
+    throw Error(response.status === 403 ? "PRIVATE_LINK_REQUIRED" : "FAILED");
+  const data = await response.json();
+  savedReadings = Array.isArray(data.readings) ? data.readings : [];
+  renderSaved();
 }
+function cancelSaved() {
+  viewVersion++;
+  if (pollTimer) clearTimeout(pollTimer);
+}
+async function loadSaved(id?: string) {
+  cancelSaved();
+  const version = viewVersion;
+  $("result").hidden = true;
+  status(copy[locale].loadingSaved);
+  const path =
+    id && /^[a-f0-9-]{36}$/.test(id)
+      ? "/private-reading/result/" + id
+      : "/private-reading/latest";
+  try {
+    const response = await fetch(path, { cache: "no-store" });
+    if (version !== viewVersion) return;
+    if (response.status === 404) {
+      status(copy[locale].noSaved);
+      return;
+    }
+    if (!(await showResponse(response, version)))
+      pollTimer = setTimeout(() => {
+        if (version === viewVersion && !busy) loadSaved(id);
+      }, 2500);
+  } catch (e) {
+    if (version === viewVersion) status(error((e as Error).message));
+  }
+}
+function addressReading() {
+  const query = new URL(location.href).searchParams.get("reading");
+  if (query && /^[a-f0-9-]{36}$/.test(query)) return query;
+  return location.hash.match(/^#reading=([a-f0-9-]{36})$/)?.[1];
+}
+window.addEventListener("hashchange", () => {
+  if (!busy && /^#reading=/.test(location.hash))
+    loadSaved(location.hash.slice(9));
+});
+$("show-saved").addEventListener("click", () => {
+  if (!busy)
+    refreshSaved()
+      .then(() => $("saved-readings").scrollIntoView({ block: "start" }))
+      .catch((e) => status(error(e.message)));
+});
+$("refresh-saved").addEventListener("click", () => {
+  if (!busy) refreshSaved().catch((e) => status(error(e.message)));
+});
+$("new-reading").addEventListener("click", () => {
+  cancelSaved();
+  $("birth-form").hidden = false;
+  $("new-reading").hidden = true;
+  $("birth-form").scrollIntoView({ block: "start" });
+});
 $("locale").addEventListener("change", () => {
   if (busy) return;
   locale = ($("locale") as HTMLSelectElement).value as Locale;
+  cancelSaved();
   $("result").hidden = true;
+  $("birth-form").hidden = false;
+  $("new-reading").hidden = true;
   language();
   status("");
 });
@@ -275,11 +409,14 @@ $("birth-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (busy) return;
   busy = true;
+  cancelSaved();
+  renderSaved();
   input("submit").disabled = true;
   ($("locale") as HTMLSelectElement).disabled = true;
   status(copy[locale].busy);
+  const version = viewVersion;
   try {
-    await showResponse(
+    const ready = await showResponse(
       await fetch("/private-reading/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -300,15 +437,21 @@ $("birth-form").addEventListener("submit", async (event) => {
           },
         }),
       }),
+      version,
     );
+    if (!ready) loadSaved(addressReading());
   } catch (e) {
-    status(error((e as Error).message));
+    if (version === viewVersion) status(error((e as Error).message));
   } finally {
     busy = false;
+    refreshSaved().catch(() => {});
     input("submit").disabled = false;
     ($("locale") as HTMLSelectElement).disabled = false;
   }
 });
 if (locale === "zh-TW") ($("place") as HTMLSelectElement).value = "TW";
 language();
-recover().catch((e) => status(error(e.message)));
+refreshSaved().catch(() => {});
+loadSaved(addressReading());
+
+window.addEventListener("pagehide", cancelSaved);

@@ -33,3 +33,11 @@ class PrivateSetupTests(unittest.TestCase):
             target=Path(directory)/'target';target.write_text('OPENAI_API_KEY=sk-offline_test_012345678901234567890')
             link=Path(directory)/'link';link.symlink_to(target)
             with self.assertRaises(ValueError):m.existing_key([link])
+
+    def test_unchanged_proxy_config_does_not_restart_the_existing_site(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root,dest=self.fixture(directory)
+            (root/'deploy/iwinv/Caddyfile.merchant-review').write_text('old config')
+            with patch.object(m,'run') as command:
+                m.configure_proxy(root,dest)
+                command.assert_not_called()

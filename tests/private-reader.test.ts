@@ -219,3 +219,41 @@ it("restarting the private reader marks interrupted requests held without anothe
     s.db.close();
   }
 });
+
+it("history lists only this session's unexpired metadata and never generates again", async () => {
+  const s = setup();
+  try {
+    const first = await login(s.app),
+      second = await login(s.app);
+    const a = await (await s.app(request(first))).json();
+    await s.app(request(second));
+    const response = await s.app(
+      new Request(origin + "/private-reading/history", {
+        headers: { cookie: first },
+      }),
+    );
+    const list = (await response.json()).readings;
+    expect(list).toHaveLength(1);
+    expect(list[0].id).toBe(a.id);
+    expect(list[0].payload).toBeUndefined();
+    expect(list[0].digest).toBeUndefined();
+    expect(s.calls).toBe(2);
+    s.db
+      .prepare("UPDATE private_readings SET created=? WHERE id=?")
+      .run(Date.now() - 86400001, a.id);
+    const expired = await (
+      await s.app(
+        new Request(origin + "/private-reading/history", {
+          headers: { cookie: first },
+        }),
+      )
+    ).json();
+    expect(expired.readings).toEqual([]);
+    expect(s.calls).toBe(2);
+    expect(s.db.prepare("SELECT count(*) n FROM ai_spend_calls").get()!.n).toBe(
+      2,
+    );
+  } finally {
+    s.db.close();
+  }
+});

@@ -29,6 +29,7 @@ def configure_proxy(root,destination):
     caddy=destination/'Caddyfile.merchant-review'
     if not caddy.exists():raise ValueError('INSTALL_MERCHANT_REVIEW_FIRST')
     old=caddy.read_bytes()
+    if old==(root/'deploy/iwinv/Caddyfile.merchant-review').read_bytes():return
     shutil.copyfile(root/'deploy/iwinv/Caddyfile.merchant-review',caddy)
     review=['docker','compose','-f',str(destination/'compose.merchant-review.yml')]
     try:
