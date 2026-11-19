@@ -532,3 +532,23 @@ html[lang="zh-TW"] body {
   outline: 2px solid var(--gold);
   outline-offset: 6px;
 }
+
+.chapter-takeaway {
+  border-left: 3px solid #926923;
+  padding: 14px 18px;
+  margin: 22px 0 26px;
+  background: #fff6df8c;
+}
+.chapter-takeaway span {
+  display: block;
+  color: #7b5828;
+  font: 11px/1.6 sans-serif;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+.chapter-takeaway p {
+  margin: 0;
+  color: #44301c;
+  font-size: 18px !important;
+  line-height: 1.8 !important;
+}

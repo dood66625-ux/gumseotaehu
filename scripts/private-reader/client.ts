@@ -1,4 +1,4 @@
-import { bookText } from "./book";
+import { bookText, chapterTakeaway } from "./book";
 export {};
 type SavedReading = {
   id: string;
@@ -307,6 +307,15 @@ function draw(report: any) {
     image.loading = "lazy";
     const cleaned = bookText(chapter.text, sharedNotes);
     movedNotes.push(...cleaned.moved);
+    const takeaway = chapterTakeaway(cleaned.text, locale);
+    if (takeaway) {
+      const callout = el("aside", undefined, "chapter-takeaway");
+      callout.append(
+        el("span", locale === "ko" ? "이 장의 한마디" : "本章一句話"),
+        el("p", takeaway),
+      );
+      article.append(callout);
+    }
     article.append(image);
     for (const paragraph of cleaned.text.split(/\n\s*\n/).filter(Boolean))
       article.append(el("p", paragraph, "chapter-copy"));

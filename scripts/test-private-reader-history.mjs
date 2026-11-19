@@ -101,6 +101,18 @@ try {
     await page.getByText(report(1).intro, { exact: true }).waitFor();
     if ((await page.locator("#chapters article:visible").count()) !== 1)
       throw Error("BOOK_NOT_SINGLE_PAGE");
+    if (
+      (await page
+        .locator("#chapters article:visible .chapter-takeaway")
+        .count()) !== 1
+    )
+      throw Error("TAKEAWAY_MISSING");
+    if (
+      (await page
+        .locator("#chapters article:visible .chapter-takeaway span")
+        .textContent()) !== "本章一句話"
+    )
+      throw Error("TAKEAWAY_LOCALE");
     await page.locator("#book-next").click();
     if ((await page.locator("#book-position").textContent()) !== "2 / 10")
       throw Error("BOOK_NEXT_FAILED");
@@ -142,6 +154,12 @@ try {
     if (!(await page.locator("#notes").textContent()).includes(calculationNote))
       throw Error("CALCULATION_DISCLOSURE_LOST");
     await page.locator("#toc a").first().click();
+    if (
+      (await page
+        .locator("#chapters article:visible .chapter-takeaway span")
+        .textContent()) !== "이 장의 한마디"
+    )
+      throw Error("KO_TAKEAWAY_LOCALE");
     await page
       .locator("#book")
       .screenshot({ path: `var/private-reader/book-${width}.png` });
@@ -183,6 +201,7 @@ try {
       widths: [390, 1440],
       historySelection: true,
       chapterPaging: true,
+      chapterTakeaways: true,
       rememberedPage: true,
       printAllChapters: true,
       reducedMotion: true,
