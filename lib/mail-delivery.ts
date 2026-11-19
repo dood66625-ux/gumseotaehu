@@ -275,15 +275,20 @@ export class MailDeliveryCoordinator {
       if ((ranks[q.state] ?? 0) > (ranks[state] ?? 0)) state = q.state;
       const terminal = state !== "accepted",
         checkAgain = !terminal && Date.now() - q.first_dispatched < 86400000;
+      const newerNotice = !!one(
+        "SELECT 1 FROM mail_notifications WHERE outbox_id=? AND id>? AND processed IS NULL",
+        c.id,
+        c.notificationId,
+      );
       run(
-        "UPDATE mail_queue SET state=?,provider_id=COALESCE(provider_id,?),lease_until=0,failures=0,recovery_hold=0,last_error=?,needs_check=MAX(needs_check,?),scheduled=?,updated=? WHERE outbox_id=?",
+        "UPDATE mail_queue SET state=?,provider_id=COALESCE(provider_id,?),lease_until=0,failures=0,recovery_hold=0,last_error=?,needs_check=?,scheduled=?,updated=? WHERE outbox_id=?",
         state,
         providerId.parse(r.providerId),
         r.state === "bounced" && r.permanent !== true
           ? "SOFT_BOUNCE_PENDING"
           : null,
-        checkAgain ? 1 : 0,
-        Date.now() + 5 * 60000,
+        newerNotice || checkAgain ? 1 : 0,
+        newerNotice ? 0 : Date.now() + 5 * 60000,
         Date.now(),
         c.id,
       );

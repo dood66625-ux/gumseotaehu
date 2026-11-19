@@ -169,7 +169,17 @@ export function createResendMailGateway(options: {
         ].includes(r.last_event)
       )
         return { key, providerId, state: "accepted", authoritative: true };
-      // A bare bounced/failed event does not establish a permanent-recipient failure reason.
+      // Resend defines bounced as permanent rejection; delivery_delayed is transient.
+      // This is an independent GET after provider-ID and transaction-tag verification.
+      if (r.last_event === "bounced")
+        return {
+          key,
+          providerId,
+          state: "bounced",
+          permanent: true,
+          authoritative: true,
+        };
+      // A generic sending failure or suppression does not prove a recipient-specific hard bounce.
       return { key, providerId, state: "unknown" };
     },
   };

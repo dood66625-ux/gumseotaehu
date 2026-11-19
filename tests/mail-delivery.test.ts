@@ -913,3 +913,85 @@ it("deduplicates signed Resend receipts, ignores their bounce claim, and changes
   expect((await f.mail.verify(o.id)).state).toBe("delivered");
   expect(f.gateway.send).toHaveBeenCalledOnce();
 });
+
+it("verified Resend hard bounce blocks future sends to that recipient and stops terminal polling", async () => {
+  const f = fixture(),
+    otp = f.otp("hard-bounce@example.invalid"),
+    pid = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const send = vi.fn(async (_url: unknown, init?: RequestInit) =>
+    Response.json(
+      init?.method === "POST"
+        ? { id: pid }
+        : {
+            id: pid,
+            last_event: "bounced",
+            tags: [{ name: "gumseo_key", value: "mail-" + otp.id }],
+          },
+    ),
+  );
+  const mail = new MailDeliveryCoordinator(
+    profile,
+    createResendMailGateway({
+      enabled: true,
+      apiKey: "re_synthetic_fixture",
+      accountScope: "bounce-test",
+      fetch: send as typeof fetch,
+    }),
+  );
+  mail.prepare(otp.id);
+  await mail.workOnce();
+  expect((await mail.verify(otp.id)).state).toBe("bounced");
+  expect(
+    one(
+      "SELECT reason FROM mail_suppressions WHERE email_hash=?",
+      hash(otp.email),
+    )?.reason,
+  ).toBe("bounced");
+  expect(
+    one("SELECT needs_check FROM mail_queue WHERE outbox_id=?", otp.id)
+      ?.needs_check,
+  ).toBe(0);
+  expect((await mail.workOnce()).state).toBe("idle");
+  expect(send).toHaveBeenCalledTimes(2);
+  const next = f.otp(otp.email);
+  expect(mail.prepare(next.id).state).toBe("blocked");
+  const other = f.otp("other-buyer@example.invalid");
+  expect(mail.prepare(other.id).state).toBe("queued");
+  expect(send.mock.calls.filter((x) => x[1]?.method === "POST")).toHaveLength(
+    1,
+  );
+});
+it("a receipt arriving during delivery lookup is processed once without losing or repeating verification", async () => {
+  const f = fixture(),
+    otp = f.otp();
+  f.mail.prepare(otp.id);
+  await f.mail.workOnce();
+  const key = "mail-" + otp.id,
+    record = {
+      key,
+      providerId: "provider-" + key,
+      state: "delivered" as const,
+      authoritative: true,
+    };
+  f.records.set(key, record);
+  f.gateway.lookup.mockImplementationOnce(async () => {
+    f.mail.notify({
+      providerId: record.providerId,
+      eventId: "arrived-during-lookup",
+    });
+    return record;
+  });
+  expect((await f.mail.verify(otp.id)).state).toBe("delivered");
+  expect(
+    one("SELECT needs_check FROM mail_queue WHERE outbox_id=?", otp.id)
+      ?.needs_check,
+  ).toBe(1);
+  expect((await f.mail.workOnce()).state).toBe("delivered");
+  expect(
+    one("SELECT needs_check FROM mail_queue WHERE outbox_id=?", otp.id)
+      ?.needs_check,
+  ).toBe(0);
+  expect((await f.mail.workOnce()).state).toBe("idle");
+  expect(f.gateway.send).toHaveBeenCalledOnce();
+  expect(f.gateway.lookup).toHaveBeenCalledTimes(2);
+});

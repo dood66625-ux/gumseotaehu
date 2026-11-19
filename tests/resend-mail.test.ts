@@ -76,11 +76,15 @@ it.each([
       ? "delivered"
       : event === "complained"
         ? "complained"
-        : ["sent", "opened"].includes(event)
-          ? "accepted"
-          : "unknown",
+        : event === "bounced"
+          ? "bounced"
+          : ["sent", "opened"].includes(event)
+            ? "accepted"
+            : "unknown",
   );
   expect(r.state).not.toBe("not_sent");
+  if (event === "bounced")
+    expect(r).toMatchObject({ permanent: true, authoritative: true });
 });
 it("rejects a different provider ID or transaction tag", async () => {
   const f = fixture();
@@ -143,5 +147,25 @@ it("forwards cancellation without leaking the caller abort reason", async () => 
   });
   await expect(f.gateway.send(message, key, c.signal)).rejects.toThrow(
     "TIMEOUT_RECONCILIATION_REQUIRED",
+  );
+});
+
+it("a temporary delivery delay is accepted, not a permanent recipient rejection", async () => {
+  const f = fixture();
+  f.send.mockResolvedValue(Response.json(evidence("delivery_delayed")));
+  const result = await f.gateway.lookup(key, undefined, id);
+  expect(result).toMatchObject({ state: "accepted", authoritative: true });
+  expect(result.permanent).not.toBe(true);
+});
+it("a mismatched hard-bounce tag is rejected before it can suppress a recipient", async () => {
+  const f = fixture();
+  f.send.mockResolvedValue(
+    Response.json({
+      ...evidence("bounced"),
+      tags: [{ name: "gumseo_key", value: "mail-other" }],
+    }),
+  );
+  await expect(f.gateway.lookup(key, undefined, id)).rejects.toThrow(
+    "MISMATCH",
   );
 });
