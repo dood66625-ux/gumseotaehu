@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, afterAll, expect, it } from "vitest";
 import { DatabaseSync } from "node:sqlite";
 import { aiSpendLedger } from "../lib/ai-spend-ledger";
+import { inspectAiWorkerQueue, runAiWorkerCycle } from "../lib/ai-worker-cycle";
 import { prepareAiOrder } from "../lib/order-generation";
 import { runOrderOpenAiJob } from "../lib/ai-order-runner";
 import { approvedOpenAiModel } from "../lib/integrations/openai-http";
@@ -23,6 +24,12 @@ beforeAll(() => {
   db();
 });
 beforeEach(() => {
+  if (
+    one(
+      "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ai_spend_calls'",
+    )
+  )
+    db().exec("DELETE FROM ai_spend_calls;DELETE FROM ai_spend_policy;");
   db().exec(
     "DELETE FROM mail_queue;DELETE FROM outbox;DELETE FROM reports;DELETE FROM jobs;DELETE FROM pg_ledger;DELETE FROM orders;DELETE FROM readings;DELETE FROM challenges;DELETE FROM session_auth;DELETE FROM sessions;DELETE FROM events;DELETE FROM audit;DELETE FROM rate_limits;",
   );
@@ -681,4 +688,165 @@ it("AI lane is retained when the current job is repaired or the order version ch
   expect(
     one("SELECT version FROM orders WHERE id=?", order.order)?.version,
   ).toBe(2);
+});
+
+const cyclePolicy = {
+  dailyUsdMicros: 120000,
+  lifetimeUsdMicros: 120000,
+  reservationUsdMicros: 60000,
+};
+it("AI worker cycle is disabled without opt-in and blocks an unprepared or changed policy", async () => {
+  let calls = 0;
+  const invoke = () => {
+    calls++;
+    return Promise.resolve(true);
+  };
+  expect(
+    await runAiWorkerCycle(db(), { policy: cyclePolicy, runJob: invoke }),
+  ).toMatchObject({ state: "disabled", processed: 0 });
+  expect(
+    await runAiWorkerCycle(db(), {
+      enabled: true,
+      policy: cyclePolicy,
+      runJob: invoke,
+    }),
+  ).toMatchObject({ state: "blocked", processed: 0 });
+  aiSpendLedger(db(), cyclePolicy);
+  expect(
+    inspectAiWorkerQueue(db(), { ...cyclePolicy, dailyUsdMicros: 60000 }),
+  ).toMatchObject({ state: "blocked", reason: "AI_WORKER_POLICY_MISMATCH" });
+  expect(calls).toBe(0);
+});
+it("AI worker cycle persists completion across restart without draining the mock queue", async () => {
+  const order = aiPaid("cycle-ai@example.invalid"),
+    mock = paid("cycle-mock@example.invalid");
+  let ledger = aiSpendLedger(db(), cyclePolicy),
+    calls = 0;
+  const runJob = (orderId: string) =>
+    runBudgetedAiJob({
+      enabled: true,
+      orderId,
+      ledger,
+      generate: async (chart, usage) => {
+        calls++;
+        usage(1500);
+        return { ...generate(chart), provider: "openai" };
+      },
+    });
+  expect(
+    await runAiWorkerCycle(db(), {
+      enabled: true,
+      policy: cyclePolicy,
+      runJob,
+    }),
+  ).toMatchObject({ state: "ready", processed: 1 });
+  const report = svc.getReport(order.session, order.order).report;
+  closeDb();
+  db();
+  ledger = aiSpendLedger(db(), cyclePolicy);
+  expect(
+    await runAiWorkerCycle(db(), {
+      enabled: true,
+      policy: cyclePolicy,
+      runJob,
+    }),
+  ).toMatchObject({ processed: 0 });
+  expect(calls).toBe(1);
+  expect(svc.getReport(order.session, order.order).report).toEqual(report);
+  expect(
+    one("SELECT fulfillment FROM orders WHERE id=?", mock.order)?.fulfillment,
+  ).toBe("queued");
+});
+it("startup holds interrupted reservations and does not increment retry attempts", async () => {
+  const order = aiPaid();
+  const ledger = aiSpendLedger(db(), cyclePolicy);
+  ledger.reserve(order.order, 1);
+  closeDb();
+  db();
+  let calls = 0;
+  const result = await runAiWorkerCycle(db(), {
+    enabled: true,
+    policy: cyclePolicy,
+    runJob: async () => {
+      calls++;
+      return true;
+    },
+  });
+  expect(result).toMatchObject({ state: "ready", processed: 0, held: 1 });
+  expect(calls).toBe(0);
+  expect(
+    one("SELECT attempts FROM jobs WHERE order_id=?", order.order)?.attempts,
+  ).toBe(0);
+});
+it("shutdown stops between jobs and the next cycle can resume the unstarted order", async () => {
+  aiPaid("cycle-one@example.invalid");
+  aiPaid("cycle-two@example.invalid");
+  const ledger = aiSpendLedger(db(), cyclePolicy);
+  let stopping = false,
+    calls = 0;
+  const runJob = (orderId: string) =>
+    runBudgetedAiJob({
+      enabled: true,
+      orderId,
+      ledger,
+      generate: async (chart, usage) => {
+        calls++;
+        usage(1000);
+        stopping = true;
+        return { ...generate(chart), provider: "openai" };
+      },
+    });
+  expect(
+    await runAiWorkerCycle(db(), {
+      enabled: true,
+      policy: cyclePolicy,
+      limit: 2,
+      stopping: () => stopping,
+      runJob,
+    }),
+  ).toMatchObject({ processed: 1 });
+  expect(calls).toBe(1);
+  stopping = false;
+  expect(
+    await runAiWorkerCycle(db(), {
+      enabled: true,
+      policy: cyclePolicy,
+      limit: 2,
+      stopping: () => stopping,
+      runJob,
+    }),
+  ).toMatchObject({ processed: 1 });
+  expect(calls).toBe(2);
+});
+
+it("a higher recorded cost pauses the batch before another job spends retry attempts", async () => {
+  aiPaid("cycle-cost-one@example.invalid");
+  aiPaid("cycle-cost-two@example.invalid");
+  const ledger = aiSpendLedger(db(), cyclePolicy);
+  let calls = 0;
+  const result = await runAiWorkerCycle(db(), {
+    enabled: true,
+    policy: cyclePolicy,
+    limit: 2,
+    runJob: (orderId) =>
+      runBudgetedAiJob({
+        enabled: true,
+        orderId,
+        ledger,
+        generate: async (chart, usage) => {
+          calls++;
+          usage(70000);
+          return { ...generate(chart), provider: "openai" };
+        },
+      }),
+  });
+  expect(result).toMatchObject({
+    state: "blocked",
+    reason: "AI_WORKER_BUDGET_EXHAUSTED",
+    processed: 1,
+  });
+  expect(calls).toBe(1);
+  expect(
+    one("SELECT count(*) n FROM jobs WHERE state='queued' AND attempts=0")?.n,
+  ).toBe(1);
 });

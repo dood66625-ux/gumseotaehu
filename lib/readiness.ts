@@ -15,6 +15,7 @@ export function launchReadiness() {
       "offline-opt-in-per-order-openai-http-storage-and-reopen",
       "admin-review-of-held-ai-reservations-with-retry-block",
       "persistent-mock-ai-queue-isolation-across-restart-and-version-change",
+      "offline-ai-worker-startup-policy-hold-budget-and-shutdown-cycle",
       "durable-job-and-refund-reconciliation",
       "offline-toss-order-integration-and-notification-recovery",
       "disabled-by-default-signed-test-webhook-receipt",
