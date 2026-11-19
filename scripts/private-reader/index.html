@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko" data-call-limit="10">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>금서태후 · 私密命書</title>
+    <link rel="stylesheet" href="/private-reading/style.css" />
+    <script defer src="/private-reading/reader.js"></script>
+  </head>
+  <body>
+    <header>
+      <a href="/private-reading" class="brand"
+        >禁書太后<span>금서태후 · 一人一書</span></a
+      ><label class="language"
+        ><span id="language-label">언어 / 語言</span
+        ><select id="locale">
+          <option value="ko">한국어</option>
+          <option value="zh-TW">繁體中文（臺灣）</option>
+        </select></label
+      >
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow" id="eyebrow">PRIVATE AUDIENCE · 비공개 AI 풀이</p>
+        <h1 id="title">그대의 이야기를<br />들려주겠느냐.</h1>
+        <p id="lead">
+          태어난 날과 시각을 알려주거라.<br />그대의 기운을 헤아려 한 권의
+          이야기를 펼쳐 주겠노라.
+        </p>
+      </section>
+      <form id="birth-form">
+        <div class="form-heading">
+          <span>01</span>
+          <h2 id="form-title">그대가 태어난 순간</h2>
+        </div>
+        <p class="hint" id="range-note"></p>
+        <div class="fields">
+          <label
+            ><span id="place-label">출생 지역·현지 시각</span
+            ><select id="place">
+              <option value="KR">한국 · UTC+9</option>
+              <option value="TW">臺灣 · UTC+8</option>
+            </select></label
+          ><label
+            ><span id="date-label">양력 생년월일</span
+            ><input id="date" type="date" required max="2007-12-31" /></label
+          ><label
+            ><span id="time-label">태어난 시각</span
+            ><input id="time" type="time" value="12:00" /></label
+          ><label
+            ><span id="sex-label">대운 계산 구분</span
+            ><select id="sex">
+              <option value="unspecified">선택하지 않음</option>
+              <option value="female">여성</option>
+              <option value="male">남성</option>
+            </select></label
+          >
+        </div>
+        <label class="check"
+          ><input id="unknown" type="checkbox" /><span id="unknown-label"
+            >태어난 시각을 모릅니다</span
+          ></label
+        ><label class="check consent"
+          ><input id="consent" type="checkbox" required /><span
+            id="consent-label"
+          ></span></label
+        ><button id="submit" type="submit">내 금서 펼치기</button>
+        <p id="cost-note" class="hint"></p>
+      </form>
+      <p id="status" role="status" aria-live="polite"></p>
+      <section id="result" hidden>
+        <div class="result-heading">
+          <p class="eyebrow">YOUR PRIVATE ARCHIVE</p>
+          <h2 id="result-title"></h2>
+        </div>
+        <div id="pillars" class="pillars"></div>
+        <p id="intro" class="quote"></p>
+        <nav id="toc" aria-label="Contents"></nav>
+        <div id="chapters"></div>
+        <section class="guide">
+          <h2 id="summary-title"></h2>
+          <p id="summary"></p>
+        </section>
+        <details>
+          <summary id="notes-title"></summary>
+          <p id="notes"></p>
+        </details>
+        <button id="print" type="button"></button>
+      </section>
+      <footer>
+        <details>
+          <summary id="about-title"></summary>
+          <p id="about"></p>
+        </details>
+        <p>禁書太后 · PRIVATE AI READING</p>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -111,13 +111,14 @@ export function createOrderOpenAiTransport(
   options: OpenAiHttpOptions & {
     approval?: "customer-data-approved";
     chart: Chart;
+    locale?: "ko" | "zh-TW";
   },
 ): Transport {
   const chart = structuredClone(options.chart);
   return pinnedTransport(
     options,
     () => options.approval === "customer-data-approved",
-    () => buildAiRequest(chart, approvedOpenAiModel),
+    () => buildAiRequest(chart, approvedOpenAiModel, options.locale),
     "AI_ORDER_REQUEST_MISMATCH",
   );
 }

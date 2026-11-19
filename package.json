@@ -43,7 +43,9 @@
     "mail:check": "tsx scripts/mail-check.ts",
     "mail:status": "tsx scripts/mail-status.ts",
     "mail:owner": "node --use-env-proxy --import tsx scripts/owner-mail-test.ts",
-    "test:staging": "tsx scripts/test-private-staging.ts"
+    "test:staging": "tsx scripts/test-private-staging.ts",
+    "private:build": "node scripts/build-private-reader.mjs",
+    "private:serve": "node --use-env-proxy --import tsx scripts/private-reader-server.ts --serve-live"
   },
   "keywords": [],
   "author": "",

@@ -177,3 +177,37 @@ it("rejects underlength chapters even when their facts and JSON structure are va
     })),
   ).rejects.toThrow("AI_INVALID_REPORT_SHAPE");
 });
+
+it("Traditional Chinese reports preserve monthly coverage and reject contradictory day/element facts", async () => {
+  const chart = calculate(b),
+    base = validAiFixture(chart);
+  base.intro = `本宮見你的日主為${chart.day}，且循命盤所見，陪你慢慢梳理心中掛念之事。`;
+  base.chapters.forEach((chapter, index) => {
+    chapter.text =
+      `第${index + 1}篇。` +
+      "且先觀照日常的選擇，不急於替未來下結論，願你在閱讀後找到一項可以實踐的小事。".repeat(
+        12,
+      );
+  });
+  base.chapters[7].text += Array.from(
+    { length: 12 },
+    (_, i) => `${i + 1}月，留意生活的節奏。`,
+  ).join(" ");
+  const invoke = (value: any) =>
+    offlineAiContract(
+      chart,
+      "model",
+      async () => ({ status: "completed", output_text: JSON.stringify(value) }),
+      "zh-TW",
+    );
+  expect((await invoke(base)).promptVersion).toBe("taehou-ai-3-zh-TW");
+  await expect(
+    invoke({
+      ...base,
+      intro: `日主為${chart.day === "甲" ? "乙" : "甲"}。` + base.intro,
+    }),
+  ).rejects.toThrow("DAY_FACT_MISMATCH");
+  const wrong = structuredClone(base);
+  wrong.chapters[0].text += ` 木${chart.counts.목 + 1}、`;
+  await expect(invoke(wrong)).rejects.toThrow("COUNT_FACT_MISMATCH");
+});

@@ -9,6 +9,7 @@ await build({
     "scripts/runtime-backup.ts",
     "scripts/toss-sandbox.ts",
     "scripts/merchant-review.ts",
+    "scripts/private-reader-server.ts",
   ],
   outdir: "dist",
   bundle: true,
@@ -21,3 +22,5 @@ await build({
 console.log(
   "Worker and local health probes built; no environment values embedded.",
 );
+
+await import("./build-private-reader.mjs");

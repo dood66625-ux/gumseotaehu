@@ -1,0 +1,25 @@
+name: gumseo-private-reader
+services:
+  reader:
+    image: gumseo-local-worker:local
+    user: '1000:1000'
+    working_dir: /app
+    network_mode: host
+    env_file: /etc/gumseo/private-reader.env
+    environment:
+      PRIVATE_READER_MAX_CALLS: "8"
+      PRIVATE_READER_ORIGIN: https://pay.gumseo.kr
+    volumes: [/var/lib/gumseo-private-reader:/app/var/private-reader]
+    command: [node, --use-env-proxy, dist/private-reader-server.js, --serve-live]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3450/private-reading').then(r=>process.exit(r.status===403?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    stop_grace_period: 75s
+    restart: unless-stopped

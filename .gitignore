@@ -17,3 +17,5 @@ scripts/public-preview/snapshot.json
 dist/
 __pycache__/
 *.pyc
+
+public/private-reader/

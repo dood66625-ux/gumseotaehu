@@ -38,6 +38,7 @@ jobs:
       - run: python3 -m unittest discover -s tests -p 'test_iwinv_automation.py'
       - run: npm run build
       - run: python3 -m unittest discover -s tests -p 'test_merchant_review_server.py'
+      - run: python3 -m unittest discover -s tests -p 'test_private_reader_setup.py'
       - run: npm run runtime:package -- var/private-runtime
       - name: Build images without server compilation
         run: |

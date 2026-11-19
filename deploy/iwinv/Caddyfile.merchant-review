@@ -25,11 +25,17 @@ pay.gumseo.kr {
 		X-Robots-Tag "noindex, nofollow"
 		Strict-Transport-Security "max-age=86400"
 	}
-	@private path /admin /login /refund
-	respond @private 404
-	reverse_proxy 127.0.0.1:3212 {
-		header_up Host pay.gumseo.kr
-		header_up -Authorization
-		header_up -Proxy-Authorization
+	@reader path /private-reading /private-reading/*
+	handle @reader {
+		reverse_proxy 127.0.0.1:3450
+	}
+	handle {
+		@private path /admin /login /refund
+		respond @private 404
+		reverse_proxy 127.0.0.1:3212 {
+			header_up Host pay.gumseo.kr
+			header_up -Authorization
+			header_up -Proxy-Authorization
+		}
 	}
 }

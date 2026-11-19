@@ -16,9 +16,13 @@ const generated = z.object({
     .length(9),
   notes: z.array(z.string().max(500)).max(10),
 });
-export function buildAiRequest(chart: Chart, model: string) {
+export function buildAiRequest(
+  chart: Chart,
+  model: string,
+  locale: "ko" | "zh-TW" = "ko",
+) {
   if (!/^[a-zA-Z0-9_.-]{1,80}$/.test(model)) throw Error("MODEL_REQUIRED");
-  return {
+  const request = {
     model,
     store: false,
     max_output_tokens: 9000,
@@ -56,17 +60,22 @@ export function buildAiRequest(chart: Chart, model: string) {
       },
     },
   };
+  if (locale === "zh-TW")
+    request.instructions =
+      "你是中國太后意象的虛構人物禁書太后。所有 intro 與章節正文只用臺灣繁體中文，語氣典雅溫暖，以本宮、你、且看、不妨等自然說話，不恐嚇、不命令讀者。每章至少350字，保留既定韓文章節標題供系統識別，正文不要使用韓文。notes 的原始不確定性說明必須逐字保留，即使原文為韓文。不得改動命盤、日主、干支或五行數量；不斷言強弱、用神、健康、死亡、感情背叛或投資結果。未知出生時辰不補造時柱或大運。禁止使用必定成功、保證獲利、必死、絕症、一定會出軌等詞，包括否定句。按所附 facts 寫九章，claimIds 沿用原值，第一章涵蓋日主和五行，第二三五章含TEN_GODS，第四六章含RELATIONS，第七章含CYCLES，第八章含MONTHS並逐一列出1月到12月的建議，第九章含日主。";
+  return request;
 }
 export async function generateAiReport(
   chart: Chart,
   model: string,
   transport: Transport = blockedTransport,
+  locale: "ko" | "zh-TW" = "ko",
 ) {
   const raw = (await transport({
     method: "POST",
     path: "/v1/responses",
     headers: { "Content-Type": "application/json" },
-    body: buildAiRequest(chart, model),
+    body: buildAiRequest(chart, model, locale),
     timeoutMs: 45000,
   })) as Record<string, any>;
   if (!raw || typeof raw !== "object" || raw.status !== "completed")
@@ -114,7 +123,29 @@ export async function generateAiReport(
       /[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/g,
     ) || [])
       if (!allowed.has(pair)) throw Error("UNSUPPORTED_PILLAR");
-    if (/반드시|무조건|죽음|사망|불치|외도 확실|수익 보장/.test(text))
+    if (locale === "zh-TW") {
+      for (const match of text.matchAll(
+        /日主(?:為|是|：|:)?\s*([甲乙丙丁戊己庚辛壬癸])/g,
+      ))
+        if (match[1] !== chart.day) throw Error("DAY_FACT_MISMATCH");
+      const elementNames: Record<string, string> = {
+        木: "목",
+        火: "화",
+        土: "토",
+        金: "금",
+        水: "수",
+      };
+      for (const match of text.matchAll(
+        /([木火土金水])\s*(\d+)(?=[、，,。\s]|$)/g,
+      ))
+        if (Number(match[2]) !== chart.counts[elementNames[match[1]]])
+          throw Error("COUNT_FACT_MISMATCH");
+    }
+    if (
+      /반드시|무조건|죽음|사망|불치|외도 확실|수익 보장|必定成功|保證獲利|必死|絕症|一定會出軌/.test(
+        text,
+      )
+    )
       throw Error("UNSAFE_AI_CONTENT");
   }
   const required = [
@@ -132,18 +163,26 @@ export async function generateAiReport(
     if (required[index].some((id) => !chapter.claimIds.includes(id)))
       throw Error("AI_CHAPTER_EVIDENCE_MISSING");
   });
+  if (
+    locale === "zh-TW" &&
+    /[가-힣]/.test(output.intro + output.chapters.map((c) => c.text).join(""))
+  )
+    throw Error("AI_LANGUAGE_MISMATCH");
   for (let month = 1; month <= 12; month++)
     if (
-      !new RegExp("(?:^|[^0-9])" + month + "월(?:[^0-9]|$)").test(
-        output.chapters[7].text,
-      )
+      !new RegExp(
+        "(?:^|[^0-9])" +
+          month +
+          (locale === "zh-TW" ? "月" : "월") +
+          "(?:[^0-9]|$)",
+      ).test(output.chapters[7].text)
     )
       throw Error("AI_MONTH_COVERAGE_MISSING");
   return validateReport(
     {
       ...output,
       provider: "openai",
-      promptVersion: "taehou-ai-3",
+      promptVersion: locale === "zh-TW" ? "taehou-ai-3-zh-TW" : "taehou-ai-3",
       chart,
       year: chart.target,
       usage: {

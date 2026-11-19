@@ -1,0 +1,314 @@
+export {};
+type Locale = "ko" | "zh-TW";
+const $ = (id: string) => document.getElementById(id)!;
+const input = (id: string) => $(id) as HTMLInputElement;
+const copy = {
+  ko: {
+    title: "그대의 이야기를 들려주겠느냐.",
+    lead: "태어난 날과 시각을 알려주거라. 그대의 기운을 헤아려 한 권의 이야기를 펼쳐 주겠노라.",
+    eyebrow: "PRIVATE AUDIENCE · 비공개 AI 풀이",
+    form: "그대가 태어난 순간",
+    place: "출생 지역·현지 시각",
+    date: "양력 생년월일",
+    time: "태어난 시각",
+    sex: "대운 계산 구분",
+    unknown: "태어난 시각을 모릅니다",
+    consent:
+      "만 19세 이상 본인이며, 입력한 출생정보로 서버에서 사주를 계산하고 계산된 사주 정보를 OpenAI에 보내 AI 해석을 생성하는 데 동의합니다. 이름·이메일·원본 생년월일은 OpenAI에 보내지 않습니다. 결과는 암호화해 24시간 기준으로 보관·정리합니다.",
+    submit: "내 금서 펼치기",
+    cost: "같은 접속에서 같은 정보·언어로 다시 펼치면 저장본을 보여줍니다. 전체 비공개 체험은 최대 10회, 추정 예약액 $0.60 한도입니다. 언어를 바꿔 새로 생성하면 1회가 추가됩니다.",
+    range:
+      "양력만 지원합니다. 한국은 1989년 이후, 대만은 1980년 이후 현지 시각을 입력하세요. 출생지에 맞는 시간대를 선택해야 합니다.",
+    result: "그대를 위해 펼친 금서",
+    summary: "마음에 남겨 두거라",
+    notes: "계산 기준과 풀이의 범위",
+    print: "금서 간직하기 · 인쇄/PDF",
+    aboutTitle: "비공개 체험·개인정보 안내",
+    about:
+      "초대 링크를 아는 사람만 접속하는 비공개 AI 체험입니다. 실제 출생정보로 계산하며 결제는 없습니다. AI 해석은 전문가 검수나 확정된 미래를 뜻하지 않습니다. 진태양시·과거 서머타임은 적용하지 않으며 경계 시각은 계산을 보류합니다. 브라우저에 입력한 원본 출생정보는 서버 계산에 사용하고 원본 입력은 DB에 저장하지 않습니다. 저장 보고서에는 계산 결과가 포함되며 암호화해 24시간 기준으로 보관·정리합니다. 링크가 노출되면 다른 사람도 새 풀이를 만들 수 있으니 재공유에 유의하세요.",
+    busy: "그대의 기운을 살피고 있느니라. 잠시 기다려 보거라…",
+    held: "결과 확인이 필요한 요청입니다. 중복 비용을 막기 위해 자동으로 다시 생성하지 않습니다. 운영자에게 확인해 주세요.",
+    error:
+      "계산하거나 결과를 가져오지 못했습니다. 날짜·지역·출생시간을 확인해 주세요. 절기 경계 시각은 임의로 확정하지 않습니다.",
+    limit:
+      "비공개 체험 한도에 도달했습니다. 추가 결제나 재생성은 실행하지 않았습니다.",
+    adult: "이 비공개 페이지는 만 19세 이상 본인만 이용할 수 있습니다.",
+    solar: "현재는 양력 생일만 지원합니다.",
+    private: "비공개 초대 링크로 다시 접속해 주세요.",
+    ready: "금서를 펼쳤느니라. 천천히 읽어 보거라.",
+    sexOptions: ["선택하지 않음 · 대운 제외", "여성", "남성"],
+    pillars: ["연주", "월주", "일주", "시주"],
+    titles: [
+      "사주 구조와 오행",
+      "타고난 성향",
+      "재물과 선택",
+      "연애와 인연",
+      "직업과 성장",
+      "관계와 균형",
+      "대운의 흐름",
+      "연간·월별 흐름",
+      "그대를 위한 조언",
+    ],
+  },
+  "zh-TW": {
+    title: "且將你的故事，道與本宮聽。",
+    lead: "告訴本宮你出生的日子與時辰，且讓本宮循著命盤的線索，為你展開一卷故事。",
+    eyebrow: "PRIVATE AUDIENCE · 私密 AI 命書",
+    form: "你來到世間的那一刻",
+    place: "出生地與當地時間",
+    date: "西元國曆出生日期",
+    time: "出生時間",
+    sex: "大運計算用性別",
+    unknown: "不確定出生時間",
+    consent:
+      "本人已滿19歲，同意以出生資料在伺服器計算命盤，並將計算後的命盤資訊傳送至 OpenAI 產生 AI 解讀。姓名、電子信箱與原始出生日期不會傳送至 OpenAI。解讀結果加密儲存，24小時後停止提供並列入清理。",
+    submit: "展開我的命書",
+    cost: "同一登入工作階段、相同資料與語言會重開已儲存結果，不重複呼叫。整個私密體驗最多10次，預估預留額度共 US$0.60。更換語言重新產生會另計1次。",
+    range:
+      "目前僅支援國曆。韓國出生限1989年起，臺灣出生限1980年起。請填寫出生地當時的當地時間，並選擇正確地區。",
+    result: "為你展開的私密命書",
+    summary: "且將這句話留在心上",
+    notes: "計算基準與解讀範圍",
+    print: "珍藏命書 · 列印／PDF",
+    aboutTitle: "私密體驗與個人資料說明",
+    about:
+      "這是持有邀請連結才能使用的私密 AI 體驗，以實際出生資料計算，不收取付款。AI 解讀不等於專家審核或確定的未來。本版不校正真太陽時及歷史日光節約時間；節氣交界附近會保留不確定性。原始出生資料僅用於伺服器計算，不寫入資料庫。儲存的解讀包含計算後命盤，以加密形式保留以24小時為保留基準。邀請連結外流後，其他人也可能使用額度，請勿任意轉傳。",
+    busy: "本宮正細看你的命盤，且稍候片刻……",
+    held: "這筆請求的結果需要確認。為避免重複費用，不會自動重新產生，請聯絡經營者確認。",
+    error:
+      "暫時無法計算或取得結果。請檢查國曆日期、出生地與時間；節氣交界附近不會任意判定。",
+    limit: "私密體驗額度已用完。未執行額外付款或重新產生。",
+    adult: "本私密頁面僅供已滿19歲的本人使用。",
+    solar: "目前僅支援國曆出生日期。",
+    private: "請使用私密邀請連結重新進入。",
+    ready: "命書已為你展開，且慢慢讀來。",
+    sexOptions: ["不指定 · 不計大運", "女", "男"],
+    pillars: ["年柱", "月柱", "日柱", "時柱"],
+    titles: [
+      "命盤結構與五行",
+      "與生俱來的氣質",
+      "財務與選擇",
+      "情感與緣分",
+      "工作與成長",
+      "人際與平衡",
+      "大運的流轉",
+      "流年與每月提醒",
+      "本宮給你的叮嚀",
+    ],
+  },
+};
+let locale: Locale = navigator.language.startsWith("zh") ? "zh-TW" : "ko",
+  busy = false;
+const set = (id: string, text: string) => {
+  $(id).textContent = text;
+};
+function language() {
+  const c = copy[locale];
+  document.documentElement.lang = locale;
+  document.title =
+    locale === "ko" ? "금서태후 · 비공개 금서" : "禁書太后 · 私密命書";
+  for (const [id, key] of Object.entries({
+    title: "title",
+    lead: "lead",
+    eyebrow: "eyebrow",
+    "form-title": "form",
+    "place-label": "place",
+    "date-label": "date",
+    "time-label": "time",
+    "sex-label": "sex",
+    "unknown-label": "unknown",
+    "consent-label": "consent",
+    submit: "submit",
+    "cost-note": "cost",
+    "range-note": "range",
+    "result-title": "result",
+    "summary-title": "summary",
+    "notes-title": "notes",
+    print: "print",
+    "about-title": "aboutTitle",
+    about: "about",
+  }))
+    set(id, (c as any)[key]);
+  const select = $("sex") as HTMLSelectElement;
+  Array.from(select.options).forEach(
+    (o, i) => (o.textContent = c.sexOptions[i]),
+  );
+  ($("locale") as HTMLSelectElement).value = locale;
+  const limit = Number(document.documentElement.dataset.callLimit ?? 10);
+  set(
+    "cost-note",
+    c.cost
+      .replace("10회", limit + "회")
+      .replace("10次", limit + "次")
+      .replace("0.60", (limit * 0.06).toFixed(2)),
+  );
+  updatePlace();
+}
+function updatePlace() {
+  input("date").min =
+    ($("place") as HTMLSelectElement).value === "TW"
+      ? "1980-01-01"
+      : "1989-01-01";
+  const now = new Date();
+  now.setFullYear(now.getFullYear() - 19);
+  input("date").max = now.toISOString().slice(0, 10);
+}
+const status = (s: string) => set("status", s);
+function error(code: string) {
+  const c = copy[locale];
+  return code === "AI_SPEND_LIMIT_REACHED"
+    ? c.limit
+    : code === "PRIVATE_LINK_REQUIRED"
+      ? c.private
+      : code === "ADULT_REQUIRED"
+        ? c.adult
+        : code === "SOLAR_CALENDAR_REQUIRED"
+          ? c.solar
+          : code === "RESULT_HELD_NO_AUTOMATIC_RETRY"
+            ? c.held
+            : c.error;
+}
+function el(tag: string, text?: string, cls?: string) {
+  const node = document.createElement(tag);
+  if (text) node.textContent = text;
+  if (cls) node.className = cls;
+  return node;
+}
+function draw(report: any) {
+  const c = copy[locale];
+  $("result").hidden = false;
+  $("intro").textContent =
+    locale === "zh-TW"
+      ? report.intro.replace(/\bfacts\b/g, "命盤依據")
+      : report.intro;
+  $("pillars").replaceChildren();
+  report.chart.pillars.forEach((p: string | null, i: number) => {
+    const card = el("div", undefined, "pillar");
+    card.append(el("small", c.pillars[i]), el("strong", p ?? "—"));
+    $("pillars").append(card);
+  });
+  $("chapters").replaceChildren();
+  $("toc").replaceChildren();
+  report.chapters.forEach((chapter: any, i: number) => {
+    const article = el("article");
+    article.id = "chapter-" + i;
+    article.append(
+      el("p", "CHAPTER " + String(i + 1).padStart(2, "0"), "eyebrow"),
+      el("h2", c.titles[i]),
+    );
+    const image = el("img") as HTMLImageElement;
+    image.src =
+      "/private-reading/chapter-" + String(i + 1).padStart(2, "0") + ".jpg";
+    image.alt = c.titles[i];
+    image.width = 508;
+    image.height = 337;
+    image.loading = "lazy";
+    article.append(image, el("p", chapter.text));
+    $("chapters").append(article);
+    const a = el("a", i + 1 + ". " + c.titles[i]) as HTMLAnchorElement;
+    a.href = "#" + article.id;
+    $("toc").append(a);
+  });
+  const element = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" }[
+    report.chart.element as "목"
+  ];
+  set(
+    "summary",
+    locale === "ko"
+      ? `그대의 일간은 ${report.chart.day}, ${element}의 결을 읽는 기준점이니라. 이 금서가 그대의 선택을 대신하지는 않느니라. 오늘 마음에 남은 제안 하나를 골라, 작은 행동으로 옮겨 보거라.`
+      : `你的日主是${report.chart.day}，以${element}的意象作為理解自己的起點。命書不替你作決定；不妨選一項讀來有感的提醒，化作今日一個小小的行動。`,
+  );
+  set(
+    "notes",
+    locale === "ko"
+      ? report.notes.join("\n\n")
+      : [
+          report.chart.pillars[3]
+            ? "出生時辰已填寫，以當地標準時間計算。"
+            : "出生時辰不明：不提供時柱、大運起始或順逆。",
+          report.chart.cycles.length
+            ? "大運只呈現計算區間，不保證特定事件。"
+            : "資料不足，未計算大運。",
+          "以午夜換日，不校正真太陽時；月度干支採每月15日代表時點，並非整個節氣月份的邊界。",
+          "臺灣使用UTC+8；韓國使用UTC+9。曆法與節氣尚未完成獨立專家審核。五行數量不等於強弱或用神判定。",
+        ].join("\n\n"),
+  );
+  status(c.ready);
+}
+async function showResponse(response: Response) {
+  const data = await response.json();
+  if (data.state === "ready") {
+    if (data.locale) {
+      locale = data.locale;
+      language();
+    }
+    draw(data.report);
+    return true;
+  }
+  if (data.state === "running") {
+    status(copy[locale].busy);
+    return false;
+  }
+  throw Error(data.code || "FAILED");
+}
+async function recover() {
+  const response = await fetch("/private-reading/latest", {
+    cache: "no-store",
+  });
+  if (response.status === 404) return;
+  if (!(await showResponse(response)))
+    setTimeout(() => recover().catch((e) => status(error(e.message))), 2500);
+}
+$("locale").addEventListener("change", () => {
+  if (busy) return;
+  locale = ($("locale") as HTMLSelectElement).value as Locale;
+  $("result").hidden = true;
+  language();
+  status("");
+});
+$("place").addEventListener("change", updatePlace);
+$("unknown").addEventListener("change", () => {
+  input("time").disabled = input("unknown").checked;
+});
+$("print").addEventListener("click", () => window.print());
+$("birth-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (busy) return;
+  busy = true;
+  input("submit").disabled = true;
+  ($("locale") as HTMLSelectElement).disabled = true;
+  status(copy[locale].busy);
+  try {
+    await showResponse(
+      await fetch("/private-reading/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          locale,
+          consent: input("consent").checked,
+          birth: {
+            name: "guest",
+            date: input("date").value,
+            calendar: "solar",
+            leap: false,
+            time: input("unknown").checked ? null : input("time").value || null,
+            sex: ($("sex") as HTMLSelectElement).value,
+            place: ($("place") as HTMLSelectElement).value,
+            age: "19+",
+            self: true,
+            consent: true,
+          },
+        }),
+      }),
+    );
+  } catch (e) {
+    status(error((e as Error).message));
+  } finally {
+    busy = false;
+    input("submit").disabled = false;
+    ($("locale") as HTMLSelectElement).disabled = false;
+  }
+});
+if (locale === "zh-TW") ($("place") as HTMLSelectElement).value = "TW";
+language();
+recover().catch((e) => status(error(e.message)));
