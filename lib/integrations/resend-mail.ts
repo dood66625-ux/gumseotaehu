@@ -1,4 +1,4 @@
-/** Candidate Resend adapter. Not registered in app/worker; no environment flag activates it. */
+/** Resend adapter; runtime enrollment requires approval, HTTPS and a signed cutover. */
 import { z } from "zod";
 import type { MailGateway, MailEvidence } from "./mail-gateway";
 const keySchema = z.string().regex(/^mail-[a-f0-9-]{36}$/);

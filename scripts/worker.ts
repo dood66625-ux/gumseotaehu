@@ -1,3 +1,4 @@
+import { runConfiguredMailCycle } from "../lib/mail-worker-runtime";
 import { db } from "../lib/db";
 import { config } from "../lib/config";
 import {
@@ -6,7 +7,9 @@ import {
   recordPrivacyCheckpointFailure,
 } from "../lib/privacy-checkpoint";
 import { workOnce, reconcileRefunds, purgeExpired } from "../lib/service";
-console.log("Local durable worker started. External effects disabled.");
+console.log(
+  "Local durable worker started. Payment/AI effects disabled; mail requires separate enrollment.",
+);
 let stopped = false;
 process.on("SIGINT", () => {
   stopped = true;
@@ -19,6 +22,12 @@ while (!stopped) {
   try {
     workOnce();
     reconcileRefunds();
+    // Sequential await: never overlap sends; stop prevents another cycle.
+    try {
+      await runConfiguredMailCycle();
+    } catch {
+      console.error("MAIL_WORKER_CYCLE_FAILED (no customer data logged)");
+    }
     if (tick++ % 60 === 0) {
       purgeExpired();
       try {

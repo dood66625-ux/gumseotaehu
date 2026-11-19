@@ -1,4 +1,4 @@
-/** Candidate scheduler only: not imported by the app worker and disabled by default.
+/** Scheduler with explicit runtime enrollment; disabled by default.
  * Explicit cutover excludes old local/demo mail when a delivery worker is enrolled.
  */
 import { all, one } from "./db";
@@ -35,7 +35,7 @@ export async function runMailCycle(
   return { prepared: rows.length, result: await coordinator.workOnce(cutoff) };
 }
 
-/** Future enrollment entry point only; the normal app worker does not invoke it. */
+/** Signed enrollment entry point; runtime registration remains disabled by default. */
 export async function runPersistedMailCycle(
   coordinator: Pick<
     MailDeliveryCoordinator,

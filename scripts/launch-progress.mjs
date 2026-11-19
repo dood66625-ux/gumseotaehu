@@ -19,6 +19,11 @@ const count = (xs) => ({
   done: xs.filter((t) => t.status === "done").length,
   total: xs.length,
   remaining: xs.filter((t) => t.status !== "done").length,
+  percent: xs.length
+    ? Math.round(
+        (xs.filter((t) => t.status === "done").length / xs.length) * 1000,
+      ) / 10
+    : 0,
 });
 const totals = count(tasks),
   remaining = { development: 0, verification: 0, decision: 0 };
@@ -35,6 +40,12 @@ const summary = {
       id: s.id,
       title: s.title,
       ...count(s.tasks),
+      tasks: s.tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        percent: t.status === "done" ? 100 : 0,
+      })),
     })),
   })),
 };
@@ -42,7 +53,7 @@ if (process.argv.includes("--write")) {
   const lines = [
     "# 출시 진행표 · 대단원 / 중단원 / 소단원",
     "",
-    `기준일: ${plan.updatedKst} KST. **${totals.done}/${totals.total} 소단원 완료 · ${totals.remaining}개 남음.**`,
+    `기준일: ${plan.updatedKst} KST. **${totals.percent}% · ${totals.done}/${totals.total} 소단원 완료 · ${totals.remaining}개 남음.**`,
     "",
     plan.basis,
     "",
@@ -50,10 +61,11 @@ if (process.argv.includes("--write")) {
     "",
     `남은 작업량: 개발 ${remaining.development}개 / 현장·전문 검증·심사 ${remaining.verification}개 / 운영 결정·승인 ${remaining.decision}개. 단위별 크기가 달라 같은 기간을 뜻하지 않으며 심사 대기 시간은 예측하지 않습니다.`,
     "",
-    "| 대단원 | 완료/전체 | 남음 |",
-    "|---|---:|---:|",
+    "| 대단원 | 진행률 | 완료/전체 | 남음 |",
+    "|---|---:|---:|---:|",
     ...summary.majors.map(
-      (m) => `| ${m.id}. ${m.title} | ${m.done}/${m.total} | ${m.remaining} |`,
+      (m) =>
+        `| ${m.id}. ${m.title} | ${m.percent}% | ${m.done}/${m.total} | ${m.remaining} |`,
     ),
     "",
   ];
@@ -66,10 +78,13 @@ if (process.argv.includes("--write")) {
     lines.push(`## ${m.id}. ${m.title}`, "");
     for (const s of m.sections) {
       const n = count(s.tasks);
-      lines.push(`### ${s.id} ${s.title} · ${n.done}/${n.total} 완료`, "");
+      lines.push(
+        `### ${s.id} ${s.title} · ${n.percent}% · ${n.done}/${n.total} 완료`,
+        "",
+      );
       for (const t of s.tasks)
         lines.push(
-          `- [${t.status === "done" ? "x" : " "}] **${t.id}** ${t.title}${t.status === "done" ? ` — 근거: [${t.evidence.split("/").pop()}](${t.evidence.startsWith("docs/") ? t.evidence.slice(5) : "../" + t.evidence})` : ` — 남음: ${labels[t.remainingKind]}`}`,
+          `- [${t.status === "done" ? "x" : " "}] **${t.id}** ${t.title} · ${t.status === "done" ? 100 : 0}%${t.status === "done" ? ` — 근거: [${t.evidence.split("/").pop()}](${t.evidence.startsWith("docs/") ? t.evidence.slice(5) : "../" + t.evidence})` : ` — 남음: ${labels[t.remainingKind]}`}`,
         );
       lines.push("");
     }

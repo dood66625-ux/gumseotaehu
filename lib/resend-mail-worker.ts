@@ -1,4 +1,4 @@
-/** Explicit future opt-in. No route or normal worker imports this registration candidate. */
+/** Explicit opt-in adapter used only by the separately approved mail runtime. */
 import { config } from "./config";
 import { MailDeliveryCoordinator } from "./mail-delivery";
 import type { MailProfile } from "./mail-content";

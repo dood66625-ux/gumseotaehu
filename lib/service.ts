@@ -1,3 +1,4 @@
+import { requireLocalMailAccess } from "./local-mail-access";
 import type { GenerationLane } from "./order-generation";
 import { aiSpendReview, hasAiReservation } from "./ai-spend-review";
 import { PRODUCT_PRICE_KRW, isSupportedOrderAmount } from "./product";
@@ -154,6 +155,7 @@ export function requestOtp(s: Session, email: unknown) {
   return cid;
 }
 export function localOtp(s: Session, cid: string) {
+  requireLocalMailAccess();
   const c = one(
     "SELECT * FROM challenges WHERE id=? AND session_id=? AND consumed=0 AND expires>?",
     cid,

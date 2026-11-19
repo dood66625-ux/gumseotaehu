@@ -1,3 +1,4 @@
+import { requireLocalMailAccess } from "./local-mail-access";
 import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { all, one, run, tx } from "./db";
@@ -66,6 +67,7 @@ export function requestEmailChange(
   return changeId;
 }
 export function localEmailChangeCode(s: Session, changeId: string) {
+  requireLocalMailAccess();
   const change = one(
     "SELECT * FROM email_changes WHERE id=? AND session_id=? AND old_hash=? AND state='pending' AND expires>?",
     changeId,

@@ -1,3 +1,5 @@
+import { runConfiguredMailCycle } from "../lib/mail-worker-runtime";
+import { localEmailChangeCode } from "../lib/email-change";
 import {
   beforeAll,
   beforeEach,
@@ -63,7 +65,10 @@ beforeEach(() => {
     "DELETE FROM mail_notifications;DELETE FROM mail_queue;DELETE FROM mail_suppressions;DELETE FROM ticket_contacts;DELETE FROM toss_notifications;DELETE FROM toss_attempts;DELETE FROM session_auth;DELETE FROM email_changes;DELETE FROM admin_auth;DELETE FROM admin_totp_replay;DELETE FROM deletion_tombstones;DELETE FROM worker_heartbeat;DELETE FROM refunds;DELETE FROM reports;DELETE FROM jobs;DELETE FROM orders;DELETE FROM readings;DELETE FROM pg_ledger;DELETE FROM tickets;DELETE FROM outbox;DELETE FROM challenges;DELETE FROM sessions;DELETE FROM events;DELETE FROM audit;DELETE FROM rate_limits;",
   );
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
 afterAll(() => {
   closeDb();
   for (const suffix of ["", "-wal", "-shm"])
@@ -1038,6 +1043,7 @@ it("registered Resend cycle binds app origin and refuses a missing cutover witho
   expect(send).not.toHaveBeenCalled();
 });
 it("registered Resend cycle uses signed enrollment, excludes demo history and reuses provider state after restart", async () => {
+  vi.stubEnv("APP_ORIGIN", "https://reader.example.invalid");
   const f = fixture(),
     old = f.otp("worker-old@example.invalid"),
     now = Date.now();
@@ -1097,7 +1103,14 @@ it("registered Resend cycle uses signed enrollment, excludes demo history and re
       runResendMailCycle({ ...options, accountScope: "another-account" }),
     ).rejects.toThrow("MAIL_CUTOVER_MISMATCH");
     expect(send).not.toHaveBeenCalled();
-    await runResendMailCycle(options);
+    vi.stubEnv("MAIL_WORKER_MODE", "resend");
+    vi.stubEnv("CUSTOMER_MAIL_APPROVAL", "customer-mail-approved");
+    vi.stubEnv("RESEND_API_KEY", options.apiKey);
+    vi.stubEnv("RESEND_ACCOUNT_SCOPE", options.accountScope);
+    vi.stubEnv("TRANSACTION_MAIL_SENDER", appProfile.sender);
+    vi.stubEnv("TRANSACTION_MAIL_REPLY_TO", appProfile.replyTo);
+    vi.stubEnv("MAIL_CUTOVER_FILE", file);
+    await runConfiguredMailCycle(send as typeof fetch);
     expect(
       one("SELECT state FROM mail_queue WHERE outbox_id=?", fresh.id)?.state,
     ).toBe("accepted");
@@ -1108,7 +1121,7 @@ it("registered Resend cycle uses signed enrollment, excludes demo history and re
       one("SELECT state FROM mail_queue WHERE outbox_id=?", held.id)?.state,
     ).toBe("local_only");
     run("UPDATE mail_queue SET scheduled=0 WHERE outbox_id=?", fresh.id);
-    await runResendMailCycle(options);
+    await runConfiguredMailCycle(send as typeof fetch);
     expect(
       one("SELECT state FROM mail_queue WHERE outbox_id=?", fresh.id)?.state,
     ).toBe("delivered");
@@ -1119,3 +1132,51 @@ it("registered Resend cycle uses signed enrollment, excludes demo history and re
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+it("configured worker defaults off, rejects unknown mode and requires approval and HTTPS before provider access", async () => {
+  const send = vi.fn<typeof fetch>();
+  vi.stubEnv("MAIL_WORKER_MODE", "");
+  expect(await runConfiguredMailCycle(send)).toEqual({ state: "disabled" });
+  vi.stubEnv("MAIL_WORKER_MODE", "typo");
+  await expect(runConfiguredMailCycle(send)).rejects.toThrow(
+    "INVALID_MAIL_WORKER_MODE",
+  );
+  vi.stubEnv("MAIL_WORKER_MODE", "resend");
+  vi.stubEnv("CUSTOMER_MAIL_APPROVAL", "");
+  await expect(runConfiguredMailCycle(send)).rejects.toThrow(
+    "CUSTOMER_MAIL_NOT_APPROVED",
+  );
+  vi.stubEnv("CUSTOMER_MAIL_APPROVAL", "customer-mail-approved");
+  vi.stubEnv("APP_ORIGIN", "http://localhost:3000");
+  await expect(runConfiguredMailCycle(send)).rejects.toThrow(
+    "MAIL_HTTPS_REQUIRED",
+  );
+  vi.stubEnv("APP_ORIGIN", "https://reader.example.invalid");
+  vi.stubEnv("MAIL_CUTOVER_FILE", "");
+  await expect(runConfiguredMailCycle(send)).rejects.toThrow(
+    "MAIL_CUTOVER_FILE_REQUIRED",
+  );
+  expect(send).not.toHaveBeenCalled();
+});
+it.each(["resend", "typo"])(
+  "mail mode %s blocks both local OTP readers even without approval",
+  (mode) => {
+    const { session } = svc.newSession();
+    const cid = svc.requestOtp(session, "otp-guard@example.invalid");
+    const before = svc.localOtp(session, cid).code;
+    expect(before).toMatch(/^\d{6}$/);
+    vi.stubEnv("MAIL_WORKER_MODE", mode);
+    vi.stubEnv("CUSTOMER_MAIL_APPROVAL", "");
+    expect(() => svc.localOtp(session, cid)).toThrow(
+      "LOCAL_MAIL_ACCESS_DISABLED",
+    );
+    expect(() => localEmailChangeCode(session, "not-an-id")).toThrow(
+      "LOCAL_MAIL_ACCESS_DISABLED",
+    );
+    // Refusing the demo reader does not consume/invalidate the emailed challenge.
+    svc.verifyOtp(session, cid, before);
+    expect(
+      one("SELECT consumed FROM challenges WHERE id=?", cid)?.consumed,
+    ).toBe(1);
+  },
+);
