@@ -67,3 +67,11 @@ Resend 공식 이벤트 설명은 `email.bounced`를 수신 서버의 영구 거
 모의 HTTP/실제 SQLite에서 주소별 재발송 차단, 다른 주소 준비 허용, 일시 지연 구분, 잘못된 태그 거부, 최종 상태 조회 종료와 조회 도중 알림 보존을 검증했습니다. 관련 메일 테스트 69개·타입 검사 통과. 실제 고객 메일·새 시험 메일은 발송하지 않았고 일반 worker/운영 webhook 설정도 활성화하지 않았습니다.
 
 공식 문서 확인: [Event Types](https://resend.com/docs/dashboard/webhooks/event-types), [Retrieve Email](https://resend.com/docs/api-reference/emails/retrieve-email). 이 구현 검증은 실제 운영 계정의 조회 권한·수신·반송 실증을 대신하지 않습니다.
+
+## Resend 전송기·전환 파일 연결 후보 (2026-11-19 KST)
+
+`runResendMailCycle`에 발신 profile·실제 HTTP 어댑터·지속된 서명 전환 기준을 연결했습니다. 기본 비활성이며 일반 worker/공개 API가 호출하지 않습니다. 명시적 고객 메일 발송 승인 표시가 없으면 키나 전환 파일을 읽기 전에 거부합니다. 발신 링크 origin은 앱 설정과 같아야 하며 전환 파일의 DB 식별자·profile·provider account scope도 일치해야 합니다.
+
+가짜 키·모의 fetch와 실제 SQLite로 과거 체험 메일/복원 보류 제외, 새 메일 한 번 접수, 새 coordinator 구성 후에도 동일 provider ID를 조회해 전달 확인, 중복 발송 POST 없음, scope 변경/파일 누락/기본 비활성 차단을 검사했습니다. 관련 메일 테스트 총72개·타입 검사 통과. 실제 공급자 HTTP 요청이나 메일 발송은 하지 않았습니다.
+
+운영 조회 권한·웹훅 등록·통제된 수신/반송 실증, 일반 worker 등록 및 로컬 OTP 제공 경로 제거는 별도 미완료입니다. 전체 진척은 [출시 진행표](launch-progress.md)의 4번 이메일 대단원에서 구현과 운영 검증을 구분합니다.

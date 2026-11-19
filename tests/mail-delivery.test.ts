@@ -18,6 +18,7 @@ import * as svc from "../lib/service";
 import { MailDeliveryCoordinator } from "../lib/mail-delivery";
 import { requestEmailChange } from "../lib/email-change";
 import { createResendMailGateway } from "../lib/integrations/resend-mail";
+import { runResendMailCycle } from "../lib/resend-mail-worker";
 import { runMailCycle, runPersistedMailCycle } from "../lib/mail-worker";
 import { createMailCutoverFile } from "../lib/mail-cutover";
 import type {
@@ -994,4 +995,127 @@ it("a receipt arriving during delivery lookup is processed once without losing o
   expect((await f.mail.workOnce()).state).toBe("idle");
   expect(f.gateway.send).toHaveBeenCalledOnce();
   expect(f.gateway.lookup).toHaveBeenCalledTimes(2);
+});
+
+it("Resend worker registration stays disabled and requires approval before reading keys/files", async () => {
+  const options = {
+    profile,
+    cutoverFile: "/not-created",
+    accountScope: "worker-test",
+    get apiKey(): string {
+      throw Error("KEY_MUST_NOT_BE_READ");
+    },
+  };
+  expect(await runResendMailCycle(options)).toEqual({ state: "disabled" });
+  await expect(
+    runResendMailCycle({
+      profile,
+      cutoverFile: "/not-created",
+      accountScope: "worker-test",
+      apiKey: "re_fake",
+      enabled: true,
+    }),
+  ).rejects.toThrow("CUSTOMER_MAIL_NOT_APPROVED");
+});
+it("registered Resend cycle binds app origin and refuses a missing cutover without contacting provider", async () => {
+  const send = vi.fn<typeof fetch>();
+  const options = {
+    enabled: true,
+    approval: "customer-mail-approved" as const,
+    apiKey: "re_synthetic_fixture",
+    accountScope: "worker-test",
+    profile: { ...profile, origin: config().origin },
+    cutoverFile: "/does-not-exist",
+    fetch: send,
+  };
+  await expect(
+    runResendMailCycle({
+      ...options,
+      profile: { ...profile, origin: "https://different.example.invalid" },
+    }),
+  ).rejects.toThrow("MAIL_APP_ORIGIN_MISMATCH");
+  await expect(runResendMailCycle(options)).rejects.toThrow();
+  expect(send).not.toHaveBeenCalled();
+});
+it("registered Resend cycle uses signed enrollment, excludes demo history and reuses provider state after restart", async () => {
+  const f = fixture(),
+    old = f.otp("worker-old@example.invalid"),
+    now = Date.now();
+  const appProfile = { ...profile, origin: config().origin };
+  const pid = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  let idempotency = "";
+  const send = vi.fn(async (_url: unknown, init?: RequestInit) => {
+    if (init?.method === "POST") {
+      idempotency = (init.headers as Record<string, string>)["Idempotency-Key"];
+      return Response.json({ id: pid });
+    }
+    return Response.json({
+      id: pid,
+      last_event: "delivered",
+      tags: [{ name: "gumseo_key", value: idempotency }],
+    });
+  });
+  const coordinator = new MailDeliveryCoordinator(
+    appProfile,
+    createResendMailGateway({
+      enabled: true,
+      apiKey: "re_synthetic_fixture",
+      accountScope: "worker-test",
+      fetch: send as typeof fetch,
+    }),
+  );
+  run(
+    "INSERT OR IGNORE INTO privacy_checkpoint_source VALUES(1,?)",
+    "11111111-1111-4111-8111-111111111111",
+  );
+  const source = one(
+    "SELECT source_id FROM privacy_checkpoint_source WHERE id=1",
+  )!;
+  const directory = mkdtempSync("var/resend-worker-test-"),
+    file = directory + "/cutover.json";
+  try {
+    createMailCutoverFile(
+      file,
+      { sourceId: source.source_id, profileDigest: coordinator.profileBinding },
+      config().key,
+      now,
+    );
+    vi.spyOn(Date, "now").mockReturnValue(now + 1000);
+    const fresh = f.otp("worker-fresh@example.invalid"),
+      held = f.otp("worker-held@example.invalid");
+    run("UPDATE mail_queue SET recovery_hold=1 WHERE outbox_id=?", held.id);
+    const options = {
+      enabled: true,
+      approval: "customer-mail-approved" as const,
+      apiKey: "re_synthetic_fixture",
+      accountScope: "worker-test",
+      profile: appProfile,
+      cutoverFile: file,
+      fetch: send as typeof fetch,
+    };
+    await expect(
+      runResendMailCycle({ ...options, accountScope: "another-account" }),
+    ).rejects.toThrow("MAIL_CUTOVER_MISMATCH");
+    expect(send).not.toHaveBeenCalled();
+    await runResendMailCycle(options);
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", fresh.id)?.state,
+    ).toBe("accepted");
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", old.id)?.state,
+    ).toBe("local_only");
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", held.id)?.state,
+    ).toBe("local_only");
+    run("UPDATE mail_queue SET scheduled=0 WHERE outbox_id=?", fresh.id);
+    await runResendMailCycle(options);
+    expect(
+      one("SELECT state FROM mail_queue WHERE outbox_id=?", fresh.id)?.state,
+    ).toBe("delivered");
+    expect(
+      send.mock.calls.filter((call) => call[1]?.method === "POST"),
+    ).toHaveLength(1);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
