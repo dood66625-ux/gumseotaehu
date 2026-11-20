@@ -4,9 +4,10 @@ export default async function Page({
 }: {
   searchParams: Promise<{ id?: string }>;
 }) {
+  const id = (await searchParams).id || "";
   return (
     <div className="page">
-      <Checkout id={(await searchParams).id || ""} />
+      <Checkout key={id} id={id} />
     </div>
   );
 }

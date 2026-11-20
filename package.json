@@ -50,7 +50,8 @@
     "progress": "node scripts/launch-progress.mjs",
     "progress:write": "node scripts/launch-progress.mjs --write",
     "ai:worker:control": "tsx scripts/ai-worker-control.ts",
-    "toss:live:enroll": "tsx scripts/toss-live-enroll.ts"
+    "toss:live:enroll": "tsx scripts/toss-live-enroll.ts",
+    "test:live-checkout": "node scripts/test-live-checkout.mjs"
   },
   "keywords": [],
   "author": "",

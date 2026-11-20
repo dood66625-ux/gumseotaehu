@@ -54,6 +54,7 @@ jobs:
       - run: npm run preview:serve > /tmp/geumseo-preview.log 2>&1 &
       - run: npm run test:preview
       - run: npm run test:private-history
+      - run: npm run test:live-checkout
       - uses: actions/upload-artifact@v4
         if: always()
         with:

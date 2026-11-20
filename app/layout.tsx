@@ -2,6 +2,8 @@ import Shell from "@/components/Shell";
 import type { Metadata } from "next";
 
 import "./globals.css";
+// Runtime payment mode must not be frozen into pre-rendered checkout/recovery shells.
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: {
     default: "금서태후 | 그대의 기운을 읽다",
@@ -20,7 +22,14 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <Shell>{children}</Shell>
+        <Shell
+          livePayments={
+            process.env.TOSS_PAYMENT_MODE === "live" &&
+            process.env.LIVE_PAYMENTS_APPROVAL === "live-payments-approved"
+          }
+        >
+          {children}
+        </Shell>
       </body>
     </html>
   );

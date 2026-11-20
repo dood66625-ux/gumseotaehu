@@ -1,6 +1,8 @@
 import { POST as tossWebhookPost } from "../app/api/toss/webhook/route";
 import { createHmac } from "node:crypto";
 import {
+  liveCheckoutInfo,
+  checkoutMode,
   enrollLiveToss,
   confirmLiveToss,
   recoverLiveToss,
@@ -728,12 +730,16 @@ it("validates the stored sandbox fixture after restart with a new authenticated 
   );
 });
 
-function liveSetup(directory: string) {
+function liveSetup(directory: string, widget = false) {
   vi.stubEnv("APP_ORIGIN", "https://live.example.invalid");
   vi.stubEnv("TOSS_PAYMENT_MODE", "live");
   vi.stubEnv("LIVE_PAYMENTS_APPROVAL", "live-payments-approved");
   vi.stubEnv("TOSS_LIVE_MERCHANT_ID", "synthetic-mid");
-  vi.stubEnv("TOSS_LIVE_SECRET_KEY", "live_sk_synthetic_fixture_key");
+  vi.stubEnv(
+    "TOSS_LIVE_SECRET_KEY",
+    widget ? "live_gsk_synthetic_fixture_key" : "live_sk_synthetic_fixture_key",
+  );
+  vi.stubEnv("TOSS_LIVE_CLIENT_KEY", "live_gck_synthetic_fixture_key");
   vi.stubEnv("TOSS_LIVE_CUTOVER_FILE", directory + "/cutover.json");
   db().exec(
     "CREATE TABLE IF NOT EXISTS privacy_checkpoint_source(id INTEGER PRIMARY KEY,source_id TEXT NOT NULL)",
@@ -981,6 +987,33 @@ it("live gate refuses historical orders, wrong amount, test credentials and unco
     ).toBe(503);
     expect(send).not.toHaveBeenCalled();
     expect(one("SELECT count(*) n FROM toss_attempts")?.n).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it("checkout setup returns only owned pending-order widget data and never the secret key", () => {
+  const directory = mkdtempSync("var/live-widget-info-");
+  try {
+    liveSetup(directory, true);
+    const f = fixture();
+    expect(checkoutMode()).toEqual({ mode: "live" });
+    const info = liveCheckoutInfo(f.s, f.oid);
+    expect(info).toMatchObject({
+      mode: "live",
+      clientKey: "live_gck_synthetic_fixture_key",
+      orderId: f.oid,
+      amount: 22000,
+      currency: "KRW",
+    });
+    expect(JSON.stringify(info)).not.toContain("live_gsk_");
+    expect(() =>
+      liveCheckoutInfo(customer("other-widget@example.invalid"), f.oid),
+    ).toThrow();
+    vi.stubEnv("TOSS_LIVE_CLIENT_KEY", "test_gck_synthetic_fixture");
+    expect(() => liveCheckoutInfo(f.s, f.oid)).toThrow(
+      "TOSS_LIVE_WIDGET_KEY_PAIR_REQUIRED",
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

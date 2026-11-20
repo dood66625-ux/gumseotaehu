@@ -1,12 +1,22 @@
-import PaymentStatus from "@/components/PaymentStatus";
+import PaymentReturn from "@/components/PaymentReturn";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ orderId?: string }>;
+  searchParams: Promise<{
+    orderId?: string;
+    paymentKey?: string;
+    amount?: string;
+  }>;
 }) {
+  const params = await searchParams;
   return (
     <div className="page">
-      <PaymentStatus id={(await searchParams).orderId || ""} />
+      <PaymentReturn
+        key={params.orderId + ":" + (params.paymentKey ?? "")}
+        id={params.orderId || ""}
+        paymentKey={params.paymentKey}
+        amount={params.amount}
+      />
     </div>
   );
 }

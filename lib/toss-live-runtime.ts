@@ -198,3 +198,38 @@ export async function recoverLiveToss(
   }
   return { state: "ready" as const, processed };
 }
+
+/** Public widget fields only, after session ownership and immutable enrollment checks. */
+export function liveCheckoutInfo(s: Session, orderId: string) {
+  const o = ready(),
+    order = ownOrder(s, orderId);
+  const clientKey = process.env.TOSS_LIVE_CLIENT_KEY ?? "";
+  if (
+    !/^live_gck_[A-Za-z0-9_]{8,500}$/.test(clientKey) ||
+    !o.secret.startsWith("live_gsk_")
+  )
+    throw Error("TOSS_LIVE_WIDGET_KEY_PAIR_REQUIRED");
+  if (
+    order.created < o.cutoff ||
+    order.payment_status !== "pending" ||
+    order.content_deleted
+  )
+    throw new Fault("결제 가능한 주문을 확인해 주세요.", 409);
+  return {
+    mode: "live" as const,
+    clientKey,
+    orderId: order.id,
+    amount: order.amount,
+    currency: "KRW" as const,
+    orderName: "금서태후 종합 운명서",
+  };
+}
+export function checkoutMode() {
+  if (
+    !process.env.TOSS_PAYMENT_MODE ||
+    process.env.TOSS_PAYMENT_MODE === "disabled"
+  )
+    return { mode: "mock" as const };
+  ready();
+  return { mode: "live" as const };
+}

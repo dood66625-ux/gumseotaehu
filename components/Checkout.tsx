@@ -2,7 +2,8 @@
 import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Link from "next/link";
 import Journey from "./Journey";
-import { useEffect, useState } from "react";
+import { openLiveWidget, type LiveWidget } from "../lib/toss-widget-client";
+import { useEffect, useRef, useState } from "react";
 import { api, useLoad, Loading, EmailAuth, ErrorBox } from "./client";
 export default function Checkout({
   id,
@@ -20,6 +21,42 @@ export default function Checkout({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [scenario, setScenario] = useState("success");
+  const [mode, setMode] = useState<"mock" | "live" | null>(
+    testReviewHref ? "mock" : null,
+  );
+  const [liveOrder, setLiveOrder] = useState<{
+    id: string;
+    orderName: string;
+  } | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const widget = useRef<LiveWidget | null>(null),
+    locked = useRef(false);
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (testReviewHref) return;
+    let active = true;
+    api("payments/config")
+      .then((value) => {
+        if (!["mock", "live"].includes(value.mode)) throw Error();
+        if (active) setMode(value.mode);
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            "결제 정보를 불러오지 못했습니다. 새로고침 후 다시 확인해 주세요.",
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [testReviewHref]);
   useEffect(() => {
     api("session")
       .then((s) => setVerified(s.authenticated))
@@ -29,12 +66,28 @@ export default function Checkout({
   }, []);
   async function pay(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (locked.current || !mode || submitted) return;
+    locked.current = true;
     const f = new FormData(e.currentTarget);
     setBusy(true);
     setError("");
     try {
       if (testReviewHref === "https://pay.gumseo.kr/") {
         window.location.assign(testReviewHref);
+        return;
+      }
+      if (mode === "live" && liveOrder && widget.current) {
+        if (!agreed) throw Error("카드 결제에 필요한 약관을 확인해 주세요.");
+        await widget.current.requestPayment({
+          orderId: liveOrder.id,
+          orderName: liveOrder.orderName,
+          successUrl: location.origin + "/checkout/success",
+          failUrl:
+            location.origin +
+            "/checkout/fail?orderId=" +
+            encodeURIComponent(liveOrder.id),
+        });
+        setSubmitted(true);
         return;
       }
       const order = await api("orders", {
@@ -48,9 +101,33 @@ export default function Checkout({
           marketing: f.get("marketing") === "on",
         },
       });
+      if (!active.current) return;
       const status = await api("orders/" + order.id);
+      if (!active.current) return;
       if (status.payment !== "pending") {
         window.location.href = "/checkout/success?orderId=" + order.id;
+        return;
+      }
+      if (mode === "live") {
+        const info = await api("payments/prepare-live", { orderId: order.id });
+        if (
+          info.mode !== "live" ||
+          info.orderId !== order.id ||
+          info.currency !== "KRW"
+        )
+          throw Error("결제 정보를 확인하지 못했습니다.");
+        if (!active.current) return;
+        setLiveOrder({ id: order.id, orderName: info.orderName });
+        widget.current = await openLiveWidget(
+          info,
+          (value) => {
+            if (active.current) setAgreed(value);
+          },
+          {
+            methods: "#live-payment-methods-" + id,
+            agreement: "#live-payment-agreement-" + id,
+          },
+        );
         return;
       }
       const p = await api("payments/authenticate", {
@@ -68,8 +145,13 @@ export default function Checkout({
       });
       window.location.href = "/checkout/success?orderId=" + order.id;
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        mode === "live"
+          ? "결제를 완료하지 못했습니다. 추가 결제 전에 같은 주문의 상태를 확인해 주세요."
+          : (e as Error).message,
+      );
     } finally {
+      locked.current = false;
       setBusy(false);
     }
   }
@@ -90,7 +172,7 @@ export default function Checkout({
   )
     return (
       <div className="notice">
-        만 19세 이상 구매자만 모의 결제를 이용할 수 있습니다.
+        만 19세 이상 구매자만 결제를 이용할 수 있습니다.
       </div>
     );
   return (
@@ -151,9 +233,9 @@ export default function Checkout({
             {PRODUCT_PRICE_TEXT}원 <small>최종 결제총액 · 일시불</small>
           </p>
           <p className="hint">
-            자동 구독이나 추가 과금은 없습니다. 정식 서비스는 결제 확인 후
-            운명서 작성을 시작하며, 현재 체험에서는 실제 금액을 청구하지
-            않습니다.
+            {mode === "live"
+              ? "자동 구독이나 추가 과금은 없습니다. 카드 결제 확인 후 운명서 작성을 시작합니다."
+              : "자동 구독이나 추가 과금은 없습니다. 현재 체험에서는 실제 금액을 청구하지 않습니다."}
           </p>
         </section>
         <section className="card">
@@ -168,8 +250,9 @@ export default function Checkout({
           </div>
           <p className="hint">
             무료 미리보기를 제공했습니다. 금서태후는 창작 캐릭터이며 AI 기반
-            해석은 미래 예측이나 전문 조언을 대신하지 않습니다. 현재는 실제 AI를
-            호출하지 않는 규칙 기반 검증판입니다.
+            해석은 미래 예측이나 전문 조언을 대신하지 않습니다.
+            {mode !== "live" &&
+              " 현재는 실제 AI를 호출하지 않는 규칙 기반 검증판입니다."}
           </p>
           <label className="check">
             <input name="buyerAdult" type="checkbox" required />
@@ -212,7 +295,18 @@ export default function Checkout({
             <input name="marketing" type="checkbox" />
             혜택·소식 수신에 동의합니다. (선택 · 현재 발송하지 않음)
           </label>
-          {!testReviewHref && (
+          {mode === "live" && (
+            <section aria-label="카드 결제 수단">
+              <div id={"live-payment-methods-" + id} />
+              <div id={"live-payment-agreement-" + id} />
+              {!liveOrder && (
+                <p className="hint">
+                  아래 버튼을 누르면 카드 결제 수단을 선택할 수 있습니다.
+                </p>
+              )}
+            </section>
+          )}
+          {mode === "mock" && !testReviewHref && (
             <details className="report-disclosure">
               <summary>다른 체험 결제 상황 살펴보기</summary>{" "}
               <div className="field">
@@ -229,17 +323,35 @@ export default function Checkout({
               </div>
             </details>
           )}
+          {submitted && liveOrder && (
+            <Link
+              className="button secondary"
+              href={"/checkout/success?orderId=" + liveOrder.id}
+            >
+              같은 주문 결제 상태 확인
+            </Link>
+          )}
           <ErrorBox error={error} />
           <button
             className="button"
             style={{ width: "100%" }}
-            disabled={busy || !verified}
+            disabled={
+              busy ||
+              submitted ||
+              !verified ||
+              !mode ||
+              (mode === "live" && !!widget.current && !agreed)
+            }
           >
             {busy
               ? "주문 확인 중…"
-              : testReviewHref
-                ? "운명서 펼치기 · 토스 테스트 결제"
-                : "운명서 펼치기 · 체험 결제"}
+              : mode === "live"
+                ? liveOrder && widget.current
+                  ? "카드로 결제하기"
+                  : "카드 결제 수단 선택"
+                : testReviewHref
+                  ? "운명서 펼치기 · 토스 테스트 결제"
+                  : "운명서 펼치기 · 체험 결제"}
           </button>
         </section>
       </form>

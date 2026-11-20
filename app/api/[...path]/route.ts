@@ -1,4 +1,8 @@
-import { confirmLiveToss } from "@/lib/toss-live-runtime";
+import {
+  confirmLiveToss,
+  liveCheckoutInfo,
+  checkoutMode,
+} from "@/lib/toss-live-runtime";
 import { requireMockPayment } from "@/lib/toss-mode";
 import { externalEffectsStatus } from "@/lib/effects-status";
 import { NextRequest, NextResponse } from "next/server";
@@ -67,6 +71,7 @@ async function handler(
         });
       }
       const s = session(req);
+      if (p === "payments/config") return json(checkoutMode());
       if (p.startsWith("readings/")) {
         const r = svc.readingFor(s, p.split("/")[1]);
         return json({
@@ -195,6 +200,17 @@ async function handler(
         close: scenario === "close",
       });
     }
+    if (p === "payments/prepare-live")
+      return json(liveCheckoutInfo(s, z.string().uuid().parse(b.orderId)));
+    if (p === "payments/live-return")
+      return json(
+        await confirmLiveToss(
+          s,
+          z.string().uuid().parse(b.orderId),
+          z.string().max(200).parse(b.paymentKey),
+          z.number().int().parse(b.amount),
+        ),
+      );
     if (p === "payments/confirm") {
       if (
         process.env.TOSS_PAYMENT_MODE &&

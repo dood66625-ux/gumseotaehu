@@ -1,14 +1,26 @@
 import type { ReactNode } from "react";
 import { business } from "@/lib/business";
-export default function Shell({ children }: { children: ReactNode }) {
+export default function Shell({
+  children,
+  livePayments = false,
+}: {
+  children: ReactNode;
+  livePayments?: boolean;
+}) {
   return (
     <>
       <a href="#main" className="skip">
         본문으로 건너뛰기
       </a>
-      <div className="test-banner" role="region" aria-label="체험 서비스 안내">
-        <span>체험판</span> 가상 정보로 둘러보기 · 실제 결제 없음
-      </div>
+      {!livePayments && (
+        <div
+          className="test-banner"
+          role="region"
+          aria-label="체험 서비스 안내"
+        >
+          <span>체험판</span> 가상 정보로 둘러보기 · 실제 결제 없음
+        </div>
+      )}
       <header className="header">
         <a href="/" className="brand">
           <span className="seal" aria-hidden="true">
@@ -48,7 +60,8 @@ export default function Shell({ children }: { children: ReactNode }) {
           <a href="/admin">관리자</a>
         </div>
         <p className="fine">
-          운영 예정 사업자: {business.name} · 대표자 {business.representative}
+          {livePayments ? "사업자" : "운영 예정 사업자"}: {business.name} ·
+          대표자 {business.representative}
           <br />
           사업자등록번호 {business.registrationNumber}
           <br />
@@ -57,8 +70,12 @@ export default function Shell({ children }: { children: ReactNode }) {
           연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>
         </p>
         <p className="fine">
-          가상 정보로 둘러보는 체험판입니다. 실제 구매는 제공하지 않습니다.
-          <br />
+          {!livePayments && (
+            <>
+              가상 정보로 둘러보는 체험판입니다. 실제 구매는 제공하지 않습니다.
+              <br />
+            </>
+          )}
           풀이의 제공 방식과 해석 범위는{" "}
           <a href="/legal/content">콘텐츠 안내</a>에서 확인할 수 있습니다.
         </p>
