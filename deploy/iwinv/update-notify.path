@@ -1,0 +1,9 @@
+[Unit]
+Description=Run the fixed Gumseo update after verified GitHub publication signal
+
+[Path]
+PathChanged=/var/lib/gumseo-update-notify/requests/published.json
+Unit=gumseo-private-update.service
+
+[Install]
+WantedBy=multi-user.target

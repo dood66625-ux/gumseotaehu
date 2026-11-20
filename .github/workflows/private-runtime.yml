@@ -20,6 +20,7 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: write
+  id-token: write
 jobs:
   package:
     runs-on: ubuntu-24.04
@@ -72,6 +73,10 @@ jobs:
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" var/mock-release.tar --target "$GITHUB_SHA" --prerelease --title "Mock runtime $GITHUB_SHA" --notes "Public code-only images. No keys, customer data or operating site. Private mock server update package."
           fi
+      - name: Notify server after published runtime
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: node --use-env-proxy scripts/notify-published-runtime.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: private-mock-runtime-${{ github.sha }}

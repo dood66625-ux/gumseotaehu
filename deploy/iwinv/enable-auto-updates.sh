@@ -15,8 +15,9 @@ flock -u 9
 systemctl daemon-reload
 # Apply/check once; a failure keeps the manual-review safeguard intact.
 systemctl start gumseo-private-update.service
+python3 "$root/deploy/iwinv/install-publish-notify.py"
 systemctl enable gumseo-private-update.timer
 systemctl restart gumseo-private-update.timer
 systemctl list-timers --all gumseo-private-update.timer
-echo 'AUTO UPDATE configured: check after five minutes plus jitter; no new release means no rollout.'
+echo 'AUTO UPDATE configured: publication signal starts update; five-minute timer remains fallback.'
 echo 'Existing keys, invites, storage, budgets and stopped-reader state are preserved.'

@@ -1,0 +1,23 @@
+name: gumseo-update-notify
+services:
+  receiver:
+    image: gumseo-local-worker:local
+    user: '1000:1000'
+    command: [node, /opt/update-notify/update-notify-server.mjs]
+    ports: ['127.0.0.1:3461:3461']
+    volumes:
+      - /usr/local/lib/gumseo/update-notify:/opt/update-notify:ro
+      - /var/lib/gumseo-update-notify/requests:/requests
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 192m
+    pids_limit: 64
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3461/_internal/update-notify').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

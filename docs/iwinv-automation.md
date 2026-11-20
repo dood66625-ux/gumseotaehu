@@ -64,8 +64,19 @@ DATA_KEY를 포함한 `/etc/gumseo/test.env`는 별도 안전한 보관소에 �
 cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/enable-auto-updates.sh
 ```
 
-자동화 설정 설치는 관리자 권한이 필요하다. 기존 NOPASSWD 규칙은 서비스 시작 명령만 허용하므로 이 설치 때 한 번은 비밀번호를 요구할 수 있다. 스크립트는 기존 서비스/Compose가 설치돼 있어야 실행하고 배포/백업 잠금이 풀릴 때까지 기다린 뒤 root helper와 update.timer만 설치한다. 키/env/Compose/기존 sudoers를 변경하지 않는다. 단회 업데이트 확인에 성공한 후 타이머를 활성화하고 다음 실행 시각을 표시한다. 권한을 모두 NOPASSWD로 풀거나 클라우드에 비밀번호/SSH 개인키를 저장하지 않는다.
+자동화 설정 설치는 관리자 권한이 필요하다. 기존 NOPASSWD 규칙은 서비스 시작 명령만 허용하므로 이 설치 때 한 번은 비밀번호를 요구할 수 있다. 스크립트는 기존 서비스/Compose가 설치돼 있어야 실행하고 배포/백업 잠금이 풀릴 때까지 기다린 뒤 root helper·타이머와 아래 발행 알림 수신기를 설치한다. 기존 키/env/앱 Compose/기존 sudoers는 변경하지 않는다. 단회 업데이트 확인에 성공한 후 타이머를 활성화하고 다음 실행 시각을 표시한다. 권한을 모두 NOPASSWD로 풀거나 클라우드에 비밀번호/SSH 개인키를 저장하지 않는다.
 
 실패한 배포/reader health 확인은 기존 `review-required` 보류를 유지한다. 보류 표시를 자동 삭제하거나 DB를 되돌리지 않는다. 따라서 정상적인 코드·화면 배포는 자동으로 처리하지만 장애/새로운 root 설정/복구에는 운영자 확인이 필요할 수 있다.
 
 검증: Python 배포 테스트19개와 설치기 Bash 구문 검사 통과. 미설치·정지·일시정지 reader 미시작, 동일 이미지 재시작 없음, 변경 이미지의 한 서비스 갱신, reader 실패 후 성공 기록 금지, 같은 release의 reader 재대조/실패 뒤 반복 배포 보류를 모의 명령으로 검증했다. 실제 서버에 새 자동화 설정을 설치하지는 않았다. 현재 클라우드 세션에는 SSH 키/에이전트/배포용 credential이 없으며, 공개 사이트에서 적용 버전만 조회할 수 있다.
+
+
+## 새 버전 발행 직후 알림 (2026-11-20)
+
+`private-runtime.yml`은 검사 후 패키지를 발행하면 `https://gumseo.kr/_internal/update-notify`로 갱신 신호를 보낸다. AI 호출이나 토큰 비용은 없다. 빌드·다운로드·백업·health 확인 시간은 별도이므로 5초 안에 배포가 끝난다는 의미는 아니다. 위 `enable-auto-updates.sh` 명령 한 번으로 함께 설치한다. 기존 서비스 시작 전용 NOPASSWD와 달리 설치에는 root 권한이 필요하다.
+
+공유 비밀번호나 SSH 키를 GitHub에 복사하지 않는다. Actions의 짧은 유효기간 OIDC 서명을 공식 공개키로 검증하고 저장소·main·지정 workflow·발행 SHA·대상 URL·시간 범위를 모두 확인한다. 같은 SHA의 공개 prerelease와 패키지가 존재할 때만 고정 요청 파일을 기록한다. 재전송·이전 release는 다시 요청하지 않는다. 수신 컨테이너에는 앱 환경 파일·고객 데이터·Docker 소켓·sudo 권한이 없다. root 소유 systemd.path는 파일 내용의 명령을 실행하지 않고 기존 고정 업데이트 서비스만 시작한다. 배포기는 기존 release/체크섬/백업/보류 검증을 독립적으로 수행한다.
+
+설치기는 기존 gumseo.kr Caddy 설정에 알림 경로만 추가하고 pay.gumseo.kr와 비공개 열람 경로를 보존한다. 검증 실패 시 원래 프록시 설정을 복구한다. 수신기 설치 전에는 발행 workflow가 알림을 건너뛰며, 알림 실패 시에도 5분 타이머가 갱신을 확인한다. 타이머만 정지해도 발행 알림은 작동하므로 자동 갱신을 모두 멈추려면 `sudo systemctl stop gumseo-private-update.timer gumseo-private-update-notify.path`를 함께 실행한다.
+
+코드 검증과 실제 서버 설치를 구분한다. 이 변경의 서버 설치 및 실제 Actions 인증 신호 수신은 아직 확인하지 않았다. 설치 후 공개 알림 경로의 준비 응답을 확인하고 다음 패키지 발행으로 실제 서비스 실행을 확인해야 한다. 운영 실결제·메일·AI 활성화 설정은 바꾸지 않는다.
