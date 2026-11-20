@@ -27,6 +27,51 @@ def release(compose=b'mock compose', tamper=False):
     return output
 
 class AutomationTests(unittest.TestCase):
+    def test_reader_is_not_started_without_install_or_running_container(self):
+        with tempfile.TemporaryDirectory() as directory:
+            compose = Path(directory)/'reader.yml'
+            with patch.object(a, 'PRIVATE_READER_COMPOSE', compose), patch.object(a, 'run') as run:
+                a.update_private_reader_if_running()
+                run.assert_not_called()
+            compose.write_text('installed')
+            with patch.object(a, 'PRIVATE_READER_COMPOSE', compose), patch.object(a, 'run', return_value=b'') as run:
+                a.update_private_reader_if_running()
+                self.assertFalse(any('up' in call.args[0] for call in run.call_args_list))
+
+    def test_reader_refresh_only_when_image_changes_and_preserves_pause(self):
+        with tempfile.TemporaryDirectory() as directory:
+            compose = Path(directory)/'reader.yml'; compose.write_text('installed')
+            for status, current, should_update in [('paused', 'old', False), ('running', 'new', False), ('running', 'old', True)]:
+                calls = []
+                def run(args, *rest):
+                    calls.append(args)
+                    if 'ps' in args: return b'reader-container'
+                    if '{{.State.Status}}' in args: return status.encode()
+                    if '{{.Image}}' in args: return current.encode()
+                    if '{{.Id}}' in args: return b'new'
+                    if '{{.State.Health.Status}}' in args: return b'healthy'
+                    return b''
+                with patch.object(a, 'PRIVATE_READER_COMPOSE', compose), patch.object(a, 'run', side_effect=run):
+                    a.update_private_reader_if_running()
+                ups = [args for args in calls if 'up' in args]
+                self.assertEqual(len(ups), 1 if should_update else 0)
+                if ups:
+                    self.assertEqual(ups[0][-1], 'reader')
+                    self.assertIn('--no-deps', ups[0])
+                    self.assertIn('--no-build', ups[0])
+                    self.assertNotIn('down', ups[0])
+
+    def test_reader_failure_blocks_successful_deployment_record(self):
+        def run(args, *rest):
+            if 'ps' in args: return b'container\n'
+            if 'inspect' in args: return b'healthy\n'
+            return b''
+        with tempfile.TemporaryDirectory() as directory, self.deploy_fixture(directory), patch.object(a, 'run', side_effect=run), patch.object(a, 'backup'), patch.object(a, 'update_review_if_installed'), patch.object(a, 'update_private_reader_if_running', side_effect=ValueError('PRIVATE_READER_HEALTH_FAILED')):
+            with self.assertRaisesRegex(ValueError, 'PRIVATE_READER_HEALTH_FAILED'):
+                a.deploy(release())
+            self.assertFalse((Path(directory)/'deployed-commit').exists())
+            self.assertTrue((Path(directory)/'review-required').exists())
+
     def test_review_rollout_is_not_enabled_without_local_installation(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(a, 'REVIEW_COMPOSE', Path(directory)/'not-installed.yml'), patch.object(a, 'run') as run:
             a.update_review_if_installed()
@@ -41,6 +86,23 @@ class AutomationTests(unittest.TestCase):
             with self.assertRaises(ValueError): a.deploy(release())
             self.assertFalse((Path(directory)/'deployed-commit').exists())
             self.assertTrue((Path(directory)/'review-required').exists())
+    def test_current_release_reconciles_reader_without_downloading_images(self):
+        metadata = json.dumps([{'id': 1, 'draft': False, 'prerelease': True, 'tag_name': 'gumseo-mock-' + 'a'*40}]).encode()
+        with tempfile.TemporaryDirectory() as directory, patch.object(a, 'STATE', Path(directory)), patch.object(a.urllib.request, 'urlopen', return_value=io.BytesIO(metadata)) as request, patch.object(a, 'update_private_reader_if_running') as refresh:
+            (Path(directory)/'deployed-commit').write_text('a'*40)
+            a.pull()
+            refresh.assert_called_once()
+            self.assertEqual(request.call_count, 1)
+
+    def test_reader_reconcile_failure_pauses_later_checks(self):
+        metadata = json.dumps([{'id': 1, 'draft': False, 'prerelease': True, 'tag_name': 'gumseo-mock-' + 'a'*40}]).encode()
+        with tempfile.TemporaryDirectory() as directory, patch.object(a, 'STATE', Path(directory)), patch.object(a.urllib.request, 'urlopen', return_value=io.BytesIO(metadata)), patch.object(a, 'update_private_reader_if_running', side_effect=ValueError('PRIVATE_READER_HEALTH_FAILED')) as refresh:
+            (Path(directory)/'deployed-commit').write_text('a'*40)
+            with self.assertRaisesRegex(ValueError, 'PRIVATE_READER_HEALTH_FAILED'): a.pull()
+            self.assertTrue((Path(directory)/'review-required').exists())
+            with self.assertRaisesRegex(ValueError, 'AUTOMATIC_UPDATE_PAUSED_FOR_MANUAL_REVIEW'): a.pull()
+            refresh.assert_called_once()
+
     def test_busy_lock_retries_then_acquires(self):
         with patch.object(a.fcntl, 'flock', side_effect=[BlockingIOError(), None]) as lock, patch.object(a.time, 'sleep'):
             a.acquire_lock(None)

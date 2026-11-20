@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Root-owned, forced-command entrypoint for the PRIVATE MOCK server only."""
+"""Root-owned deployment entrypoint; never changes effect modes or starts a stopped reader."""
 import fcntl
 import grp
 import hashlib
@@ -34,6 +34,30 @@ def update_review_if_installed():
                 return
         time.sleep(2)
     raise ValueError('REVIEW_CHECKOUT_HEALTH_FAILED')
+
+PRIVATE_READER_COMPOSE = Path('/usr/local/lib/gumseo/compose.private-reader.yml')
+
+def update_private_reader_if_running():
+    # Preserve a deliberately stopped/uninstalled reader. Never create invite/key/budget files.
+    if not PRIVATE_READER_COMPOSE.exists():
+        return
+    args = ['/usr/bin/docker', 'compose', '-f', str(PRIVATE_READER_COMPOSE)]
+    container = run(args + ['ps', '-q', 'reader']).decode().strip()
+    if not container or run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Status}}', container]).decode().strip() != 'running':
+        return
+    desired = run(['/usr/bin/docker', 'image', 'inspect', '--format', '{{.Id}}', 'gumseo-local-worker:local']).decode().strip()
+    current = run(['/usr/bin/docker', 'inspect', '--format', '{{.Image}}', container]).decode().strip()
+    if not desired or not current:
+        raise ValueError('PRIVATE_READER_IMAGE_REQUIRED')
+    if desired == current:
+        return
+    run(args + ['up', '-d', '--no-build', '--no-deps', '--force-recreate', 'reader'], 180)
+    for _ in range(30):
+        container = run(args + ['ps', '-q', 'reader']).decode().strip()
+        if container and run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', container]).decode().strip() == 'healthy':
+            return
+        time.sleep(2)
+    raise ValueError('PRIVATE_READER_HEALTH_FAILED')
 
 def acquire_lock(lock, timeout=240):
     deadline = time.monotonic() + timeout
@@ -162,6 +186,7 @@ def deploy(source):
                     health = [run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', item]).decode().strip() for item in ids]
                     if health == ['healthy', 'healthy']:
                         update_review_if_installed()
+                        update_private_reader_if_running()
                         (STATE / 'deployed-commit').write_text(commit + '\n')
                         print('PRIVATE_MOCK_DEPLOYMENT_HEALTHY ' + commit)
                         return
@@ -185,6 +210,12 @@ def pull():
     commit = latest['tag_name'].removeprefix('gumseo-mock-')
     current = STATE / 'deployed-commit'
     if current.exists() and current.read_text().strip() == commit:
+        # A previously installed reader can still reference an older image under the same tag.
+        try:
+            update_private_reader_if_running()
+        except Exception:
+            (STATE / 'review-required').write_text(commit + '\n')
+            raise
         print('PRIVATE_MOCK_ALREADY_CURRENT')
         return
     assets = [a for a in latest.get('assets', []) if a.get('name') == 'mock-release.tar']

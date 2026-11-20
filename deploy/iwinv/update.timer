@@ -1,10 +1,10 @@
 [Unit]
-Description=Check for Gumseo private mock update every hour
+Description=Check for Gumseo private mock update every five minutes
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=1h
-RandomizedDelaySec=2min
+OnUnitActiveSec=5min
+RandomizedDelaySec=15s
 Persistent=true
 
 [Install]
