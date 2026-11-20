@@ -6,7 +6,7 @@ const oid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const bundle = buildSync({
   stdin: {
     contents:
-      `import React from 'react';import{createRoot}from'react-dom/client';import Checkout from './components/Checkout';import PaymentReturn from './components/PaymentReturn';const p=new URL(location.href).searchParams;createRoot(document.getElementById('root')).render(p.has('return')?<PaymentReturn id={JSON.stringify(oid)} paymentKey={p.get('paymentKey')??undefined} amount={p.get('amount')??undefined}/>:<Checkout id="synthetic-reading"/>);`.replace(
+      `import React from 'react';import{createRoot}from'react-dom/client';import Checkout from './components/Checkout';import PaymentReturn from './components/PaymentReturn';const p=new URL(location.href).searchParams;createRoot(document.getElementById('root')).render(p.has('return')?<PaymentReturn id={JSON.stringify(oid)} paymentKey={p.get('paymentKey')??undefined} amount={p.get('amount')??undefined}/>:<Checkout id="synthetic-reading" testReviewHref={p.has('review')?'https://pay.gumseo.kr/':undefined}/>);`.replace(
         "id={JSON.stringify(oid)}",
         `id="${oid}"`,
       ),
@@ -59,7 +59,7 @@ try {
       if (request.method() === "POST") posts.push({ path, body });
       let result = {};
       let status = 200;
-      if (path === "session") result = { authenticated: true };
+      if (path === "session") result = { authenticated: mode !== "review" };
       else if (path === "payments/config") result = { mode };
       else if (path.startsWith("readings/"))
         result = {
@@ -110,6 +110,19 @@ try {
       .getByRole("button", { name: "운명서 펼치기 · 체험 결제" })
       .waitFor();
     if (sdkLoads !== before) throw Error("DEFAULT_MODE_LOADED_LIVE_SDK");
+    mode = "review";
+    posts = [];
+    await page.goto(origin + "/?review=1");
+    const reviewLink = page.getByRole("link", {
+      name: "운명서 펼치기 · 토스 테스트 결제",
+    });
+    await reviewLink.waitFor();
+    if (
+      (await reviewLink.getAttribute("href")) !== "https://pay.gumseo.kr/" ||
+      (await page.locator("input[required]").count())
+    )
+      throw Error("REVIEW_CHECKOUT_BLOCKED_BY_AUTH_OR_CONSENT");
+    if (sdkLoads !== before) throw Error("REVIEW_CHECKOUT_STARTED_PAYMENT");
     mode = "live";
     posts = [];
     await page.goto(origin);
@@ -192,6 +205,7 @@ try {
       widths: [390, 1440],
       defaultSdkRequests: 0,
       widgetAgreement: true,
+      reviewLinkWithoutAuth: true,
       serverAmount: true,
       oneRequest: true,
       callbackConfirmation: true,

@@ -12,6 +12,7 @@ export default function Checkout({
   id: string;
   testReviewHref?: string;
 }) {
+  const review = testReviewHref === "https://pay.gumseo.kr/";
   const {
     data: r,
     error: loadError,
@@ -22,7 +23,7 @@ export default function Checkout({
     [busy, setBusy] = useState(false),
     [scenario, setScenario] = useState("success");
   const [mode, setMode] = useState<"mock" | "live" | null>(
-    testReviewHref ? "mock" : null,
+    review ? "mock" : null,
   );
   const [liveOrder, setLiveOrder] = useState<{
     id: string;
@@ -40,7 +41,7 @@ export default function Checkout({
     };
   }, []);
   useEffect(() => {
-    if (testReviewHref) return;
+    if (review) return;
     let active = true;
     api("payments/config")
       .then((value) => {
@@ -56,7 +57,7 @@ export default function Checkout({
     return () => {
       active = false;
     };
-  }, [testReviewHref]);
+  }, [review]);
   useEffect(() => {
     api("session")
       .then((s) => setVerified(s.authenticated))
@@ -212,7 +213,12 @@ export default function Checkout({
           입력정보 수정하기 ↗
         </Link>
       </div>
-      {!verified ? (
+      {review ? (
+        <p className="notice">
+          심사용 가상 주문입니다. 이메일 인증 없이 토스 테스트 카드 결제창을
+          확인할 수 있습니다. 실제 청구는 없습니다.
+        </p>
+      ) : !verified ? (
         <EmailAuth onVerified={() => setVerified(true)} />
       ) : (
         <p className="success">구매 이메일 인증이 완료되었습니다.</p>
@@ -254,47 +260,51 @@ export default function Checkout({
             {mode !== "live" &&
               " 현재는 실제 AI를 호출하지 않는 규칙 기반 검증판입니다."}
           </p>
-          <label className="check">
-            <input name="buyerAdult" type="checkbox" required />
-            <span>
-              구매자 본인은 만 19세 이상입니다. (필수)
-              <small className="hint" style={{ display: "block" }}>
-                만 14~18세는 보호자 확인 절차가 준비되기 전까지 무료 풀이만
-                이용할 수 있습니다.
-              </small>
-            </span>
-          </label>
-          <label className="check">
-            <input name="confirmedBirth" type="checkbox" required />
-            출생정보와 시간 미상 시 해석 한계를 확인했습니다. (필수)
-          </label>
-          <label className="check">
-            <input name="terms" type="checkbox" required />
-            <span>
-              <Link href="/legal/terms" target="_blank">
-                이용약관
-              </Link>
-              과 상품 구성·가격·1년 열람기간을 확인했습니다. (필수)
-            </span>
-          </label>
-          <label className="check">
-            <input name="privacy" type="checkbox" required />
-            <span>
-              <Link href="/legal/privacy" target="_blank">
-                주문 이행을 위한 개인정보 처리
-              </Link>
-              에 동의합니다. (필수)
-            </span>
-          </label>
-          <label className="check">
-            <input name="withdrawal" type="checkbox" required />
-            미리보기와 청약철회·환불 고지를 확인하고, 결제 확인 후 콘텐츠 작성을
-            요청합니다. 법정 권리는 유지됩니다. (필수)
-          </label>
-          <label className="check">
-            <input name="marketing" type="checkbox" />
-            혜택·소식 수신에 동의합니다. (선택 · 현재 발송하지 않음)
-          </label>
+          {!review && (
+            <>
+              <label className="check">
+                <input name="buyerAdult" type="checkbox" required />
+                <span>
+                  구매자 본인은 만 19세 이상입니다. (필수)
+                  <small className="hint" style={{ display: "block" }}>
+                    만 14~18세는 보호자 확인 절차가 준비되기 전까지 무료 풀이만
+                    이용할 수 있습니다.
+                  </small>
+                </span>
+              </label>
+              <label className="check">
+                <input name="confirmedBirth" type="checkbox" required />
+                출생정보와 시간 미상 시 해석 한계를 확인했습니다. (필수)
+              </label>
+              <label className="check">
+                <input name="terms" type="checkbox" required />
+                <span>
+                  <Link href="/legal/terms" target="_blank">
+                    이용약관
+                  </Link>
+                  과 상품 구성·가격·1년 열람기간을 확인했습니다. (필수)
+                </span>
+              </label>
+              <label className="check">
+                <input name="privacy" type="checkbox" required />
+                <span>
+                  <Link href="/legal/privacy" target="_blank">
+                    주문 이행을 위한 개인정보 처리
+                  </Link>
+                  에 동의합니다. (필수)
+                </span>
+              </label>
+              <label className="check">
+                <input name="withdrawal" type="checkbox" required />
+                미리보기와 청약철회·환불 고지를 확인하고, 결제 확인 후 콘텐츠
+                작성을 요청합니다. 법정 권리는 유지됩니다. (필수)
+              </label>
+              <label className="check">
+                <input name="marketing" type="checkbox" />
+                혜택·소식 수신에 동의합니다. (선택 · 현재 발송하지 않음)
+              </label>
+            </>
+          )}
           {mode === "live" && (
             <section aria-label="카드 결제 수단">
               <div id={"live-payment-methods-" + id} />
@@ -332,27 +342,39 @@ export default function Checkout({
             </Link>
           )}
           <ErrorBox error={error} />
-          <button
-            className="button"
-            style={{ width: "100%" }}
-            disabled={
-              busy ||
-              submitted ||
-              !verified ||
-              !mode ||
-              (mode === "live" && !!widget.current && !agreed)
-            }
-          >
-            {busy
-              ? "주문 확인 중…"
-              : mode === "live"
-                ? liveOrder && widget.current
-                  ? "카드로 결제하기"
-                  : "카드 결제 수단 선택"
-                : testReviewHref
-                  ? "운명서 펼치기 · 토스 테스트 결제"
-                  : "운명서 펼치기 · 체험 결제"}
-          </button>
+          {review ? (
+            <a
+              className="button"
+              style={{ width: "100%" }}
+              href="https://pay.gumseo.kr/"
+            >
+              운명서 펼치기 · 토스 테스트 결제
+            </a>
+          ) : (
+            <>
+              <button
+                className="button"
+                style={{ width: "100%" }}
+                disabled={
+                  busy ||
+                  submitted ||
+                  !verified ||
+                  !mode ||
+                  (mode === "live" && !!widget.current && !agreed)
+                }
+              >
+                {busy
+                  ? "주문 확인 중…"
+                  : mode === "live"
+                    ? liveOrder && widget.current
+                      ? "카드로 결제하기"
+                      : "카드 결제 수단 선택"
+                    : testReviewHref
+                      ? "운명서 펼치기 · 토스 테스트 결제"
+                      : "운명서 펼치기 · 체험 결제"}
+              </button>
+            </>
+          )}
         </section>
       </form>
     </>

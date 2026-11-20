@@ -36,6 +36,7 @@ window.fetch = async (input: any, init: any = {}) => {
   const p = path.slice(5),
     s = read();
   const b = init.body ? JSON.parse(String(init.body)) : {};
+  if (p === "payments/config") return response({ mode: "mock" });
   if (p === "session")
     return response({
       authenticated: s.authenticated,

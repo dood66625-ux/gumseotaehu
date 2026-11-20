@@ -64,11 +64,11 @@ await new Promise<void>((resolve, reject) => {
 });
 const sdk = `window.qaCalls=[];window.TossPayments=key=>({widgets:options=>{window.qaCalls.push({key,options});return {setAmount:async value=>window.qaCalls.push(value),renderPaymentMethods:async()=>{document.querySelector('#methods').textContent='테스트 카드';},renderAgreement:async()=>{document.querySelector('#agreement').innerHTML='<label><input id=qa-terms type=checkbox>테스트 필수 약관</label>';document.querySelector('#qa-terms').checked=!!window.qaTermsInitial;return {on:(name,cb)=>{if(!window.qaTermsInitial)cb({agreedRequiredTerms:false});document.querySelector('#qa-terms').onchange=e=>cb({agreedRequiredTerms:e.target.checked});}};},requestPayment:async options=>{if(window.qaNeedTermsOnce){window.qaNeedTermsOnce=false;const e=Error();e.code='NEED_AGREEMENT_WITH_REQUIRED_TERMS';throw e;}window.qaCalls.push(options);location.href=options.successUrl+'?orderId='+options.orderId+'&paymentKey=opaque-test-key&amount=22000';}};}});`;
 try {
-  for (const engine of [
-    "mobile-chromium",
-    "mobile-webkit",
-    "desktop-chromium",
-  ]) {
+  const allEngines = ["mobile-chromium", "mobile-webkit", "desktop-chromium"];
+  const engines = process.env.TOSS_BROWSER_ENGINES?.split(",") ?? allEngines;
+  if (!engines.length || engines.some((engine) => !allEngines.includes(engine)))
+    throw Error("INVALID_TOSS_TEST_BROWSER");
+  for (const engine of engines) {
     payment = "pending";
     authenticated = false;
     const before = confirms;
@@ -112,7 +112,8 @@ try {
       });
       const page = await context.newPage();
       await page.goto(origin);
-      await page.locator("#load").click();
+      // First SDK attempt is automatic; simulate failure, then verify the explicit retry.
+
       await page
         .getByRole("status")
         .filter({ hasText: "불러오지 못했습니다" })

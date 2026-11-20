@@ -241,6 +241,20 @@ async function start() {
         ? "테스트 결제가 확인되었습니다."
         : "결제 확인 상태: " + result.state,
     );
-  } else message("가상 주문이 준비되었습니다. 결제수단 불러오기를 눌러주세요.");
+  } else {
+    message(
+      "가상 주문이 준비되었습니다. 토스 테스트 결제수단을 준비하고 있습니다.",
+    );
+    if (
+      state.order.payment === "pending" &&
+      state.merchantConfigured &&
+      loadButton
+    )
+      await loadButton.onclick();
+    else if (!state.merchantConfigured)
+      message(
+        "상점 설정을 확인 중입니다. 결제수단 불러오기로 다시 확인해 주세요.",
+      );
+  }
 }
 start().catch((e) => message(e.message));
