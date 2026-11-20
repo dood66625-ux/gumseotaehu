@@ -62,7 +62,7 @@ await new Promise<void>((resolve, reject) => {
   server.once("error", reject);
   server.listen(3212, "127.0.0.1", resolve);
 });
-const sdk = `window.qaCalls=[];window.TossPayments=key=>({widgets:options=>{window.qaCalls.push({key,options});return {setAmount:async value=>window.qaCalls.push(value),renderPaymentMethods:async()=>{document.querySelector('#methods').textContent='테스트 카드';},renderAgreement:async()=>{document.querySelector('#agreement').innerHTML='<label><input id=qa-terms type=checkbox>테스트 필수 약관</label>';document.querySelector('#qa-terms').checked=!!window.qaTermsInitial;return {on:(name,cb)=>{if(!window.qaTermsInitial)cb({agreedRequiredTerms:false});document.querySelector('#qa-terms').onchange=e=>cb({agreedRequiredTerms:e.target.checked});}};},requestPayment:async options=>{if(window.qaNeedTermsOnce){window.qaNeedTermsOnce=false;const e=Error();e.code='NEED_AGREEMENT_WITH_REQUIRED_TERMS';throw e;}window.qaCalls.push(options);location.href=options.successUrl+'?orderId='+options.orderId+'&paymentKey=opaque-test-key&amount=22000';}};}});`;
+const sdk = `window.qaCalls=[];window.TossPayments=key=>({widgets:options=>{window.qaCalls.push({key,options});return {setAmount:async value=>window.qaCalls.push(value),renderPaymentMethods:async()=>{document.querySelector('#methods').textContent='테스트 카드';},renderAgreement:async()=>{document.querySelector('#agreement').innerHTML='<label><input id=qa-terms type=checkbox>테스트 필수 약관</label>';document.querySelector('#qa-terms').checked=!!window.qaTermsInitial;return {on:(name,cb)=>{if(!window.qaTermsInitial)cb({agreedRequiredTerms:false});document.querySelector('#qa-terms').onchange=e=>cb({agreedRequiredTerms:e.target.checked});}};},requestPayment:async options=>{if(window.qaNeedCardOnce){window.qaNeedCardOnce=false;const e=Error();e.code='NEED_CARD_PAYMENT_DETAIL';throw e;}if(window.qaNeedTermsOnce){window.qaNeedTermsOnce=false;const e=Error();e.code='NEED_AGREEMENT_WITH_REQUIRED_TERMS';throw e;}window.qaCalls.push(options);location.href=options.successUrl+'?orderId='+options.orderId+'&paymentKey=opaque-test-key&amount=22000';}};}});`;
 try {
   const allEngines = ["mobile-chromium", "mobile-webkit", "desktop-chromium"];
   const engines = process.env.TOSS_BROWSER_ENGINES?.split(",") ?? allEngines;
@@ -132,6 +132,16 @@ try {
       const calls = await page.evaluate(() => (window as any).qaCalls);
       assert.equal(calls[0].options.customerKey, "ANONYMOUS");
       assert.deepEqual(calls[1], { currency: "KRW", value: 22000 });
+      await page.evaluate(() => {
+        (window as any).qaNeedCardOnce = true;
+      });
+      await page.locator("#pay").click();
+      await page
+        .getByRole("status")
+        .filter({ hasText: "카드사를 선택" })
+        .waitFor();
+      assert.equal(confirms, before);
+      await page.locator("#pay:not([disabled])").waitFor();
       await page.evaluate(() => {
         (window as any).qaNeedTermsOnce = true;
       });

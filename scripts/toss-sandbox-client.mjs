@@ -138,7 +138,12 @@ if (payButton)
         failUrl: location.origin + "/fail",
       });
     } catch (error) {
-      if (error?.code === "NEED_AGREEMENT_WITH_REQUIRED_TERMS") {
+      if (error?.code === "NEED_CARD_PAYMENT_DETAIL") {
+        requestLocked = false;
+        message(
+          "아래 결제수단에서 카드사를 선택한 뒤 테스트 결제를 다시 눌러주세요.",
+        );
+      } else if (error?.code === "NEED_AGREEMENT_WITH_REQUIRED_TERMS") {
         agreementAllowsRequest = true;
         message("토스 필수 약관에 동의한 뒤 다시 요청해주세요.");
       } else {

@@ -17,26 +17,15 @@
   "reviewerAcceptance": "not confirmed",
   "followUpBrowserAudit": {
     "dateKst": "2026-11-17",
-    "viewports": [
-      390,
-      768,
-      1920
-    ],
+    "viewports": [390, 768, 1920],
     "homeHorizontalOverflow": false,
     "reviewCardCenteredOnPublicSite": true,
     "refundLink": "/refund.html",
     "refundReadableWithoutJavaScript": true,
     "automatedAccessibility": {
       "engine": "axe-core",
-      "tags": [
-        "wcag2a",
-        "wcag2aa",
-        "wcag21aa"
-      ],
-      "pages": [
-        "https://gumseo.kr/",
-        "https://gumseo.kr/refund.html"
-      ],
+      "tags": ["wcag2a", "wcag2aa", "wcag21aa"],
+      "pages": ["https://gumseo.kr/", "https://gumseo.kr/refund.html"],
       "viewportWidth": 390,
       "violations": 0,
       "scope": "automated Chromium checks only; not full accessibility certification"
@@ -58,5 +47,18 @@
       "cardOrAuthenticationInformationEntered": false,
       "approvalAttempted": false
     }
+  },
+  "buttonRemediationRecheck": {
+    "dateKst": "2026-11-20",
+    "publicAssetsRevision": "818d6ea73a0cf9499b424d67837826845314ecf6",
+    "reviewCheckoutLinkWithoutEmailAuth": true,
+    "paymentMethodsAutoLoaded": true,
+    "testPaymentButtonEnabled": true,
+    "desktopRealTestGatewayOpenedAfterCardSelection": true,
+    "cardDataEntered": false,
+    "approvalSubmitted": false,
+    "newPublicDomainApprovalVerified": false,
+    "additionalPreflightIssue": "NEED_CARD_PAYMENT_DETAIL previously locked button; corrective message/retry patch prepared separately",
+    "reviewerAcceptance": "not confirmed"
   }
 }

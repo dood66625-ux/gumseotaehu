@@ -146,10 +146,17 @@ export default function Checkout({
       });
       window.location.href = "/checkout/success?orderId=" + order.id;
     } catch (e) {
+      const cardDetailNeeded =
+        typeof e === "object" &&
+        e !== null &&
+        "code" in e &&
+        e.code === "NEED_CARD_PAYMENT_DETAIL";
       setError(
-        mode === "live"
-          ? "결제를 완료하지 못했습니다. 추가 결제 전에 같은 주문의 상태를 확인해 주세요."
-          : (e as Error).message,
+        cardDetailNeeded
+          ? "결제수단에서 카드사를 선택한 뒤 다시 눌러주세요."
+          : mode === "live"
+            ? "결제를 완료하지 못했습니다. 추가 결제 전에 같은 주문의 상태를 확인해 주세요."
+            : (e as Error).message,
       );
     } finally {
       locked.current = false;
