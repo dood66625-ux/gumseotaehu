@@ -101,3 +101,39 @@ it("suppresses secret values and distinguishes configuration from verification",
   expect(JSON.stringify(result)).not.toContain(key);
   expect(mailSetupStatus({}).launchReady).toBe(false);
 });
+
+it("rejects duplicate selector keys and conflicting DMARC rather than accepting one matching record", async () => {
+  const cases = [
+    {
+      name: "resend._domainkey.example.invalid",
+      value: "p=public-test",
+      other: "p=other-key",
+      reason: "MULTIPLE_DKIM_RECORDS",
+    },
+    {
+      name: "_dmarc.example.invalid",
+      value: "v=DMARC1; p=none",
+      other: "v=DMARC1; p=reject",
+      reason: "MULTIPLE_DMARC_RECORDS",
+    },
+    {
+      name: "send.example.invalid",
+      value: "V=SPF1 -all",
+      other: "v=spf1 ~all",
+      reason: "MULTIPLE_SPF_RECORDS",
+    },
+  ];
+  for (const c of cases) {
+    const r = resolver();
+    r.txt.mockResolvedValue([[c.value], [c.other]]);
+    const result = await checkMailDns(
+      {
+        domain: "example.invalid",
+        records: [{ type: "TXT", name: c.name, value: c.value }],
+      },
+      r,
+    );
+    expect(result.dnsMatchesPlan).toBe(false);
+    expect(result.checks[0].reason).toBe(c.reason);
+  }
+});

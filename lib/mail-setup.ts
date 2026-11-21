@@ -67,14 +67,23 @@ export async function checkMailDns(input: unknown, resolver: MailDnsResolver) {
     plan.records.map(async (r) => {
       try {
         let matched = false,
-          conflict = false;
+          conflict: string | null = null;
         if (r.type === "TXT") {
           const values = (await resolver.txt(r.name)).map((parts) =>
             parts.join(""),
           );
-          conflict =
-            r.value.startsWith("v=spf1") &&
-            values.filter((v) => /^v=spf1(?:\s|$)/i.test(v)).length > 1;
+          if (
+            /^v=spf1(?:\s|$)/i.test(r.value) &&
+            values.filter((v) => /^v=spf1(?:\s|$)/i.test(v)).length > 1
+          )
+            conflict = "MULTIPLE_SPF_RECORDS";
+          else if (r.name.includes("._domainkey.") && values.length > 1)
+            conflict = "MULTIPLE_DKIM_RECORDS";
+          else if (
+            /^v=DMARC1(?:;|\s|$)/i.test(r.value) &&
+            values.filter((v) => /^v=DMARC1(?:;|\s|$)/i.test(v)).length > 1
+          )
+            conflict = "MULTIPLE_DMARC_RECORDS";
           matched = values.includes(r.value) && !conflict;
         } else if (r.type === "MX")
           matched = (await resolver.mx(r.name)).some(
@@ -90,11 +99,7 @@ export async function checkMailDns(input: unknown, resolver: MailDnsResolver) {
           type: r.type,
           name: r.name,
           matched,
-          reason: conflict
-            ? "MULTIPLE_SPF_RECORDS"
-            : matched
-              ? "MATCHED"
-              : "NOT_MATCHED",
+          reason: conflict ? conflict : matched ? "MATCHED" : "NOT_MATCHED",
         };
       } catch {
         return {
