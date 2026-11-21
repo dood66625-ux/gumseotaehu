@@ -32,7 +32,9 @@ export async function notifyPublishedRuntime(
       },
     },
     fetcher,
-  );
+  ).catch(() => {
+    throw Error("UPDATE_IDENTITY_FETCH_FAILED");
+  });
   if (typeof identity.value !== "string" || identity.value.length > 16384)
     throw Error("UPDATE_IDENTITY_REQUEST_UNAVAILABLE");
   const response = await fetcher(notifyEndpoint, {
@@ -44,8 +46,11 @@ export async function notifyPublishedRuntime(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ sha }),
+  }).catch(() => {
+    throw Error("UPDATE_SIGNAL_NETWORK_FAILED");
   });
-  if (response.status !== 202) throw Error("UPDATE_SIGNAL_NOT_ACCEPTED");
+  if (response.status !== 202)
+    throw Error("UPDATE_SIGNAL_HTTP_" + response.status);
   return { state: "accepted" };
 }
 import { pathToFileURL } from "node:url";
@@ -62,9 +67,19 @@ if (
           : "UPDATE_NOTIFY_NOT_INSTALLED; timer fallback remains active",
       ),
     )
-    .catch(() => {
+    .catch((error) => {
+      // Only fixed codes/numeric status, never arbitrary network errors or response bodies.
+      const code =
+        error instanceof Error &&
+        /^(UPDATE_NOTIFY_MAIN_ONLY|UPDATE_IDENTITY_REQUEST_UNAVAILABLE|UPDATE_IDENTITY_FETCH_FAILED|UPDATE_SIGNAL_NETWORK_FAILED|UPDATE_SIGNAL_HTTP_[1-5][0-9]{2})$/.test(
+          error.message,
+        )
+          ? error.message
+          : "UPDATE_SIGNAL_FAILED";
       console.error(
-        "::warning::UPDATE_SIGNAL_FAILED; timer fallback remains active. No token logged.",
+        "::warning::" +
+          code +
+          "; timer fallback remains active. No token logged.",
       );
       process.exitCode = 1;
     });
