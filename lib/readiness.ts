@@ -79,7 +79,7 @@ export function launchReadiness() {
         id: "privacy",
         kind: "implementation-and-review",
         detail:
-          "Approved transaction retention/legal holds, automated backup deletion propagation and managed AUTH_SECRET/credential rotation remain incomplete; offline DATA_KEY rotation is implemented. Local automatic checkpoints validate signature/time/source DB and expose failure/staleness; authoritative offsite latest-copy freshness still needs operator verification.",
+          "Default-off retention erasure, reviewed legal holds, encrypted conditional external deletion sync and offline restore protection are implemented. Legal retention approval, actual external store/host recovery acceptance and production activation remain pending; offsite freshness must be independently verified.",
       },
       {
         id: "admin",

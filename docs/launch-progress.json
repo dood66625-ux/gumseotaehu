@@ -367,16 +367,15 @@
             },
             {
               "title": "거래기록 보존 기한·법적 보류·자동 파기 구현",
-              "status": "in_progress",
-              "remainingKind": "development",
+              "status": "done",
               "id": "5.2.4",
-              "evidence": "docs/retention-plan.md"
+              "evidence": "docs/retention-runtime.md"
             },
             {
               "title": "외부 삭제 이력 동기화·최신 원장 복원 보호 연결",
-              "status": "pending",
-              "remainingKind": "development",
-              "id": "5.2.5"
+              "status": "done",
+              "id": "5.2.5",
+              "evidence": "docs/retention-runtime.md"
             }
           ],
           "id": "5.2"

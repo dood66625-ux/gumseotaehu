@@ -1,3 +1,4 @@
+import { requireExternalDeletionProof } from "./external-deletion-ledger";
 import { applyDeletions, type Deletions } from "./deletion-manifest";
 import { backup, DatabaseSync } from "node:sqlite";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
@@ -72,6 +73,7 @@ export function restoreEncryptedBackup(
   deletions: Deletions = [],
   expectedSourceId?: string,
 ) {
+  requireExternalDeletionProof(expectedSourceId, deletions);
   checkKey(key);
   const target = resolve(destination);
   for (const suffix of ["", "-wal", "-shm", "-journal"])

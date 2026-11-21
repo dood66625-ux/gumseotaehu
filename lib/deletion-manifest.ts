@@ -1,12 +1,14 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
+import { eraseFinancialOrder, eraseDispute } from "./financial-erasure";
 import { encryptJson } from "./crypto";
 const entries = z
   .array(
     z.object({
       orderId: z.string().uuid(),
       deletedAt: z.number().int().nonnegative(),
+      scope: z.enum(["full", "dispute"]).optional(),
     }),
   )
   .max(100000);
@@ -47,12 +49,27 @@ export function decodeDeletions(text: string, key: Buffer): Deletions {
 export function applyDeletions(db: DatabaseSync, rows: Deletions, key: Buffer) {
   if (!rows.length) return;
   entries.parse(rows);
-  db.exec("PRAGMA foreign_keys=ON; BEGIN IMMEDIATE;");
+  db.exec("PRAGMA foreign_keys=ON; PRAGMA secure_delete=ON; BEGIN IMMEDIATE;");
   try {
     db.exec(
       "CREATE TABLE IF NOT EXISTS deletion_tombstones(order_id TEXT PRIMARY KEY,deleted_at INTEGER NOT NULL)",
     );
+    db.exec(
+      "CREATE TABLE IF NOT EXISTS full_deletion_tombstones(order_id TEXT PRIMARY KEY,deleted_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS dispute_deletion_tombstones(order_id TEXT PRIMARY KEY,deleted_at INTEGER NOT NULL)",
+    );
     for (const row of rows) {
+      if (row.scope) {
+        if (row.scope === "full") eraseFinancialOrder(db, row.orderId);
+        else eraseDispute(db, row.orderId);
+        const table =
+          row.scope === "full"
+            ? "full_deletion_tombstones"
+            : "dispute_deletion_tombstones";
+        db.prepare(
+          `INSERT INTO ${table} VALUES(?,?) ON CONFLICT(order_id) DO UPDATE SET deleted_at=MAX(deleted_at,excluded.deleted_at)`,
+        ).run(row.orderId, row.deletedAt);
+        continue;
+      }
       const order = db
         .prepare("SELECT reading_id FROM orders WHERE id=?")
         .get(row.orderId);
@@ -88,4 +105,31 @@ export function applyDeletions(db: DatabaseSync, rows: Deletions, key: Buffer) {
     db.exec("ROLLBACK;");
     throw error;
   }
+}
+
+export function deletionIdentity(row: Deletions[number]) {
+  return (row.scope === "dispute" ? "dispute:" : "order:") + row.orderId;
+}
+export function collectDeletions(db: DatabaseSync): Deletions {
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS deletion_tombstones(order_id TEXT PRIMARY KEY,deleted_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS full_deletion_tombstones(order_id TEXT PRIMARY KEY,deleted_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS dispute_deletion_tombstones(order_id TEXT PRIMARY KEY,deleted_at INTEGER NOT NULL)",
+  );
+  const legacy = db
+    .prepare(
+      "SELECT order_id AS orderId,deleted_at AS deletedAt FROM deletion_tombstones WHERE order_id NOT IN(SELECT order_id FROM full_deletion_tombstones)",
+    )
+    .all() as Deletions;
+  const full = db
+    .prepare(
+      "SELECT order_id AS orderId,deleted_at AS deletedAt,'full' AS scope FROM full_deletion_tombstones",
+    )
+    .all() as Deletions;
+  const disputes = db
+    .prepare(
+      "SELECT order_id AS orderId,deleted_at AS deletedAt,'dispute' AS scope FROM dispute_deletion_tombstones",
+    )
+    .all() as Deletions;
+  return [...legacy, ...full, ...disputes].sort((a, b) =>
+    deletionIdentity(a).localeCompare(deletionIdentity(b)),
+  );
 }

@@ -14,6 +14,7 @@ const fields: Record<string, string[]> = {
   ticket_contacts: ["email_enc"],
   tickets: ["payload"],
   refunds: ["reason_enc"],
+  retained_records: ["payload_enc"],
   email_changes: ["new_email_enc"],
   toss_attempts: ["refund_reason_enc"],
 };
@@ -24,6 +25,7 @@ export async function rotateDataKey(
   oldKey: Buffer,
   newKey: Buffer,
   deletions: Deletions,
+  expectedSourceId?: string,
 ) {
   if (oldKey.length !== 32 || newKey.length !== 32 || oldKey.equals(newKey))
     throw Error("ROTATION_KEYS_INVALID");
@@ -45,6 +47,7 @@ export async function rotateDataKey(
       candidate,
       oldKey,
       deletions,
+      expectedSourceId,
     );
     const db = new DatabaseSync(candidate);
     let encryptedFields = 0;
@@ -98,7 +101,13 @@ export async function rotateDataKey(
     } finally {
       db.close();
     }
-    restoreEncryptedBackup(join(temp, "after.gsb"), target, newKey);
+    restoreEncryptedBackup(
+      join(temp, "after.gsb"),
+      target,
+      newKey,
+      deletions,
+      expectedSourceId,
+    );
     return { encryptedFields };
   } finally {
     rmSync(temp, { recursive: true, force: true });

@@ -1,3 +1,7 @@
+import { finishErasure } from "../lib/financial-erasure";
+import { runConfiguredRetentionCycle } from "../lib/retention-runtime";
+import { configuredExternalLedger } from "../lib/external-deletion-ledger";
+import { readPrivacyCheckpoint } from "../lib/privacy-checkpoint";
 import { recoverLiveToss } from "../lib/toss-live-runtime";
 import { runConfiguredAiCycle } from "../lib/ai-worker-runtime";
 import { runConfiguredMailCycle } from "../lib/mail-worker-runtime";
@@ -42,12 +46,32 @@ while (!stopped) {
     }
     if (tick++ % 60 === 0) {
       purgeExpired();
+      let retentionFailed = false;
       try {
-        publishPrivacyCheckpoint(
+        if (!stopped) await runConfiguredRetentionCycle(db());
+      } catch {
+        recordPrivacyCheckpointFailure(db());
+        retentionFailed = true;
+        console.error("RETENTION_ERASURE_FAILED (no customer data logged)");
+      }
+      try {
+        const checkpoint = publishPrivacyCheckpoint(
           db(),
           privacyCheckpointDirectory(config().db, config().key),
           config().key,
         );
+        const remote = configuredExternalLedger();
+        if (remote) {
+          finishErasure(db());
+          const latest = readPrivacyCheckpoint(checkpoint.path, config().key);
+          await remote.publish({
+            sourceId: latest.sourceId,
+            generatedAt: latest.generatedAt,
+            rows: latest.rows,
+            pending: false,
+          });
+        }
+        if (retentionFailed) recordPrivacyCheckpointFailure(db());
       } catch {
         recordPrivacyCheckpointFailure(db());
         console.error("PRIVACY_CHECKPOINT_FAILED (no customer data logged)");

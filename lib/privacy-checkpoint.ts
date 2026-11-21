@@ -23,6 +23,8 @@ import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
 import {
   encodeDeletions,
+  collectDeletions,
+  deletionIdentity,
   decodeDeletions,
   type Deletions,
 } from "./deletion-manifest";
@@ -107,7 +109,7 @@ export function readPrivacyCheckpoint(
   const rows = decodeDeletions(text, key);
   if (
     rows.length !== row.count ||
-    new Set(rows.map((r) => r.orderId)).size !== rows.length ||
+    new Set(rows.map(deletionIdentity)).size !== rows.length ||
     rows.some((r) => r.deletedAt > row.generatedAt)
   )
     throw Error("CHECKPOINT_CONTENT_MISMATCH");
@@ -147,11 +149,7 @@ export function publishPrivacyCheckpoint(
           .prepare("SELECT source_id FROM privacy_checkpoint_source WHERE id=1")
           .get()!.source_id,
       );
-    const rows = database
-      .prepare(
-        "SELECT order_id AS orderId,deleted_at AS deletedAt FROM deletion_tombstones ORDER BY order_id",
-      )
-      .all() as Deletions;
+    const rows = collectDeletions(database);
     if (rows.some((r) => r.deletedAt > now))
       throw Error("INVALID_DELETION_TIME");
     const text = encodeDeletions(rows, key);
