@@ -99,3 +99,8 @@ cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/enable-aut
 
 
 수정 검증44849197457: 실제 Actions 토큰의 repositoryId/ownerId 포함 모든 필수 조건 일치와 공식 공개키를 통한 서명 검증 성공(`UPDATE_IDENTITY_LOCAL_VERIFIED`)을 확인했다. 토큰 원문/헤더/키는 로그에 출력하지 않았다. 기존 설치 서버는 여전히401이므로 수정본 재설치 전 성공으로 처리하지 않는다. 인증·HTTP·공개 상태 검사27개와 설치기2개·타입 검사·비밀값 검사 통과. 실제 신호 수락/서비스 실행은 서버 재설치 후 별도 확인한다.
+
+
+### 수정본 설치 후 실제 인증 신호 수락 (2026-11-21)
+
+운영자가8c093a3까지 pull 후 재설치한 출력과 공개 assets8c093a3 반영을 확인했다. 알림 전용 Actions 실행[44849732284](https://github.com/dood66625-ux/gumseotaehu/actions/runs/44849732284)은 성공했고, 2026-11-21 10:22:14 KST에 `UPDATE_SIGNAL_ACCEPTED`를 확인했다. 이는 실제 GitHub 신원과 발행 패키지를 서버가 검증해 HTTP202로 수락한 근거다. 원격 root 서비스 실행 로그·비공개 앱 health를 읽은 근거는 아니며 같은 버전 알림으로 새 이미지 교체까지 검증한 것은 아니다. 앞으로 일반 발행에도 같은 인증 경로가 사용된다. 실결제·메일·AI 호출은 없었다.
