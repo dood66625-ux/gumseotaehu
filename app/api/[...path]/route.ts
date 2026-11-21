@@ -303,6 +303,11 @@ async function handler(
       }
       if (p === "admin/refund") {
         if (isLiveTossOrder(oid)) {
+          if (b.confirmLiveRefund !== true)
+            throw new Fault(
+              "운영 전액 취소 대상을 명시적으로 확인해 주세요.",
+              409,
+            );
           if (b.testFailure === true)
             throw new Fault(
               "운영 주문에는 모의 취소를 사용할 수 없습니다.",
@@ -325,7 +330,12 @@ async function handler(
         );
         return json({ ok: true });
       }
-      if (p === "admin/refund-check" || p === "admin/refund-retry")
+      if (p === "admin/refund-check" || p === "admin/refund-retry") {
+        if (p === "admin/refund-retry" && b.confirmLiveRefund !== true)
+          throw new Fault(
+            "운영 전액 취소 재시도 대상을 명시적으로 확인해 주세요.",
+            409,
+          );
         return json(
           await manageLiveRefund(
             s,
@@ -333,6 +343,7 @@ async function handler(
             p === "admin/refund-check" ? "check" : "retry",
           ),
         );
+      }
       if (p === "admin/resend") {
         svc.adminResend(s, oid);
         return json({ ok: true });

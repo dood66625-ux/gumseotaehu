@@ -201,6 +201,8 @@ test("live refunds distinguish pending acknowledgement, read-only checks and exp
   );
   for (const action of ["refund", "refund-check", "refund-retry"])
     await page.route("**/api/admin/" + action, (route) => {
+      if (action !== "refund-check")
+        expect(route.request().postDataJSON().confirmLiveRefund).toBe(true);
       actions.push(action);
       state = action === "refund-retry" ? "refunded" : "refund_pending";
       return route.fulfill({
@@ -264,4 +266,34 @@ test("live refunds distinguish pending acknowledgement, read-only checks and exp
     page.getByRole("status").filter({ hasText: "토스 전액 취소를 확인" }),
   ).toBeVisible();
   expect(actions).toEqual(["refund", "refund-check", "refund-retry"]);
+});
+
+test("editing a refund order to an unknown ID cannot execute a financial action", async ({
+  page,
+}) => {
+  let writes = 0;
+  await page.route(/\/api\/admin\?query=/, (route) =>
+    route.fulfill({
+      json: {
+        ...overview(),
+        orders: overview().orders.map((o) => ({ ...o, livePayment: true })),
+      },
+    }),
+  );
+  await page.route("**/api/admin/refund", (route) => {
+    writes++;
+    return route.fulfill({ json: { state: "refunded" } });
+  });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "환불", exact: true }).click();
+  await page
+    .getByLabel("주문번호", { exact: true })
+    .fill("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  await expect(
+    page.getByText("주문번호로 검색한 뒤 목록에서 환불 대상을 선택해 주세요."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "선택 주문 모의 전액 환불", exact: true }),
+  ).toBeDisabled();
+  expect(writes).toBe(0);
 });

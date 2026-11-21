@@ -91,7 +91,12 @@ export default function Admin() {
     setMessage("");
     const f = new FormData(e.currentTarget);
     try {
+      const selectedOrder = data.orders.find((o: any) => o.id === oid);
+      if (["refund", "refund-retry"].includes(action) && !selectedOrder)
+        throw Error("주문번호로 검색한 뒤 목록에서 환불 대상을 선택해 주세요.");
       const body: any = { orderId: oid, reason: f.get("reason") };
+      if (["refund", "refund-retry"].includes(action))
+        body.confirmLiveRefund = selectedOrder?.livePayment === true;
       if (action === "correct")
         body.input = {
           name: f.get("correctionName"),
@@ -450,6 +455,12 @@ export default function Admin() {
       )}
       <form className="card" onSubmit={act} ref={actionForm}>
         <h2>선택 주문 업무</h2>
+        {["refund", "refund-retry"].includes(action) &&
+          !data.orders.some((o: any) => o.id === oid) && (
+            <p className="notice" role="status">
+              주문번호로 검색한 뒤 목록에서 환불 대상을 선택해 주세요.
+            </p>
+          )}
         {action === "refund" && data.orders.find((o: any) => o.id === oid) && (
           <p className="notice" role="status">
             주문 {oid} · 전액{" "}
@@ -621,7 +632,11 @@ export default function Admin() {
               ? "danger"
               : "secondary")
           }
-          disabled={busy}
+          disabled={
+            busy ||
+            (["refund", "refund-retry"].includes(action) &&
+              !data.orders.some((o: any) => o.id === oid))
+          }
         >
           {busy
             ? "처리 중…"
