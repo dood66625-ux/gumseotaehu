@@ -75,7 +75,7 @@ cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/enable-aut
 
 `private-runtime.yml`은 검사 후 패키지를 발행하면 `https://gumseo.kr/_internal/update-notify`로 갱신 신호를 보낸다. AI 호출이나 토큰 비용은 없다. 빌드·다운로드·백업·health 확인 시간은 별도이므로 5초 안에 배포가 끝난다는 의미는 아니다. 위 `enable-auto-updates.sh` 명령 한 번으로 함께 설치한다. 기존 서비스 시작 전용 NOPASSWD와 달리 설치에는 root 권한이 필요하다.
 
-공유 비밀번호나 SSH 키를 GitHub에 복사하지 않는다. Actions의 짧은 유효기간 OIDC 서명을 공식 공개키로 검증하고 저장소·main·지정 workflow·발행 SHA·대상 URL·시간 범위를 모두 확인한다. 같은 SHA의 공개 prerelease와 패키지가 존재할 때만 고정 요청 파일을 기록한다. 재전송·이전 release는 다시 요청하지 않는다. 수신 컨테이너에는 앱 환경 파일·고객 데이터·Docker 소켓·sudo 권한이 없다. root 소유 systemd.path는 파일 내용의 명령을 실행하지 않고 기존 고정 업데이트 서비스만 시작한다. 배포기는 기존 release/체크섬/백업/보류 검증을 독립적으로 수행한다.
+공유 비밀번호나 SSH 키를 GitHub에 복사하지 않는다. Actions의 짧은 유효기간 OIDC 서명을 공식 공개키로 검증하고 저장소 이름·변경 불가 저장소/소유자 ID·main·지정 workflow·발행 SHA·대상 URL·시간 범위를 모두 확인한다. 같은 SHA의 공개 prerelease와 패키지가 존재할 때만 고정 요청 파일을 기록한다. 재전송·이전 release는 다시 요청하지 않는다. 수신 컨테이너에는 앱 환경 파일·고객 데이터·Docker 소켓·sudo 권한이 없다. root 소유 systemd.path는 파일 내용의 명령을 실행하지 않고 기존 고정 업데이트 서비스만 시작한다. 배포기는 기존 release/체크섬/백업/보류 검증을 독립적으로 수행한다.
 
 설치기는 기존 gumseo.kr Caddy 설정에 알림 경로만 추가하고 pay.gumseo.kr와 비공개 열람 경로를 보존한다. 검증 실패 시 원래 프록시 설정을 복구한다. 수신기 설치 전에는 발행 workflow가 알림을 건너뛰며, 알림 실패 시에도 5분 타이머가 갱신을 확인한다. 타이머만 정지해도 발행 알림은 작동하므로 자동 갱신을 모두 멈추려면 `sudo systemctl stop gumseo-private-update.timer gumseo-private-update-notify.path`를 함께 실행한다.
 
@@ -87,3 +87,15 @@ cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/enable-aut
 `npm run update:status`는 공개 assets 커밋과 알림 수신기 준비 상태를 읽기 전용으로 확인한다. 404는 `not-installed`와 한 번의 설치 명령을, 네트워크/서버 오류·다른 응답은 `unverified`와 점검 대상을 표시한다. 수신기 준비 응답만으로 인증된 발행 신호 전달·비공개 앱 health·타이머 설치를 성공으로 표시하지 않는다. 미준비 또는 assets 버전 미확인은 종료 코드2다. 고객정보나 인증값을 조회하지 않는다.
 
 2026-11-20 후속 확인: `3b0c4e7` 검사·패키지 발행 성공과 공개 assets 동일 커밋 반영을 확인했다. 발행 workflow는 수신기 미설치로 신호 전송을 건너뛰었으며 공개 수신 경로도404였다. 운영자 화면은5분 타이머 등록을 확인하지만 발행 수신기 설치 완료 근거는 아니다. 설치기의 마지막 타이머 출력에 `--no-pager`를 지정해 화면 보기에서 멈추지 않고 완료 문구까지 출력하게 했다. 실제 서버 단회 설치·인증 신호 수신 확인은 여전히 남는다.
+
+
+### 실제 발행 시험에서 발견한 subject 형식 불일치 (2026-11-21)
+
+운영자 설치 출력과 외부 GET 준비 응답으로 수신기 설치를 확인했다. 실제 Actions 실행44848460342는 알림 전송에 실패했고 재시험44848710830에서 HTTP401을 확인했다. 알림만 재시험하는 `workflow_dispatch`의 `notify_only=true` 경로를 추가해 이미지 재빌드 없이 재시도할 수 있게 했다. 서버는 같은 SHA의 발행 패키지를 독립 검증하므로 패키지 미발행 SHA를 배포하도록 허용하지 않는다.
+
+실제 서명 토큰 내용을 출력하지 않고 고정 조건의 일치 여부만 비교한44848968501 시험에서 issuer/audience/repository/ref/workflow/SHA/event/시간은 일치했으나 subject 문자열 비교만 불일치했다. 저장소 OIDC 설정은 use_default=true였지만 예상 문자열을 인증 계약으로 고정한 구현이 실제 발급을 거절했다. 수정은 GitHub의 서명된 `repository_id=1456702842`, `repository_owner_id=313947680`과 기존 이름/main/workflow/SHA/audience/시간을 모두 대조한다. subject는 존재/길이만 확인하며 형식을 인증 조건으로 추측하지 않는다. 이름 재사용/소유자 변경 및 다른 저장소·브랜치·워크플로는 여전히 거절한다. 서명·공식 키·허용 알고리즘·토큰 유효시간 검증은 유지한다.
+
+이 수정은 root 소유 별도 마운트의 검증기 파일에 적용되어야 한다. 일반 앱 이미지 자동 배포만으로 해당 파일은 바뀌지 않으므로 운영자의 `sudo bash deploy/iwinv/enable-auto-updates.sh` 재설치가 한 번 필요하다. 클라우드에는 root 설치를 수행할 SSH 키가 없으며 기존 한정 NOPASSWD는 서비스 시작만 허용한다. 수정 전 서버가401인 상태를 성공으로 기록하지 않는다.
+
+
+수정 검증44849197457: 실제 Actions 토큰의 repositoryId/ownerId 포함 모든 필수 조건 일치와 공식 공개키를 통한 서명 검증 성공(`UPDATE_IDENTITY_LOCAL_VERIFIED`)을 확인했다. 토큰 원문/헤더/키는 로그에 출력하지 않았다. 기존 설치 서버는 여전히401이므로 수정본 재설치 전 성공으로 처리하지 않는다. 인증·HTTP·공개 상태 검사27개와 설치기2개·타입 검사·비밀값 검사 통과. 실제 신호 수락/서비스 실행은 서버 재설치 후 별도 확인한다.
