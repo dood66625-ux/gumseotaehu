@@ -1,6 +1,11 @@
 name: Build private mock runtime
 on:
   workflow_dispatch:
+    inputs:
+      notify_only:
+        description: Retry the authenticated publication signal without rebuilding images
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -16,13 +21,14 @@ on:
       - 'tsconfig.json'
       - '.github/workflows/private-runtime.yml'
 concurrency:
-  group: private-mock-runtime
+  group: private-mock-runtime${{ inputs.notify_only && '-notify' || '' }}
   cancel-in-progress: true
 permissions:
   contents: write
   id-token: write
 jobs:
   package:
+    if: inputs.notify_only != true
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -83,3 +89,14 @@ jobs:
           path: var/private-release/
           retention-days: 3
           if-no-files-found: error
+  notify:
+    if: github.event_name == 'workflow_dispatch' && inputs.notify_only == true && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Retry publication signal without rebuilding
+        run: node --use-env-proxy scripts/notify-published-runtime.mjs
