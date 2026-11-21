@@ -53,7 +53,8 @@
     "toss:live:enroll": "tsx scripts/toss-live-enroll.ts",
     "test:live-checkout": "node scripts/test-live-checkout.mjs",
     "update:status": "node --use-env-proxy scripts/update-status.mjs",
-    "retention:plan": "tsx scripts/retention-plan.ts"
+    "retention:plan": "tsx scripts/retention-plan.ts",
+    "test:proxy": "tsx scripts/test-proxy-access.ts"
   },
   "keywords": [],
   "author": "",

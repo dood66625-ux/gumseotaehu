@@ -22,6 +22,8 @@
   header_up -Proxy-Authorization
   header_up -Forwarded
   header_up -X-Forwarded-For
+  header_up X-Gumseo-Client-IP {remote_host}
+  header_up X-Gumseo-Proxy-Token {$TRUSTED_PROXY_TOKEN:disabled}
   header_up X-Forwarded-Proto https
  }
  handle_errors {

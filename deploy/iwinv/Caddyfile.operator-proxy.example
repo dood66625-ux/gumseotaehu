@@ -3,6 +3,11 @@
 # The upstream app MUST bind loopback only. Do not put CDN/LB IPs into this design implicitly.
 # CLIENT_IP_PROTECTION=trusted-proxy is enabled only after private path validation.
 operator.example.invalid {
+    @privateFiles path /.env /.env.* /.git /.git/*
+    respond @privateFiles 404
+    request_body {
+        max_size 1MB
+    }
     reverse_proxy 127.0.0.1:3100 {
         header_up -Forwarded
         header_up -X-Forwarded-For
