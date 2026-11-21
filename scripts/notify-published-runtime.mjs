@@ -1,5 +1,42 @@
 /** Actions-only sender. GitHub issues a short-lived identity; no repository secret is needed. */
-import { boundedJson, notifyEndpoint } from "./update-notify-identity.mjs";
+import {
+  boundedJson,
+  notifyEndpoint,
+  repository,
+  workflowRef,
+} from "./update-notify-identity.mjs";
+
+/** Diagnostic comparisons only: never return token contents, identity values, or headers. */
+export function identityChecks(
+  token,
+  sha,
+  now = Math.floor(Date.now() / 1000),
+) {
+  try {
+    const claims = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64url").toString("utf8"),
+    );
+    return {
+      issuer: claims.iss === "https://token.actions.githubusercontent.com",
+      audience: claims.aud === notifyEndpoint,
+      repository: claims.repository === repository,
+      subject: claims.sub === "repo:" + repository + ":ref:refs/heads/main",
+      ref: claims.ref === "refs/heads/main",
+      workflow: claims.workflow_ref === workflowRef,
+      sha: claims.sha === sha,
+      event: ["push", "workflow_dispatch"].includes(claims.event_name),
+      issued:
+        Number.isSafeInteger(claims.iat) &&
+        claims.iat <= now + 30 &&
+        claims.iat >= now - 600,
+      notBefore: Number.isSafeInteger(claims.nbf) && claims.nbf <= now + 30,
+      expires: Number.isSafeInteger(claims.exp) && claims.exp > now,
+      lifetime: claims.exp > claims.iat && claims.exp - claims.iat <= 600,
+    };
+  } catch {
+    return { malformed: true };
+  }
+}
 /** @param {Record<string,string|undefined>} [env] */
 export async function notifyPublishedRuntime(
   env = process.env,
@@ -49,6 +86,11 @@ export async function notifyPublishedRuntime(
   }).catch(() => {
     throw Error("UPDATE_SIGNAL_NETWORK_FAILED");
   });
+  if (response.status === 401)
+    console.log(
+      "UPDATE_IDENTITY_CHECKS " +
+        JSON.stringify(identityChecks(identity.value, sha)),
+    );
   if (response.status !== 202)
     throw Error("UPDATE_SIGNAL_HTTP_" + response.status);
   return { state: "accepted" };
