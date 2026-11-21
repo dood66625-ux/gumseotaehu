@@ -54,7 +54,7 @@ if (!flag && !dbPath) {
     database = new DatabaseSync(dbPath, { readOnly: true });
     database.exec("BEGIN");
     const query = database.prepare(
-      `SELECT o.id,o.created,o.paid_at AS paidAt,o.payment_status AS payment,(SELECT MAX(resolved) FROM refunds WHERE order_id=o.id) AS refundResolved,(SELECT COUNT(*) FROM tickets WHERE order_id=o.id AND status NOT IN ('closed','resolved')) AS openDisputes,(SELECT COUNT(*) FROM jobs WHERE order_id=o.id AND state NOT IN ('done','canceled')) AS activeWork FROM orders o ORDER BY o.created,o.id`,
+      `SELECT o.id,o.created,o.paid_at AS paidAt,o.payment_status AS payment,(SELECT MAX(resolved) FROM refunds WHERE order_id=o.id) AS refundResolved,(SELECT COUNT(*) FROM refunds WHERE order_id=o.id) AS refundCount,(SELECT COUNT(*) FROM refunds WHERE order_id=o.id AND (status IS NULL OR status!='completed' OR resolved IS NULL)) AS unresolvedRefunds,(SELECT COUNT(*) FROM tickets WHERE order_id=o.id AND status NOT IN ('closed','resolved')) AS openDisputes,(SELECT COUNT(*) FROM jobs WHERE order_id=o.id AND state NOT IN ('done','canceled')) AS activeWork FROM orders o ORDER BY o.created,o.id`,
     );
     const counts: Record<string, number> = {};
     let total = 0;

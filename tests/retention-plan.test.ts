@@ -21,6 +21,8 @@ const record = {
   payment: "paid",
   openDisputes: 0,
   activeWork: 0,
+  refundCount: 0,
+  unresolvedRefunds: 0,
 };
 it("keeps legal holds, disputes, work and pending financial states out of expired candidates", () => {
   expect(retentionDecision(record, { ...policy, heldOrders: [id] }, now)).toBe(
@@ -52,7 +54,12 @@ it("uses the latest refund evidence and calendar-year boundary without early exp
   );
   expect(
     retentionDecision(
-      { ...record, payment: "refunded", refundResolved: Date.UTC(2028, 0, 1) },
+      {
+        ...record,
+        payment: "refunded",
+        refundCount: 1,
+        refundResolved: Date.UTC(2028, 0, 1),
+      },
       policy,
       now,
     ),
@@ -66,7 +73,11 @@ it("does not make a candidate from stale hold review, unknown payment dates or u
     "invalid-dates",
   );
   expect(
-    retentionDecision({ ...record, payment: "refunded" }, policy, now),
+    retentionDecision(
+      { ...record, payment: "refunded", refundCount: 1 },
+      policy,
+      now,
+    ),
   ).toBe("invalid-dates");
   expect(() =>
     retentionPolicySchema.parse({ ...policy, purpose: "delete" }),
@@ -74,4 +85,31 @@ it("does not make a candidate from stale hold review, unknown payment dates or u
   expect(() =>
     retentionPolicySchema.parse({ ...policy, holdsReviewed: false }),
   ).toThrow();
+});
+
+it("does not expire inconsistent or unresolved refund records even when the order still says paid", () => {
+  expect(
+    retentionDecision(
+      { ...record, refundCount: 1, unresolvedRefunds: 1 },
+      policy,
+      now,
+    ),
+  ).toBe("unresolved-refund");
+  expect(retentionDecision({ ...record, refundCount: 1 }, policy, now)).toBe(
+    "financial-review-required",
+  );
+  expect(
+    retentionDecision(
+      { ...record, payment: "refunded", refundResolved: record.paidAt },
+      policy,
+      now,
+    ),
+  ).toBe("financial-review-required");
+  expect(
+    retentionDecision(
+      { ...record, unresolvedRefunds: undefined as any },
+      policy,
+      now,
+    ),
+  ).toBe("invalid-record-state");
 });

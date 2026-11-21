@@ -19,6 +19,8 @@ export type RetentionRecord = {
   payment: string;
   openDisputes: number;
   activeWork: number;
+  refundCount: number;
+  unresolvedRefunds: number;
 };
 export function retentionDecision(
   record: RetentionRecord,
@@ -33,6 +35,21 @@ export function retentionDecision(
     return "policy-review-required";
   if (policy.heldOrders.includes(record.id)) return "legal-hold";
   if (record.openDisputes > 0) return "open-dispute";
+  if (
+    ![
+      record.openDisputes,
+      record.activeWork,
+      record.refundCount,
+      record.unresolvedRefunds,
+    ].every((n) => Number.isSafeInteger(n) && n >= 0)
+  )
+    return "invalid-record-state";
+  if (record.unresolvedRefunds > 0) return "unresolved-refund";
+  if (
+    (record.payment === "paid" && record.refundCount !== 0) ||
+    (record.payment === "refunded" && record.refundCount !== 1)
+  )
+    return "financial-review-required";
   if (record.activeWork > 0) return "active-work";
   if (!["paid", "refunded"].includes(record.payment))
     return "unsettled-payment";

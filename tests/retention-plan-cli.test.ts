@@ -19,7 +19,7 @@ it("plans against an existing database without modifying it or exposing order ID
       now = Date.now();
     const db = new DatabaseSync(path);
     db.exec(
-      "CREATE TABLE orders(id TEXT,created INTEGER,paid_at INTEGER,payment_status TEXT); CREATE TABLE refunds(order_id TEXT,resolved INTEGER); CREATE TABLE tickets(order_id TEXT,status TEXT); CREATE TABLE jobs(order_id TEXT,state TEXT)",
+      "CREATE TABLE orders(id TEXT,created INTEGER,paid_at INTEGER,payment_status TEXT); CREATE TABLE refunds(order_id TEXT,resolved INTEGER,status TEXT); CREATE TABLE tickets(order_id TEXT,status TEXT); CREATE TABLE jobs(order_id TEXT,state TEXT)",
     );
     db.prepare("INSERT INTO orders VALUES(?,?,?,'paid')").run(
       id,
@@ -62,6 +62,29 @@ it("plans against an existing database without modifying it or exposing order ID
     });
     expect(result.stdout).not.toContain(id);
     expect(readFileSync(path)).toEqual(before);
+    const inconsistent = new DatabaseSync(path);
+    inconsistent.prepare("INSERT INTO refunds VALUES(?,NULL,'error')").run(id);
+    inconsistent.close();
+    const guarded = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "scripts/retention-plan.ts",
+        "--db",
+        path,
+        "--policy",
+        file,
+      ],
+      { encoding: "utf8" },
+    );
+    expect(JSON.parse(guarded.stdout).counts).toEqual({
+      "unresolved-refund": 1,
+    });
+    const restored = new DatabaseSync(path);
+    restored.exec("DELETE FROM refunds");
+    restored.close();
+    const afterFixtureChange = readFileSync(path);
     chmodSync(file, 0o644);
     const rejected = spawnSync(
       process.execPath,
@@ -78,7 +101,7 @@ it("plans against an existing database without modifying it or exposing order ID
     );
     expect(rejected.status).toBe(1);
     expect(rejected.stdout).toBe("");
-    expect(readFileSync(path)).toEqual(before);
+    expect(readFileSync(path)).toEqual(afterFixtureChange);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
