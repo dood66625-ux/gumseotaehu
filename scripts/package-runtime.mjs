@@ -67,6 +67,7 @@ export function packageRuntime(source, destination, secrets = []) {
     "dist/worker.js",
     "dist/ai-worker-control.js",
     "dist/toss-live-enroll.js",
+    "dist/retention-plan.js",
     "dist/runtime-health.js",
     "db/001-init.sql",
   ])
