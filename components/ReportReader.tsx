@@ -6,6 +6,7 @@ import { reportDisclosure } from "../lib/report-disclosure";
 import { useLayoutEffect, useRef, useState } from "react";
 import { reportDownload } from "../lib/report-download";
 import { reportFigures } from "../lib/report-figures";
+import CourtPortrait from "./CourtPortrait";
 import { api, useLoad, ErrorBox, Loading } from "./client";
 export default function ReportReader({
   id,
@@ -229,6 +230,7 @@ export default function ReportReader({
           </a>
         </p>
       </section>
+      <CourtPortrait key={id} element={d.report.chart.element} />
       {figures && (
         <section className="card gold" aria-label={figures.title}>
           <p className="eyebrow">人物 · 세 갈래의 빛</p>

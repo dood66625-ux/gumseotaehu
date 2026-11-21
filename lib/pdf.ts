@@ -3,6 +3,7 @@ import { chapterArt } from "./report-art";
 import { readingGuide } from "./report-reading-guide";
 import { reportDisclosure } from "./report-disclosure";
 import { reportFigures } from "./report-figures";
+import { reportPortrait } from "./report-portrait";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import type { getReport } from "./service";
@@ -210,6 +211,35 @@ export async function reportPdf(
         .text(meaning, { lineGap: 7 });
     }
     doc.addPage();
+    const courtPortrait = reportPortrait(data.report.chart.element);
+    if (courtPortrait) {
+      doc.fontSize(20).fillColor(ink).text(courtPortrait.title);
+      doc.moveDown().fontSize(15).fillColor(gold).text(courtPortrait.role);
+      doc
+        .moveDown()
+        .fontSize(10.5)
+        .fillColor(ink)
+        .text(courtPortrait.story, { lineGap: 5 });
+      doc.moveDown().text(courtPortrait.traits.join(" · "));
+      doc.moveDown().fontSize(13).fillColor(gold).text("오늘 곁에 둘 색");
+      doc
+        .moveDown()
+        .fontSize(10.5)
+        .fillColor(ink)
+        .text(courtPortrait.colors.map(([name]) => name).join(" · "));
+      doc.moveDown().text(courtPortrait.item);
+      doc.moveDown().fontSize(9).text(courtPortrait.colorNote);
+      doc.moveDown().fontSize(13).fillColor(gold).text("오늘의 작은 한 걸음");
+      courtPortrait.actions.forEach((action) =>
+        doc
+          .moveDown(0.5)
+          .fontSize(10.5)
+          .fillColor(ink)
+          .text("· " + action),
+      );
+      doc.moveDown().fontSize(8.5).text(courtPortrait.note);
+      doc.addPage();
+    }
     const figures = reportFigures(data.report.chart.element);
     if (figures) {
       doc.fontSize(20).fillColor(ink).text(figures.title);

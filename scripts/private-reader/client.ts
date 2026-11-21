@@ -1,5 +1,6 @@
 import { bookText, chapterTakeaway } from "./book";
 import { reportFigures } from "../../lib/report-figures";
+import { reportPortrait } from "../../lib/report-portrait";
 export {};
 type SavedReading = {
   id: string;
@@ -40,9 +41,9 @@ const copy = {
     consent:
       "만 19세 이상 본인이며, 입력한 출생정보로 서버에서 사주를 계산하고 계산된 사주 정보를 OpenAI에 보내 AI 해석을 생성하는 데 동의합니다. 이름·이메일·원본 생년월일은 OpenAI에 보내지 않습니다. 결과는 암호화해 24시간 기준으로 보관·정리합니다.",
     submit: "내 금서 펼치기",
-    cost: "같은 접속에서 같은 정보·언어로 다시 펼치면 저장본을 보여줍니다. 전체 비공개 체험은 최대 10회, 추정 예약액 $0.60 한도입니다. 언어를 바꿔 새로 생성하면 1회가 추가됩니다.",
+    cost: "같은 접속에서 같은 정보로 다시 펼치면 저장본을 보여줍니다. 전체 비공개 체험은 최대 10회, 추정 예약액 $0.60 한도입니다.",
     range:
-      "양력만 지원합니다. 한국은 1989년 이후, 대만은 1980년 이후 현지 시각을 입력하세요. 출생지에 맞는 시간대를 선택해야 합니다.",
+      "한국 출생·양력 1989년 이후를 지원합니다. 태어난 당시 한국 시각을 입력해 주세요.",
     result: "그대를 위해 펼친 금서",
     summary: "마음에 남겨 두거라",
     notes: "계산 기준과 풀이의 범위",
@@ -132,7 +133,7 @@ const copy = {
     ],
   },
 };
-let locale: Locale = navigator.language.startsWith("zh") ? "zh-TW" : "ko",
+let locale: Locale = "ko",
   busy = false;
 const set = (id: string, text: string) => {
   $(id).textContent = text;
@@ -329,7 +330,61 @@ function draw(report: any) {
     });
     $("toc").append(a);
   });
-  const figures = reportFigures(report.chart.element, locale);
+  const portrait = reportPortrait(report.chart.element);
+  if (portrait) {
+    const page = el("article", undefined, "book-page court-portrait");
+    page.id = "book-portrait";
+    page.append(
+      el("p", "금서태후의 궁정 도감", "eyebrow"),
+      el("h2", portrait.title),
+      el("p", portrait.role, "court-role"),
+      el("p", portrait.story),
+      el("p", portrait.traits.join(" · ")),
+    );
+    page.append(el("h3", "오늘 곁에 둘 색"));
+    const colors = el("div", undefined, "court-colors");
+    for (const [name, hex] of portrait.colors) {
+      const label = el("span", name),
+        swatch = el("i");
+      swatch.style.background = hex;
+      swatch.setAttribute("aria-hidden", "true");
+      label.prepend(swatch);
+      colors.append(label);
+    }
+    page.append(
+      colors,
+      el("p", portrait.item),
+      el("p", portrait.colorNote, "figure-note"),
+      el("h3", "오늘은 어떤 한 걸음을 고르겠느냐?"),
+    );
+    const choices = el("div", undefined, "court-choices"),
+      chosen = el("p", "마음이 가는 카드 하나를 골라 보거라.");
+    chosen.setAttribute("role", "status");
+    portrait.actions.forEach((action) => {
+      const button = el("button", action) as HTMLButtonElement;
+      button.type = "button";
+      button.setAttribute("aria-pressed", "false");
+      button.addEventListener("click", () => {
+        choices
+          .querySelectorAll("button")
+          .forEach((other) =>
+            other.setAttribute("aria-pressed", String(other === button)),
+          );
+        chosen.textContent = `좋다. 오늘은 ‘${action}’부터 시작하거라.`;
+      });
+      choices.append(button);
+    });
+    page.append(choices, chosen, el("p", portrait.note, "figure-note"));
+    $("chapters").append(page);
+    const link = el("a", portrait.title) as HTMLAnchorElement;
+    link.href = "#book-portrait";
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      turnPage(report.chapters.length);
+    });
+    $("toc").append(link);
+  }
+  const figures = reportFigures(report.chart.element, "ko");
   if (figures) {
     const page = el("article", undefined, "book-page figure-page");
     page.id = "book-figures";
@@ -354,7 +409,7 @@ function draw(report: any) {
     link.href = "#book-figures";
     link.addEventListener("click", (event) => {
       event.preventDefault();
-      turnPage(report.chapters.length);
+      turnPage(report.chapters.length + (portrait ? 1 : 0));
     });
     $("toc").append(link);
   }
@@ -389,7 +444,7 @@ function draw(report: any) {
   closingLink.href = "#book-ending";
   closingLink.addEventListener("click", (event) => {
     event.preventDefault();
-    turnPage(report.chapters.length + (figures ? 1 : 0));
+    turnPage(report.chapters.length + (portrait ? 1 : 0) + (figures ? 1 : 0));
   });
   $("toc").append(closingLink);
   $("book-prev").textContent = locale === "ko" ? "← 이전 장" : "← 上一章";
@@ -425,8 +480,9 @@ async function showResponse(response: Response, version = viewVersion) {
     history.replaceState(null, "", address.pathname + address.search);
   }
   if (data.state === "ready") {
+    if (data.locale && data.locale !== "ko") throw Error("NOT_FOUND");
     if (data.locale) {
-      locale = data.locale;
+      locale = "ko";
       language();
     }
     draw(data.report);
@@ -441,7 +497,7 @@ async function showResponse(response: Response, version = viewVersion) {
 function renderSaved() {
   $("saved-readings").hidden = !savedReadings.length;
   $("saved-list").replaceChildren();
-  for (const row of savedReadings) {
+  for (const row of savedReadings.filter((row) => row.locale === "ko")) {
     const item = el("div", undefined, "saved-item");
     const label =
       (row.locale === "ko" ? "한국어" : "繁體中文") +
@@ -530,7 +586,7 @@ $("new-reading").addEventListener("click", () => {
 });
 $("locale").addEventListener("change", () => {
   if (busy) return;
-  locale = ($("locale") as HTMLSelectElement).value as Locale;
+  locale = "ko";
   cancelSaved();
   $("result").hidden = true;
   $("birth-form").hidden = false;
@@ -602,7 +658,7 @@ $("birth-form").addEventListener("submit", async (event) => {
     ($("locale") as HTMLSelectElement).disabled = false;
   }
 });
-if (locale === "zh-TW") ($("place") as HTMLSelectElement).value = "TW";
+
 language();
 refreshSaved().catch(() => {});
 loadSaved(addressReading());

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="robots" content="noindex,nofollow,noarchive" />
-    <title>금서태후 · 私密命書</title>
+    <title>금서태후 · 비공개 금서</title>
     <link rel="stylesheet" href="/private-reading/style.css" />
     <script defer src="/private-reading/reader.js"></script>
   </head>
@@ -12,13 +12,11 @@
     <header>
       <a href="/private-reading" class="brand"
         >禁書太后<span>금서태후 · 一人一書</span></a
-      ><label class="language"
-        ><span id="language-label">언어 / 語言</span
-        ><select id="locale">
-          <option value="ko">한국어</option>
-          <option value="zh-TW">繁體中文（臺灣）</option>
-        </select></label
       >
+      <input id="locale" type="hidden" value="ko" /><span
+        id="language-label"
+        hidden
+      ></span>
     </header>
     <main>
       <section class="intro">
@@ -47,7 +45,6 @@
             ><span id="place-label">출생 지역·현지 시각</span
             ><select id="place">
               <option value="KR">한국 · UTC+9</option>
-              <option value="TW">臺灣 · UTC+8</option>
             </select></label
           ><label
             ><span id="date-label">양력 생년월일</span

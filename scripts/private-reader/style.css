@@ -594,3 +594,46 @@ html[lang="zh-TW"] body {
 .figure-page h2 {
   word-break: keep-all;
 }
+.court-portrait h2 {
+  word-break: keep-all;
+}
+.court-role {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #885631;
+}
+.court-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.court-colors span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.court-colors i {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #92794c;
+  border-radius: 50%;
+}
+.court-choices {
+  display: grid;
+  gap: 0.65rem;
+}
+.court-choices button {
+  text-align: left;
+  white-space: normal;
+}
+.court-choices button[aria-pressed="true"] {
+  outline: 3px solid #885631;
+  outline-offset: 2px;
+}
+@media print {
+  .court-choices button {
+    color: #352517;
+    border: 1px solid #947342;
+  }
+}

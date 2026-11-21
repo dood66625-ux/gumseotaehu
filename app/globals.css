@@ -2853,3 +2853,36 @@ body {
 .report-method[open] summary {
   margin-bottom: 20px;
 }
+.court-role {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.court-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.court-colors span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.court-colors i {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #92794c;
+  border-radius: 50%;
+}
+.court-choices {
+  display: grid;
+  gap: 0.65rem;
+}
+.court-choices button {
+  text-align: left;
+  white-space: normal;
+}
+.court-choices button[aria-pressed="true"] {
+  outline: 3px solid #d9ba80;
+  outline-offset: 2px;
+}

@@ -13,10 +13,10 @@ let writes = 0,
 const calculationNote =
   "한국 음력·절기 독립 대조 및 전문가 검수가 완료되지 않은 로컬 검증 결과입니다.";
 const report = (i) => ({
-  intro: i ? "已儲存的第二卷命書" : "이미 저장한 첫 번째 금서",
+  intro: i ? "이미 저장한 두 번째 금서" : "이미 저장한 첫 번째 금서",
   chapters: Array.from({ length: 9 }, () => ({
     text: i
-      ? "這是已儲存的解讀，不會重新呼叫模型。"
+      ? "저장된 두 번째 풀이입니다. 다시 생성하지 않습니다."
       : "저장된 풀이입니다. 새 AI 호출을 하지 않습니다.\nuncertainty: " +
         calculationNote,
   })),
@@ -43,7 +43,7 @@ const server = createServer(async (req, res) => {
     json({
       readings: ids.map((id, i) => ({
         id,
-        locale: i ? "zh-TW" : "ko",
+        locale: "ko",
         state: "ready",
         created: Date.now() - i * 1000,
       })),
@@ -62,7 +62,7 @@ const server = createServer(async (req, res) => {
       });
     json({
       id: ids[index],
-      locale: index ? "zh-TW" : "ko",
+      locale: "ko",
       state: "ready",
       report: report(index),
     });
@@ -96,7 +96,10 @@ const browser = await chromium.launch();
 mkdirSync("var/private-reader", { recursive: true, mode: 0o700 });
 try {
   for (const width of [390, 1440]) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    const page = await browser.newPage({
+      viewport: { width, height: 900 },
+      locale: "zh-TW",
+    });
     await page.goto("http://127.0.0.1:3460/private-reading#reading=" + ids[1]);
     await page.getByText(report(1).intro, { exact: true }).waitFor();
     if ((await page.locator("#chapters article:visible").count()) !== 1)
@@ -110,23 +113,56 @@ try {
     if (
       (await page
         .locator("#chapters article:visible .chapter-takeaway span")
-        .textContent()) !== "本章一句話"
+        .textContent()) !== "이 장의 한마디"
     )
       throw Error("TAKEAWAY_LOCALE");
     await page.locator("#book-next").click();
-    if ((await page.locator("#book-position").textContent()) !== "2 / 11")
+    if ((await page.locator("#book-position").textContent()) !== "2 / 12")
       throw Error("BOOK_NEXT_FAILED");
     await page.locator("#book-prev").click();
     await page.locator("#toc a").nth(3).click();
     await page.reload();
     await page.getByText(report(1).intro, { exact: true }).waitFor();
-    if ((await page.locator("#book-position").textContent()) !== "4 / 11")
+    if ((await page.locator("#book-position").textContent()) !== "4 / 12")
       throw Error("BOOK_PAGE_NOT_REMEMBERED");
+    if (
+      (await page.locator("#locale").isVisible()) ||
+      (await page.locator('#place option[value="TW"]').count())
+    )
+      throw Error("TAIWAN_UI_VISIBLE");
+    if ((await page.locator("html").getAttribute("lang")) !== "ko")
+      throw Error("KOREAN_ONLY_LANGUAGE");
+    await page.locator('#toc a[href="#book-portrait"]').click();
+    await page.locator("#book-portrait .court-choices button").first().click();
+    if (
+      (await page
+        .locator('#book-portrait button[aria-pressed="true"]')
+        .count()) !== 1
+    )
+      throw Error("CHOICE_NOT_SELECTED");
+    await page.locator("#book-portrait .court-choices button").nth(1).click();
+    if (
+      (await page
+        .locator('#book-portrait button[aria-pressed="true"]')
+        .count()) !== 1
+    )
+      throw Error("MULTIPLE_CHOICES_SELECTED");
+    if (
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      )
+    )
+      throw Error("PORTRAIT_OVERFLOW");
+    await page
+      .locator("#book")
+      .screenshot({ path: `var/private-reader/portrait-${width}.png` });
     await page.locator('#toc a[href="#book-figures"]').click();
     if ((await page.locator("#book-figures .figure-card").count()) !== 3)
       throw Error("FIGURE_COUNT");
-    if (!(await page.locator("#book-figures").textContent()).includes("莫札特"))
-      throw Error("FIGURE_TW_LOCALE");
+    if (
+      !(await page.locator("#book-figures").textContent()).includes("모차르트")
+    )
+      throw Error("FIGURE_KOREAN_ONLY");
     if (
       await page.evaluate(
         () => document.documentElement.scrollWidth > innerWidth,
@@ -135,12 +171,12 @@ try {
       throw Error("FIGURE_OVERFLOW");
     await page
       .locator("#book")
-      .screenshot({ path: `var/private-reader/figures-tw-${width}.png` });
+      .screenshot({ path: `var/private-reader/figures-korean-${width}.png` });
     await page.locator("#toc a").last().click();
     if (!(await page.locator("#book-next").isDisabled()))
       throw Error("BOOK_END_BOUNDARY");
     await page.emulateMedia({ media: "print" });
-    if ((await page.locator("#chapters article:visible").count()) !== 10)
+    if ((await page.locator("#chapters article:visible").count()) !== 11)
       throw Error("PRINT_LOST_CHAPTERS");
     await page.emulateMedia({ media: "screen", reducedMotion: "reduce" });
     await page.locator("#toc a").first().click();
@@ -225,7 +261,9 @@ try {
       chapterPaging: true,
       chapterTakeaways: true,
       historicalFigures: true,
-      localizedFigures: true,
+      koreanOnly: true,
+      courtPortrait: true,
+      interactiveChoice: true,
       rememberedPage: true,
       printAllChapters: true,
       reducedMotion: true,

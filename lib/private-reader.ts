@@ -19,7 +19,7 @@ export const privateReaderPolicy = {
 };
 const inputSchema = z
   .object({
-    locale: z.enum(["ko", "zh-TW"]),
+    locale: z.literal("ko"),
     consent: z.literal(true),
     birth: localBirthSchema,
   })
@@ -92,23 +92,25 @@ export function createPrivateReader(options: {
     return mac(parts[0]);
   };
   const result = (row: Record<string, any>) =>
-    row.state === "ready"
-      ? json({
-          id: row.id,
-          state: "ready",
-          locale: row.locale,
-          report: decryptJson(row.payload, options.key),
-        })
-      : row.state === "running"
-        ? json({ id: row.id, state: "running" }, 202)
-        : json(
-            {
-              id: row.id,
-              state: "held",
-              code: "RESULT_HELD_NO_AUTOMATIC_RETRY",
-            },
-            409,
-          );
+    row.locale !== "ko"
+      ? json({ code: "NOT_FOUND" }, 404)
+      : row.state === "ready"
+        ? json({
+            id: row.id,
+            state: "ready",
+            locale: row.locale,
+            report: decryptJson(row.payload, options.key),
+          })
+        : row.state === "running"
+          ? json({ id: row.id, state: "running" }, 202)
+          : json(
+              {
+                id: row.id,
+                state: "held",
+                code: "RESULT_HELD_NO_AUTOMATIC_RETRY",
+              },
+              409,
+            );
   return async (request: Request): Promise<Response> => {
     try {
       const url = new URL(request.url);
@@ -167,7 +169,7 @@ export function createPrivateReader(options: {
         return json({
           readings: db
             .prepare(
-              "SELECT id,locale,state,created FROM private_readings WHERE session_hash=? ORDER BY created DESC,id DESC LIMIT 10",
+              "SELECT id,locale,state,created FROM private_readings WHERE session_hash=? AND locale='ko' ORDER BY created DESC,id DESC LIMIT 10",
             )
             .all(owner),
         });
@@ -178,7 +180,7 @@ export function createPrivateReader(options: {
       ) {
         const row = db
           .prepare(
-            "SELECT * FROM private_readings WHERE session_hash=? ORDER BY created DESC LIMIT 1",
+            "SELECT * FROM private_readings WHERE session_hash=? AND locale='ko' ORDER BY created DESC LIMIT 1",
           )
           .get(owner);
         return row ? result(row) : json({ code: "NOT_FOUND" }, 404);
@@ -211,11 +213,13 @@ export function createPrivateReader(options: {
       if (!parsed.success)
         return json({ code: "INVALID_BIRTH_OR_CONSENT" }, 400);
       const { birth, locale } = parsed.data;
+      if (birth.place !== "KR")
+        return json({ code: "KOREAN_READER_ONLY" }, 400);
       if (birth.calendar !== "solar")
         return json({ code: "SOLAR_CALENDAR_REQUIRED" }, 400);
       const chart = calculateLocal({ ...birth, name: "guest" });
       const [y, m, d] = chart.solarDate.split("-").map(Number),
-        today = new Date(Date.now() + (birth.place === "TW" ? 8 : 9) * 3600000);
+        today = new Date(Date.now() + 9 * 3600000);
       const age =
         today.getUTCFullYear() -
         y -

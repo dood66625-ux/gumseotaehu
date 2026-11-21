@@ -43,13 +43,13 @@ async function login(app: ReturnType<typeof setup>["app"]) {
 }
 function request(
   cookie: string,
-  birth: any = { ...syntheticBirths.known, place: "TW" },
+  birth: any = { ...syntheticBirths.known, place: "KR" },
   extra: any = {},
 ) {
   return new Request(origin + "/private-reading/generate", {
     method: "POST",
     headers: { cookie, origin, "content-type": "application/json" },
-    body: JSON.stringify({ locale: "zh-TW", consent: true, birth, ...extra }),
+    body: JSON.stringify({ locale: "ko", consent: true, birth, ...extra }),
   });
 }
 it("Taipei UTC8 differs from Seoul UTC9 around Lichun and supports modern Taiwan dates", () => {
@@ -182,7 +182,7 @@ it("the private page lifetime budget refuses the eleventh distinct generation", 
       const r = await s.app(
         request(cookie, {
           ...syntheticBirths.known,
-          place: "TW",
+          place: "KR",
           date: `1995-09-${day}`,
         }),
       );
@@ -253,6 +253,53 @@ it("history lists only this session's unexpired metadata and never generates aga
     expect(s.db.prepare("SELECT count(*) n FROM ai_spend_calls").get()!.n).toBe(
       2,
     );
+  } finally {
+    s.db.close();
+  }
+});
+
+it("hides Taiwan generation and saved results without deleting the encrypted record", async () => {
+  const s = setup();
+  try {
+    const cookie = await login(s.app);
+    expect(
+      (await s.app(request(cookie, undefined, { locale: "zh-TW" }))).status,
+    ).toBe(400);
+    expect(
+      (await s.app(request(cookie, { ...syntheticBirths.known, place: "TW" })))
+        .status,
+    ).toBe(400);
+    expect(s.calls).toBe(0);
+    const made = await (await s.app(request(cookie))).json();
+    s.db
+      .prepare("UPDATE private_readings SET locale='zh-TW' WHERE id=?")
+      .run(made.id);
+    const headers = { cookie };
+    const history = await (
+      await s.app(new Request(origin + "/private-reading/history", { headers }))
+    ).json();
+    expect(history.readings).toEqual([]);
+    expect(
+      (
+        await s.app(
+          new Request(origin + "/private-reading/latest", { headers }),
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await s.app(
+          new Request(origin + "/private-reading/result/" + made.id, {
+            headers,
+          }),
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      s.db
+        .prepare("SELECT payload FROM private_readings WHERE id=?")
+        .get(made.id)?.payload,
+    ).toBeTruthy();
   } finally {
     s.db.close();
   }
