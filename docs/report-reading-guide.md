@@ -55,3 +55,6 @@
 
 
 배포 확인 상태(2026-11-21 10:47 KST): 7ab02b3의 GitHub 검사44851512477·패키지44851512566과 `UPDATE_SIGNAL_ACCEPTED`는 성공했다. 그러나 반복 조회와 cache-busting 조회의 공개 build-info는6868297을 유지해 새 서버 적용 완료로 보고하지 않았다. 실제 업데이트 서비스가 실행 중인지/실패했는지는 공개 응답만으로 구분할 수 없으며 root 로그 조회가 필요하다. 운영자 진단: `sudo journalctl -u gumseo-private-update.service -n 30 --no-pager`. 보류 표시 삭제나 재배포 강제 실행은 하지 않았다. 클라우드에는 해당 서버 로그를 직접 읽을 SSH 키가 없다.
+
+
+후속 공개 배포 확인(2026-11-21 10:49 KST): 공개 build-info의 revision=7ab02b3a960e597461a302a7bdc7acb37fe5fd1c를 확인했다. 위 공개 assets 적용 대기는 해소됐다. SSH는인증 시도 전TCP22 Connection refused로 서비스 로그를 읽지 못했으며 지연 원인을 확정하지 않았다. 재배포 강제 실행/서버 설정/실결제·메일·AI 활성화 변경은 없었다. 비공개 고객 세션의 실제 재열람은 이 공개 버전 확인과 별도다.
