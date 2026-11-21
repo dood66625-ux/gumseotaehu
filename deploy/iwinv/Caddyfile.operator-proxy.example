@@ -1,0 +1,12 @@
+# Future operating app only. Do not replace the installed merchant-review Caddyfile.
+# Root provisions the same 64-lowercase-hex TRUSTED_PROXY_TOKEN into proxy and app.
+# The upstream app MUST bind loopback only. Do not put CDN/LB IPs into this design implicitly.
+# CLIENT_IP_PROTECTION=trusted-proxy is enabled only after private path validation.
+operator.example.invalid {
+    reverse_proxy 127.0.0.1:3100 {
+        header_up -Forwarded
+        header_up -X-Forwarded-For
+        header_up X-Gumseo-Client-IP {remote_host}
+        header_up X-Gumseo-Proxy-Token {$TRUSTED_PROXY_TOKEN}
+    }
+}

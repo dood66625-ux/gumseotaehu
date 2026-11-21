@@ -1,3 +1,4 @@
+import { protectProxyRequest } from "@/lib/proxy-access";
 import {
   confirmLiveToss,
   liveCheckoutInfo,
@@ -62,6 +63,7 @@ async function handler(
         launchReady: false,
       });
     config();
+    protectProxyRequest(req.headers, p, req.method);
     if (req.method === "GET") {
       if (p === "session") {
         const t = req.cookies.get("gs_session")?.value,

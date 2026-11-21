@@ -397,9 +397,10 @@
             },
             {
               "title": "신뢰 프록시 IP·WAF·운영 rate limit 연결",
-              "status": "pending",
+              "status": "in_progress",
               "remainingKind": "development",
-              "id": "5.3.3"
+              "id": "5.3.3",
+              "evidence": "docs/proxy-access.md"
             }
           ],
           "id": "5.3"
