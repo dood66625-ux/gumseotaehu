@@ -2,8 +2,10 @@ import {
   confirmLiveToss,
   liveCheckoutInfo,
   checkoutMode,
+  manageLiveRefund,
+  livePurchaseReceipt,
 } from "@/lib/toss-live-runtime";
-import { requireMockPayment } from "@/lib/toss-mode";
+import { requireMockPayment, isLiveTossOrder } from "@/lib/toss-mode";
 import { externalEffectsStatus } from "@/lib/effects-status";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -83,6 +85,13 @@ async function handler(
         });
       }
       if (p === "orders") return json(svc.listOrders(s));
+      if (/^orders\/[^/]+\/receipt$/.test(p))
+        return json(
+          await livePurchaseReceipt(
+            s,
+            z.string().uuid().parse(p.split("/")[1]),
+          ),
+        );
       if (/^orders\/[^/]+$/.test(p))
         return json(svc.orderView(svc.ownOrder(s, p.split("/")[1])));
       if (/^reports\/[^/]+\/pdf$/.test(p)) {
@@ -293,6 +302,21 @@ async function handler(
         return json({ ok: true });
       }
       if (p === "admin/refund") {
+        if (isLiveTossOrder(oid)) {
+          if (b.testFailure === true)
+            throw new Fault(
+              "운영 주문에는 모의 취소를 사용할 수 없습니다.",
+              409,
+            );
+          return json(
+            await manageLiveRefund(
+              s,
+              oid,
+              "refund",
+              z.string().trim().min(5).max(200).parse(b.reason),
+            ),
+          );
+        }
         svc.refund(
           s,
           oid,
@@ -301,6 +325,14 @@ async function handler(
         );
         return json({ ok: true });
       }
+      if (p === "admin/refund-check" || p === "admin/refund-retry")
+        return json(
+          await manageLiveRefund(
+            s,
+            oid,
+            p === "admin/refund-check" ? "check" : "retry",
+          ),
+        );
       if (p === "admin/resend") {
         svc.adminResend(s, oid);
         return json({ ok: true });

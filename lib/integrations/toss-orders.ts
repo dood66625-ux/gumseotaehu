@@ -371,7 +371,7 @@ export class TossOrderCoordinator {
         "UPDATE orders SET payment_status='refund_pending' WHERE id=?",
         orderId,
       );
-      audit(s.id, "toss_test_refund_requested", orderId);
+      audit(s.id, "toss_" + this.environment + "_refund_requested", orderId);
     });
     if (
       one("SELECT payment_status FROM orders WHERE id=?", orderId)

@@ -1,4 +1,4 @@
-import { requireMockPayment } from "./toss-mode";
+import { requireMockPayment, isLiveTossOrder } from "./toss-mode";
 import { requireLocalMailAccess } from "./local-mail-access";
 import type { GenerationLane } from "./order-generation";
 import { aiSpendReview, hasAiReservation } from "./ai-spend-review";
@@ -643,6 +643,7 @@ export async function workOnceWithGenerator(
 export function orderView(o: Record<string, any>) {
   return {
     id: o.id,
+    livePayment: isLiveTossOrder(o.id),
     amount: o.amount,
     payment: o.payment_status,
     fulfillment: o.fulfillment,
@@ -957,7 +958,11 @@ function finalizeRefund(oid: string) {
     enqueueMail(o.email_hash, {
       template: "refund_completed",
       orderId: oid,
-      body: "모의 전액 취소가 확인되었습니다. 웹 재열람 권한은 종료됩니다. 이미 저장한 파일의 원격 삭제를 뜻하지 않습니다.",
+      body:
+        (isLiveTossOrder(oid)
+          ? "전액 취소가 확인되었습니다."
+          : "모의 전액 취소가 확인되었습니다.") +
+        " 웹 재열람 권한은 종료됩니다. 이미 저장한 파일의 원격 삭제를 뜻하지 않습니다.",
     });
   });
 }

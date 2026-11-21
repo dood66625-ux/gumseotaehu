@@ -18,7 +18,15 @@ export default function Admin() {
   function chooseOrder(orderId: string, refund = false) {
     actionForm.current?.reset();
     setOid(orderId);
-    if (refund) setAction("refund");
+    setAction(
+      refund
+        ? data?.orders.find((o: any) => o.id === orderId)?.livePayment &&
+          data?.orders.find((o: any) => o.id === orderId)?.payment ===
+            "refund_pending"
+          ? "refund-check"
+          : "refund"
+        : "resend",
+    );
     setError("");
     setMessage("");
     actionForm.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -102,8 +110,17 @@ export default function Admin() {
         };
       if (action === "delete") body.ticketId = f.get("ticketId");
       if (action === "refund") body.testFailure = f.get("failure") === "on";
-      await api("admin/" + action, body);
-      setMessage("처리가 기록되었습니다. 모의 PG/메일 상태를 확인하세요.");
+      const result = await api("admin/" + action, body);
+      setMessage(
+        action.startsWith("refund") &&
+          data.orders.find((o: any) => o.id === oid)?.livePayment
+          ? result.state === "refunded"
+            ? "토스 전액 취소를 확인했습니다. 고객 열람 권한이 종료됩니다."
+            : result.state === "processing"
+              ? "환불 상태를 확인 중입니다. 추가 취소 없이 처리 내역을 다시 확인해 주세요."
+              : "전액 취소가 아직 확인되지 않았습니다. 상태를 조회한 뒤 필요한 경우에만 명시적으로 재시도해 주세요."
+          : "처리가 기록되었습니다. 주문과 처리 내역을 확인하세요.",
+      );
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -350,7 +367,10 @@ export default function Admin() {
                 <td>{o.id}</td>
                 <td>{o.email}</td>
                 <td>{o.amount.toLocaleString()}원</td>
-                <td>{o.payment}</td>
+                <td>
+                  {o.livePayment ? "운영 · " : "모의 · "}
+                  {o.payment}
+                </td>
                 <td>{o.fulfillment}</td>
                 <td>
                   {o.expires
@@ -435,7 +455,9 @@ export default function Admin() {
             주문 {oid} · 전액{" "}
             {data.orders.find((o: any) => o.id === oid).amount.toLocaleString()}
             원 환불 검토입니다. 사유와 대상 주문을 확인한 뒤 실행하세요. 이
-            화면은 모의 PG용이며 실제 토스 취소를 실행하지 않습니다.
+            {data.orders.find((o: any) => o.id === oid)?.livePayment
+              ? "운영 주문이며 실행 시 실제 토스 전액 취소를 요청합니다."
+              : "화면은 모의 PG용이며 실제 토스 취소를 실행하지 않습니다."}
           </p>
         )}
         <div className="field">
@@ -458,7 +480,21 @@ export default function Admin() {
           >
             <option value="resend">재열람 이메일 로컬 재발송</option>
             <option value="retry">실패한 보고서 생성 재시도</option>
-            <option value="refund">모의 전액 환불</option>
+            <option value="refund">
+              {data.orders.find((o: any) => o.id === oid)?.livePayment
+                ? "운영 전액 취소"
+                : "모의 전액 환불"}
+            </option>
+            {data.orders.find((o: any) => o.id === oid)?.livePayment && (
+              <>
+                <option value="refund-check">
+                  운영 환불 상태 조회 · 취소 재요청 없음
+                </option>
+                <option value="refund-retry">
+                  운영 전액 취소 명시적 재시도
+                </option>
+              </>
+            )}
             <option value="correct">본인확인 후 출생정보 1회 정정</option>
             <option value="delete">개인정보 삭제 · 거래기록 분리 보존</option>
           </select>
@@ -471,7 +507,12 @@ export default function Admin() {
                 id="reason"
                 name="reason"
                 minLength={5}
-                maxLength={1000}
+                maxLength={
+                  action === "refund" &&
+                  data.orders.find((o: any) => o.id === oid)?.livePayment
+                    ? 200
+                    : 1000
+                }
                 required
               />
             </div>
@@ -481,12 +522,20 @@ export default function Admin() {
             </label>
           </>
         )}
-        {action === "refund" && (
+        {action === "refund-retry" && (
           <label className="check">
-            <input name="failure" type="checkbox" />
-            PG 취소 실패를 시험합니다 · 완료로 표시하지 않음
+            <input type="checkbox" required />
+            최근 조회 결과가 미취소 상태임을 확인했고, 같은 주문의 전액 취소
+            재시도를 요청합니다.
           </label>
         )}
+        {action === "refund" &&
+          !data.orders.find((o: any) => o.id === oid)?.livePayment && (
+            <label className="check">
+              <input name="failure" type="checkbox" />
+              PG 취소 실패를 시험합니다 · 완료로 표시하지 않음
+            </label>
+          )}
         {action === "correct" && (
           <fieldset className="card">
             <legend>본인 확인 후 출생정보 정정</legend>
@@ -566,7 +615,9 @@ export default function Admin() {
         <button
           className={
             "button " +
-            (action === "refund" || action === "delete"
+            (action === "refund" ||
+            action === "refund-retry" ||
+            action === "delete"
               ? "danger"
               : "secondary")
           }
@@ -575,8 +626,12 @@ export default function Admin() {
           {busy
             ? "처리 중…"
             : action === "refund"
-              ? "선택 주문 모의 전액 환불"
-              : "선택 업무 실행"}
+              ? data.orders.find((o: any) => o.id === oid)?.livePayment
+                ? "선택 운영 주문 전액 취소"
+                : "선택 주문 모의 전액 환불"
+              : action === "refund-retry"
+                ? "선택 운영 주문 전액 취소 재시도"
+                : "선택 업무 실행"}
         </button>
       </form>
       <h2>고객 문의</h2>

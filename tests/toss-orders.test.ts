@@ -7,6 +7,8 @@ import {
   confirmLiveToss,
   recoverLiveToss,
   liveTossReceiptCoordinator,
+  manageLiveRefund,
+  livePurchaseReceipt,
 } from "../lib/toss-live-runtime";
 import { receiveTossWebhook } from "../lib/integrations/toss-webhook";
 import { createEncryptedBackup, restoreEncryptedBackup } from "../lib/backup";
@@ -1014,6 +1016,203 @@ it("checkout setup returns only owned pending-order widget data and never the se
     expect(() => liveCheckoutInfo(f.s, f.oid)).toThrow(
       "TOSS_LIVE_WIDGET_KEY_PAIR_REQUIRED",
     );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it("live refund requires separate approval and fresh MFA before mutation or provider requests", async () => {
+  const directory = mkdtempSync("var/toss-refund-");
+  try {
+    liveSetup(directory);
+    const f = fixture();
+    const send = vi.fn(async () => Response.json(f.payment));
+    await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send);
+    send.mockClear();
+    await expect(
+      manageLiveRefund(f.s, f.oid, "refund", "서비스 미제공 확인", send),
+    ).rejects.toThrow();
+    const admin = f.admin();
+    await expect(
+      manageLiveRefund(admin, f.oid, "refund", "서비스 미제공 확인", send),
+    ).rejects.toThrow("운영 환불 설정");
+    expect(send).not.toHaveBeenCalled();
+    expect(
+      one("SELECT payment_status FROM orders WHERE id=?", f.oid)
+        ?.payment_status,
+    ).toBe("paid");
+    expect(
+      one("SELECT 1 FROM refunds WHERE order_id=?", f.oid),
+    ).toBeUndefined();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("live full refund performs bound GET then one cancel, revokes access and deduplicates repeats", async () => {
+  const directory = mkdtempSync("var/toss-refund-");
+  try {
+    liveSetup(directory);
+    vi.stubEnv("LIVE_REFUNDS_APPROVAL", "live-refunds-approved");
+    const f = fixture();
+    let current = f.payment;
+    const send = vi.fn(async (url: any, init: any) => {
+      if (String(url).endsWith("/cancel")) {
+        expect(JSON.parse(init.body)).toEqual({
+          cancelReason: "디지털콘텐츠 주문 전액 취소",
+          cancelAmount: 22000,
+        });
+        expect(init.headers["Idempotency-Key"]).toBe("live-cancel-" + f.oid);
+        current = f.canceled();
+      }
+      return Response.json(current);
+    });
+    await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send);
+    send.mockClear();
+    const admin = f.admin();
+    expect(
+      await manageLiveRefund(
+        admin,
+        f.oid,
+        "refund",
+        "서비스 미제공 확인",
+        send,
+      ),
+    ).toEqual({ state: "refunded" });
+    expect(send.mock.calls.map((c) => c[1].method)).toEqual(["GET", "POST"]);
+    expect(
+      await manageLiveRefund(
+        admin,
+        f.oid,
+        "refund",
+        "서비스 미제공 확인",
+        send,
+      ),
+    ).toEqual({ state: "refunded" });
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(
+      one("SELECT payment_status FROM orders WHERE id=?", f.oid)
+        ?.payment_status,
+    ).toBe("refunded");
+    expect(() => svc.getReport(f.s, f.oid)).toThrow();
+    expect(
+      one(
+        "SELECT * FROM audit WHERE action='toss_live_refund_requested' LIMIT 1",
+      ),
+    ).toBeTruthy();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("a lost live cancel response is recovered by GET only and never automatically resubmitted", async () => {
+  const directory = mkdtempSync("var/toss-refund-");
+  try {
+    liveSetup(directory);
+    vi.stubEnv("LIVE_REFUNDS_APPROVAL", "live-refunds-approved");
+    const f = fixture();
+    let current = f.payment,
+      posts = 0;
+    const send = vi.fn(async (url: any, init: any) => {
+      if (String(url).endsWith("/cancel")) {
+        posts++;
+        current = f.canceled();
+        throw Error("lost-response");
+      }
+      return Response.json(current);
+    });
+    await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send);
+    const admin = f.admin();
+    await expect(
+      manageLiveRefund(admin, f.oid, "refund", "서비스 미제공 확인", send),
+    ).rejects.toThrow();
+    expect(
+      one("SELECT payment_status FROM orders WHERE id=?", f.oid)
+        ?.payment_status,
+    ).toBe("refund_pending");
+    expect(await manageLiveRefund(admin, f.oid, "check", "", send)).toEqual({
+      state: "refunded",
+    });
+    expect(posts).toBe(1);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+it("receipts require owner and live binding, verify PG identity and allow only the fixed provider receipt URL", async () => {
+  const directory = mkdtempSync("var/toss-refund-");
+  try {
+    liveSetup(directory);
+    const f = fixture();
+    const url =
+      "https://dashboard.tosspayments.com/receipt/redirection?transactionId=synthetic&ref=PX";
+    const send = vi.fn(async () =>
+      Response.json({ ...f.payment, receipt: { url } }),
+    );
+    await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send);
+    send.mockClear();
+    expect(await livePurchaseReceipt(f.s, f.oid, send)).toEqual({ url });
+    expect(send.mock.calls[0]).toHaveLength(2);
+    const stranger = customer("other-receipt@example.invalid");
+    send.mockClear();
+    await expect(livePurchaseReceipt(stranger, f.oid, send)).rejects.toThrow();
+    expect(send).not.toHaveBeenCalled();
+    await expect(
+      livePurchaseReceipt(
+        f.s,
+        f.oid,
+        vi.fn(async () =>
+          Response.json({ ...f.payment, mId: "other-mid", receipt: { url } }),
+        ),
+      ),
+    ).rejects.toThrow("PG_RESPONSE_MISMATCH");
+    await expect(
+      livePurchaseReceipt(
+        f.s,
+        f.oid,
+        vi.fn(async () =>
+          Response.json({
+            ...f.payment,
+            receipt: { url: "https://evil.invalid/receipt" },
+          }),
+        ),
+      ),
+    ).rejects.toThrow("구매 증빙 주소");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it("live partial-cancel evidence cannot trigger a cancel POST, and retry needs a fresh independent full-balance lookup", async () => {
+  const directory = mkdtempSync("var/toss-refund-");
+  try {
+    liveSetup(directory);
+    vi.stubEnv("LIVE_REFUNDS_APPROVAL", "live-refunds-approved");
+    const f = fixture();
+    let current = f.payment,
+      posts = 0;
+    const send = vi.fn(async (url: any) => {
+      if (String(url).endsWith("/cancel")) {
+        posts++;
+        current = f.canceled();
+      }
+      return Response.json(current);
+    });
+    await confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send);
+    const admin = f.admin();
+    current = { ...f.payment, balanceAmount: 11000 };
+    await expect(
+      manageLiveRefund(admin, f.oid, "refund", "서비스 미제공 확인", send),
+    ).rejects.toThrow();
+    expect(posts).toBe(0);
+    await expect(
+      manageLiveRefund(admin, f.oid, "retry", "", send),
+    ).rejects.toThrow("최근 결제 조회");
+    current = f.payment;
+    expect(await manageLiveRefund(admin, f.oid, "check", "", send)).toEqual({
+      state: "review",
+    });
+    expect(await manageLiveRefund(admin, f.oid, "retry", "", send)).toEqual({
+      state: "refunded",
+    });
+    expect(posts).toBe(1);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

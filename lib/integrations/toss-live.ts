@@ -2,12 +2,13 @@ import { z } from "zod";
 import { isSupportedOrderAmount } from "../product";
 import { blockedTransport, type Transport } from "./contracts";
 import { tossPaymentSchema } from "./toss";
-/** Approval/query only. Cancellation is a separate, currently disabled operating scope. */
+/** Full cancellation requires a separate explicit capability; default remains approval/query only. */
 export class TossLiveContract {
   constructor(
     private secret: string,
     private merchantId: string,
     private transport: Transport = blockedTransport,
+    private allowCancel = false,
   ) {
     if (!/^live_(?:gsk|sk)_[A-Za-z0-9_]{8,500}$/.test(secret))
       throw Error("ONLY_TOSS_LIVE_KEYS_ALLOWED");
@@ -71,7 +72,50 @@ export class TossLiveContract {
       amount,
     );
   }
-  async cancel(): Promise<never> {
-    throw Error("TOSS_LIVE_CANCEL_NOT_ENABLED");
+  async cancel(orderId: string, key: string, reason: string, amount: number) {
+    if (!this.allowCancel) throw Error("TOSS_LIVE_CANCEL_NOT_ENABLED");
+    z.string().trim().min(5).max(200).parse(reason);
+    // Independent lookup before a financial POST, including external/full cancellation recovery.
+    const before = await this.lookup(orderId, amount, key);
+    if (before.status === "CANCELED")
+      return this.fullCancellation(before, amount);
+    if (
+      before.status !== "DONE" ||
+      before.balanceAmount !== amount ||
+      !before.approvedAt ||
+      before.cancels?.length
+    )
+      throw Error("FULL_CANCEL_PREFLIGHT_REQUIRED");
+    const raw = await this.transport({
+      method: "POST",
+      path: "/v1/payments/" + encodeURIComponent(key) + "/cancel",
+      headers: {
+        Authorization:
+          "Basic " + Buffer.from(this.secret + ":").toString("base64"),
+        "Content-Type": "application/json",
+        "Idempotency-Key": "live-cancel-" + orderId,
+      },
+      body: { cancelReason: reason.trim(), cancelAmount: amount },
+      timeoutMs: 10000,
+    });
+    return this.fullCancellation(
+      this.validate(raw, orderId, key, amount),
+      amount,
+    );
+  }
+  private fullCancellation(
+    p: ReturnType<typeof tossPaymentSchema.parse>,
+    amount: number,
+  ) {
+    const done = p.cancels?.filter((c) => c.cancelStatus === "DONE") ?? [];
+    if (
+      p.status !== "CANCELED" ||
+      p.balanceAmount !== 0 ||
+      !p.approvedAt ||
+      done.length !== 1 ||
+      done[0].cancelAmount !== amount
+    )
+      throw Error("FULL_CANCEL_NOT_VERIFIED");
+    return p;
   }
 }

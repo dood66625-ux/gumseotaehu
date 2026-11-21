@@ -223,9 +223,9 @@
             },
             {
               "title": "실운영 취소/환불·구매 증빙 경로 연결",
-              "status": "pending",
-              "remainingKind": "development",
-              "id": "3.2.3"
+              "status": "done",
+              "id": "3.2.3",
+              "evidence": "docs/toss-live-operations.md"
             },
             {
               "title": "실운영 승인·취소·고객 접근 종료 통합 검증",

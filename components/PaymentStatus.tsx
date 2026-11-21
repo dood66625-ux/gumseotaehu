@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, ErrorBox, Loading } from "./client";
+import PaymentReceipt from "./PaymentReceipt";
 import { customerOrderState } from "../lib/customer-order-state";
 export default function PaymentStatus({ id }: { id: string }) {
   const [o, setO] = useState<any>(),
@@ -82,6 +83,10 @@ export default function PaymentStatus({ id }: { id: string }) {
         )}
       </div>
       <div className="actions">
+        {o.livePayment &&
+          ["paid", "refund_pending", "refunded"].includes(o.payment) && (
+            <PaymentReceipt key={id} id={id} />
+          )}
         {view.terminal && (
           <button
             className="button secondary"

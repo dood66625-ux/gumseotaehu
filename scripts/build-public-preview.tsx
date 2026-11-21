@@ -53,6 +53,7 @@ const data = {
   report: {
     id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
     order: {
+      livePayment: false,
       id: oid,
       amount: PRODUCT_PRICE_KRW,
       payment: "paid",

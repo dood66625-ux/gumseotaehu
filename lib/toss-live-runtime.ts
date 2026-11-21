@@ -2,6 +2,9 @@ import { createHash } from "node:crypto";
 import { config } from "./config";
 import { db, one, run, tx, all } from "./db";
 import { Fault } from "./security";
+import { limit } from "./security";
+import { safeTossReceiptUrl } from "./toss-receipt";
+import { requireRecentAdmin } from "./admin-auth";
 import { ownOrder, type Session } from "./service";
 import { TossOrderCoordinator } from "./integrations/toss-orders";
 import { TossLiveContract } from "./integrations/toss-live";
@@ -92,7 +95,11 @@ function ready() {
     throw Error("TOSS_LIVE_CUTOFF_MISMATCH");
   return { ...o, cutoff: row.cutoff };
 }
-function coordinator(o: ReturnType<typeof ready>, fetcher?: typeof fetch) {
+function coordinator(
+  o: ReturnType<typeof ready>,
+  fetcher?: typeof fetch,
+  allowCancel = false,
+) {
   return new TossOrderCoordinator(
     new TossLiveContract(
       o.secret,
@@ -101,11 +108,81 @@ function coordinator(o: ReturnType<typeof ready>, fetcher?: typeof fetch) {
         enabled: true,
         approval: "live-payments-approved",
         fetch: fetcher,
+        allowCancel,
       }),
+      allowCancel,
     ),
     o.merchantId,
     "live",
   );
+}
+function boundLiveOrder(o: ReturnType<typeof ready>, orderId: string) {
+  const order = one("SELECT * FROM orders WHERE id=?", orderId);
+  if (
+    !order ||
+    order.created < o.cutoff ||
+    !one(
+      "SELECT 1 FROM toss_live_orders WHERE order_id=? AND profile_digest=?",
+      orderId,
+      o.profileDigest,
+    )
+  )
+    throw new Fault("운영 결제 대상 주문을 확인해 주세요.", 409);
+  return order;
+}
+export async function manageLiveRefund(
+  s: Session,
+  orderId: string,
+  action: "refund" | "check" | "retry",
+  reason = "",
+  fetcher?: typeof fetch,
+) {
+  requireRecentAdmin(s, ["operations", "finance"]);
+  limit("live-refund:" + s.id, 15, 60000);
+  const o = ready();
+  boundLiveOrder(o, orderId);
+  const cancel = action !== "check";
+  if (cancel && process.env.LIVE_REFUNDS_APPROVAL !== "live-refunds-approved")
+    throw new Fault("운영 환불 설정을 먼저 확인해 주세요.", 409);
+  const c = coordinator(o, fetcher, cancel);
+  if (action === "check") return c.recover(orderId);
+  if (action === "retry") return c.retryRefund(s, orderId);
+  return c.refund(s, orderId, reason);
+}
+/** Fresh owner-authorized GET only. Never stores, proxies, or opens an arbitrary receipt host. */
+export async function livePurchaseReceipt(
+  s: Session,
+  orderId: string,
+  fetcher?: typeof fetch,
+) {
+  limit("live-receipt:" + s.id, 10, 60000);
+  const o = ready(),
+    owned = ownOrder(s, orderId),
+    order = boundLiveOrder(o, orderId);
+  if (!["paid", "refund_pending", "refunded"].includes(owned.payment_status))
+    throw new Fault("확인된 구매 기록이 없습니다.", 409);
+  const attempt = one("SELECT * FROM toss_attempts WHERE order_id=?", orderId);
+  if (
+    !attempt ||
+    attempt.merchant_id !== o.merchantId ||
+    !order.payment_key ||
+    attempt.payment_key !== order.payment_key
+  )
+    throw new Fault("구매 증빙 대상을 확인해 주세요.", 409);
+  const payment = await new TossLiveContract(
+    o.secret,
+    o.merchantId,
+    createTossLiveTransport({
+      enabled: true,
+      approval: "live-payments-approved",
+      fetch: fetcher,
+    }),
+  ).lookup(orderId, order.amount, order.payment_key);
+  if (!["DONE", "CANCELED"].includes(payment.status) || !payment.approvedAt)
+    throw new Fault("구매 증빙을 확인하지 못했습니다.", 409);
+  const url = safeTossReceiptUrl(payment.receipt?.url);
+  if (!url) throw new Fault("구매 증빙 주소를 확인하지 못했습니다.", 409);
+  return { url };
 }
 export async function confirmLiveToss(
   s: Session,

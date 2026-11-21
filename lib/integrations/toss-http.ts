@@ -12,13 +12,14 @@ export function createTossLiveTransport(options: {
   enabled: boolean;
   approval?: "live-payments-approved";
   fetch?: typeof fetch;
+  allowCancel?: boolean;
 }): Transport {
   if (options.approval !== "live-payments-approved")
     throw Error("LIVE_PAYMENTS_NOT_APPROVED");
   return tossTransport(options, true);
 }
 function tossTransport(
-  options: { enabled: boolean; fetch?: typeof fetch },
+  options: { enabled: boolean; fetch?: typeof fetch; allowCancel?: boolean },
   live: boolean,
 ): Transport {
   const send = options.fetch ?? globalThis.fetch;
@@ -41,7 +42,14 @@ function tossTransport(
       if (!/^live_(?:gsk|sk)_[A-Za-z0-9_]{8,500}$/.test(secret))
         throw Error("ONLY_TOSS_LIVE_KEYS_ALLOWED");
       kind = secret.startsWith("live_gsk_") ? "widget" : "individual";
-      if (request.method === "POST" && request.path !== "/v1/payments/confirm")
+      if (
+        request.method === "POST" &&
+        request.path !== "/v1/payments/confirm" &&
+        !(
+          options.allowCancel === true &&
+          /^\/v1\/payments\/[A-Za-z0-9_%.-]+\/cancel$/.test(request.path)
+        )
+      )
         throw Error("TOSS_LIVE_CANCEL_NOT_ENABLED");
     } else kind = tossTestSecretKind(secret);
     const orderLookup = /^\/v1\/payments\/orders\/[A-Za-z0-9_%.-]+$/.test(

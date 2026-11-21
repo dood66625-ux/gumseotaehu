@@ -1,5 +1,12 @@
 import { one } from "./db";
 import { Fault } from "./security";
+export function isLiveTossOrder(orderId: string) {
+  return !!(
+    one(
+      "SELECT 1 FROM sqlite_master WHERE type='table' AND name='toss_live_orders'",
+    ) && one("SELECT 1 FROM toss_live_orders WHERE order_id=?", orderId)
+  );
+}
 export function requireMockPayment(orderId?: string) {
   if (
     process.env.TOSS_PAYMENT_MODE &&

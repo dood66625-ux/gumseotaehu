@@ -43,7 +43,7 @@ export function launchReadiness() {
         id: "toss",
         kind: "implementation-and-provider",
         detail:
-          "An owner-operated isolated test server completed test authentication, verified approval, report readiness, MFA-authorized full cancellation and post-refund PDF HTTP 403. Test MID mismatch recovery used independent lookup before rebinding the unique synthetic order. Public synthetic review HTTPS and the real Toss TEST widget/card gateway are verified. Approval on the new public domain, production routes/workers, webhook verification and merchant contract review remain incomplete; live payments remain disabled.",
+          "An owner-operated isolated test server completed test authentication, verified approval, report readiness, MFA-authorized full cancellation and post-refund PDF HTTP 403. Test MID mismatch recovery used independent lookup before rebinding the unique synthetic order. Public synthetic review HTTPS and the real Toss TEST widget/card gateway are verified. Production approval/lookup/widget, separately approved full-refund recovery and owner receipt code paths are tested offline. Actual production transaction/refund/receipt and webhook verification, host cutover and merchant contract review remain incomplete; live payments remain disabled.",
       },
       {
         id: "ai",

@@ -21,6 +21,7 @@ export const tossPaymentSchema = z.object({
     "IN_PROGRESS",
     "READY",
   ]),
+  receipt: z.object({ url: z.string().max(2048) }).nullish(),
   cancels: z
     .array(
       z.object({

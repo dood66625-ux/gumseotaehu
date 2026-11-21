@@ -182,3 +182,86 @@ test("held AI costs are readable and selecting the order sends no retry or relea
   await expect(page.getByLabel("주문번호", { exact: true })).toHaveValue(oid);
   expect(writes).toBe(0);
 });
+
+test("live refunds distinguish pending acknowledgement, read-only checks and explicit retries", async ({
+  page,
+}) => {
+  let state = "paid";
+  const actions: string[] = [];
+  await page.route(/\/api\/admin\?query=/, (route) =>
+    route.fulfill({
+      json: {
+        ...overview(state),
+        orders: overview(state).orders.map((o) => ({
+          ...o,
+          livePayment: true,
+        })),
+      },
+    }),
+  );
+  for (const action of ["refund", "refund-check", "refund-retry"])
+    await page.route("**/api/admin/" + action, (route) => {
+      actions.push(action);
+      state = action === "refund-retry" ? "refunded" : "refund_pending";
+      return route.fulfill({
+        json: {
+          state:
+            action === "refund-retry"
+              ? "refunded"
+              : action === "refund"
+                ? "processing"
+                : "review",
+        },
+      });
+    });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "환불", exact: true }).click();
+  await expect(
+    page.getByText("운영 주문이며 실행 시 실제 토스 전액 취소를 요청합니다.", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("PG 취소 실패를 시험합니다", { exact: false }),
+  ).toHaveCount(0);
+  await page
+    .getByLabel("검토 근거·본인확인·처리 사유")
+    .fill("가상 운영 주문의 미제공 검토입니다.");
+  await page
+    .getByRole("checkbox", {
+      name: "대상 주문, 본인확인 및 법정 소비자 권리를 검토했습니다.",
+    })
+    .check();
+  await page
+    .getByRole("button", { name: "선택 운영 주문 전액 취소", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "추가 취소 없이" }),
+  ).toBeVisible();
+  expect(actions).toEqual(["refund"]);
+  await page
+    .getByRole("button", { name: "환불 처리 확인", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "선택 업무 실행", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "전액 취소가 아직 확인되지" }),
+  ).toBeVisible();
+  await page.getByLabel("처리 종류").selectOption("refund-retry");
+  await page
+    .getByRole("checkbox", {
+      name: "최근 조회 결과가 미취소 상태임을 확인했고, 같은 주문의 전액 취소 재시도를 요청합니다.",
+    })
+    .check();
+  await page
+    .getByRole("button", {
+      name: "선택 운영 주문 전액 취소 재시도",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "토스 전액 취소를 확인" }),
+  ).toBeVisible();
+  expect(actions).toEqual(["refund", "refund-check", "refund-retry"]);
+});
