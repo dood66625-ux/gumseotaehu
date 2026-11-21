@@ -1106,3 +1106,43 @@ it("admin mail health is aggregate-only, authorized and does not dispatch or mut
   );
   expect(all("SELECT * FROM mail_queue ORDER BY outbox_id")).toEqual(before);
 });
+
+it("rotating admin credentials invalidates only elevated cookies while customer sessions survive", () => {
+  const customer = svc.newSession(),
+    operator = svc.newSession();
+  const token = loginAdmin(
+    operator.session,
+    process.env.ADMIN_PASSWORD,
+    totp(process.env.ADMIN_TOTP_SECRET!),
+  );
+  expect(svc.sessionFor(token)?.role).toBe("operations");
+  const original = process.env.ADMIN_PASSWORD!;
+  process.env.ADMIN_PASSWORD = original + "rotated";
+  try {
+    expect(svc.sessionFor(token)).toBeUndefined();
+    expect(svc.sessionFor(customer.token)?.role).toBe("customer");
+  } finally {
+    process.env.ADMIN_PASSWORD = original;
+  }
+  const seed = process.env.ADMIN_TOTP_SECRET!;
+  process.env.ADMIN_TOTP_SECRET = "ef".repeat(20);
+  try {
+    expect(svc.sessionFor(token)).toBeUndefined();
+    expect(svc.sessionFor(customer.token)?.role).toBe("customer");
+  } finally {
+    process.env.ADMIN_TOTP_SECRET = seed;
+  }
+});
+it("an old unbound elevated cookie is rejected and token signatures cannot be edited", () => {
+  const old = svc.newSession();
+  run("UPDATE sessions SET role='operations' WHERE id=?", old.session.id);
+  expect(svc.sessionFor(old.token)).toBeUndefined();
+  const current = svc.newSession();
+  const token = loginAdmin(
+    current.session,
+    process.env.ADMIN_PASSWORD,
+    totp(process.env.ADMIN_TOTP_SECRET!),
+  );
+  expect(svc.sessionFor(token + "x")).toBeUndefined();
+  expect(svc.sessionFor(token.replace(/^ad1\./, "ad2."))).toBeUndefined();
+});

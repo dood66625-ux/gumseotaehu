@@ -391,9 +391,9 @@
             },
             {
               "title": "출시 운영자 비밀/MFA 등록·복구·회수 절차 구현",
-              "status": "pending",
-              "remainingKind": "development",
-              "id": "5.3.2"
+              "status": "done",
+              "id": "5.3.2",
+              "evidence": "docs/operator-identity.md"
             },
             {
               "title": "신뢰 프록시 IP·WAF·운영 rate limit 연결",

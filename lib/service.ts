@@ -1,3 +1,4 @@
+import { validAdminToken } from "./admin-token";
 import { requireMockPayment, isLiveTossOrder } from "./toss-mode";
 import { requireLocalMailAccess } from "./local-mail-access";
 import type { GenerationLane } from "./order-generation";
@@ -51,11 +52,16 @@ export function newSession() {
   };
 }
 export function sessionFor(token: string) {
-  return one<Session>(
+  if (typeof token !== "string" || token.length > 256) return undefined;
+  const session = one<Session>(
     "SELECT * FROM sessions WHERE id=? AND expires>?",
     hash(token),
     Date.now(),
   );
+  if (!session) return undefined;
+  if (session.role !== "customer" && !validAdminToken(token)) return undefined;
+  if (session.role === "customer" && token.startsWith("ad1.")) return undefined;
+  return session;
 }
 export function requireEmail(s: Session) {
   const current = one(

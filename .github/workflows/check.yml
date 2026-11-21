@@ -22,6 +22,7 @@ jobs:
       - run: npm run typecheck
       - run: python3 -m unittest discover -s tests -p 'test_iwinv_automation.py'
       - run: python3 -m unittest discover -s tests -p 'test_update_notify_install.py'
+      - run: python3 -m unittest discover -s tests -p 'test_operator_provision.py'
       - name: Test changed modules; fall back to unit suite if base unavailable
         shell: bash
         run: |

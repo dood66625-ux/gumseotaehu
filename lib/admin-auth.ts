@@ -1,10 +1,11 @@
-import { randomBytes, createHash } from "node:crypto";
+import { createHash } from "node:crypto";
 import { z } from "zod";
+import { newAdminToken } from "./admin-token";
 import { one, run, tx } from "./db";
 import { audit, equal, Fault, hash, limit, totp } from "./security";
 import type { Session } from "./service";
 
-/** Single local operator only. Not a replacement for managed multi-user MFA. */
+/** Single self-hosted operator; host-owner recovery stays offline, never a public MFA bypass. */
 export function loginAdmin(s: Session, password: unknown, rawCode: unknown) {
   limit("admin-login-global", 15, 900000);
   limit("admin-login:" + s.id, 5, 900000);
@@ -41,7 +42,7 @@ export function loginAdmin(s: Session, password: unknown, rawCode: unknown) {
         "사용된 관리자 인증코드입니다. 다음 코드를 입력해 주세요.",
         401,
       );
-    const token = randomBytes(32).toString("base64url"),
+    const token = newAdminToken(),
       sid = hash(token);
     run(
       "INSERT INTO sessions VALUES(?,?,?,?,?)",
