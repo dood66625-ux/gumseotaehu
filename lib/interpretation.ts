@@ -140,11 +140,21 @@ export function validateReport(raw: unknown, c: Chart) {
   if (r.year !== c.target) throw Error("REPORT_YEAR_MISMATCH");
   if (c.notes.some((note) => !r.notes.includes(note)))
     throw Error("UNCERTAINTY_REMOVED");
-  if (new Set(r.chapters.map((s) => s.text.trim())).size !== 9)
+  const normalizedChapter = (text: string) =>
+    text
+      .normalize("NFC")
+      .replace(/[\u00ad\u200b\u2060\ufeff]/g, "")
+      .replace(/\s+/gu, " ")
+      .trim();
+  if (new Set(r.chapters.map((s) => normalizedChapter(s.text))).size !== 9)
     throw Error("DUPLICATE_CHAPTER");
-  if (
+  const unsafeContent = (text: string) =>
     /반드시 성공|죽을|불치|외도 확실|무조건 부자|수익 보장/.test(
-      [r.intro, ...r.notes].join("\n"),
+      normalizedChapter(text),
+    );
+  if (
+    [r.intro, ...r.notes, ...r.chapters.map((chapter) => chapter.text)].some(
+      unsafeContent,
     )
   )
     throw Error("UNSAFE_CONTENT");
@@ -160,8 +170,6 @@ export function validateReport(raw: unknown, c: Chart) {
   r.chapters.forEach((s, i) => {
     if (s.title !== chapterTitles[i] || s.claimIds.some((x) => !ids.has(x)))
       throw Error("UNSUPPORTED_FACT");
-    if (/반드시 성공|죽을|불치|외도 확실|무조건 부자/.test(s.text))
-      throw Error("UNSAFE_CONTENT");
   });
   return r;
 }

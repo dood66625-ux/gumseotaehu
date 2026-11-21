@@ -92,3 +92,43 @@ describe("content evidence and uncertainty gates (offline, not expert approval)"
     );
   });
 });
+
+it.each(["whitespace", "invisible", "decomposed"])(
+  "rejects a chapter duplicated through %s without changing the supplied report",
+  (variant) => {
+    const c = calculate(birth),
+      r = generate(c);
+    const original = r.chapters[0].text;
+    r.chapters[1].text =
+      variant === "whitespace"
+        ? "  " + original.replace(/ /g, "  ").replace(/\n/g, "\t\n") + "  "
+        : variant === "invisible"
+          ? original.replace(/ /g, "\u200b ")
+          : original.normalize("NFD");
+    const before = JSON.stringify(r);
+    expect(() => validateReport(r, c)).toThrow("DUPLICATE_CHAPTER");
+    expect(JSON.stringify(r)).toBe(before);
+  },
+);
+it("applies the same investment guarantee rejection to chapter copy and introduction", () => {
+  const c = calculate(birth),
+    r = generate(c);
+  const chapter = structuredClone(r);
+  chapter.chapters[2].text += " 수익 보장 상품이니라.";
+  expect(() => validateReport(chapter, c)).toThrow("UNSAFE_CONTENT");
+  expect(() =>
+    validateReport({ ...r, intro: r.intro + " 수익 보장 상품이니라." }, c),
+  ).toThrow("UNSAFE_CONTENT");
+});
+
+it.each([
+  "수익   보장",
+  "수익\n보장",
+  "수\u200b익 보장",
+  "수익 보장".normalize("NFD"),
+])("rejects formatting variations of a guarantee in chapter copy", (phrase) => {
+  const c = calculate(birth),
+    r = generate(c);
+  r.chapters[2].text += " " + phrase + " 상품이니라.";
+  expect(() => validateReport(r, c)).toThrow("UNSAFE_CONTENT");
+});
