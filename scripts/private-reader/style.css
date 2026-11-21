@@ -552,3 +552,45 @@ html[lang="zh-TW"] body {
   font-size: 18px !important;
   line-height: 1.8 !important;
 }
+
+.figure-card {
+  position: relative;
+  margin: 1.25rem 0;
+  padding: 1.1rem 1.2rem 1.1rem 3.6rem;
+  border: 1px solid #aa895855;
+  border-radius: 3px;
+  background: linear-gradient(120deg, #ad7e3010, transparent);
+  break-inside: avoid;
+}
+.figure-card h3 {
+  margin: 0 0 0.4rem;
+}
+.figure-card p {
+  margin: 0.35rem 0;
+}
+.figure-seal {
+  position: absolute;
+  left: 1rem;
+  top: 1.1rem;
+  color: #8a3d30;
+  font-size: 1.5rem;
+}
+.figure-lesson {
+  font-weight: 600;
+}
+.figure-note {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+@media (max-width: 480px) {
+  .figure-card {
+    padding: 1rem;
+  }
+  .figure-seal {
+    position: static;
+    display: block;
+  }
+}
+.figure-page h2 {
+  word-break: keep-all;
+}

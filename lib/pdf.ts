@@ -2,6 +2,7 @@ import PDFDocument from "pdfkit";
 import { chapterArt } from "./report-art";
 import { readingGuide } from "./report-reading-guide";
 import { reportDisclosure } from "./report-disclosure";
+import { reportFigures } from "./report-figures";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import type { getReport } from "./service";
@@ -209,6 +210,30 @@ export async function reportPdf(
         .text(meaning, { lineGap: 7 });
     }
     doc.addPage();
+    const figures = reportFigures(data.report.chart.element);
+    if (figures) {
+      doc.fontSize(20).fillColor(ink).text(figures.title);
+      doc.moveDown().fontSize(10.5).text(figures.lead, { lineGap: 5 });
+      figures.people.forEach((person, i) => {
+        doc
+          .moveDown(1.4)
+          .fontSize(13)
+          .fillColor(gold)
+          .text(`${i + 1}. ${person.name}`);
+        doc
+          .moveDown(0.5)
+          .fontSize(10.5)
+          .fillColor(ink)
+          .text(person.work, { lineGap: 5 });
+        doc.moveDown(0.5).text(person.lesson, { lineGap: 5 });
+      });
+      doc
+        .moveDown(1.5)
+        .fontSize(8.5)
+        .fillColor(gold)
+        .text(figures.note, { lineGap: 4 });
+      doc.addPage();
+    }
     doc.fontSize(9).fillColor(gold).text("METHOD & NOTES");
     doc.moveDown().fontSize(21).fillColor(ink).text("계산 기준과 해석의 범위");
     doc

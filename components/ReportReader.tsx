@@ -5,6 +5,7 @@ import { readingGuide } from "../lib/report-reading-guide";
 import { reportDisclosure } from "../lib/report-disclosure";
 import { useLayoutEffect, useRef, useState } from "react";
 import { reportDownload } from "../lib/report-download";
+import { reportFigures } from "../lib/report-figures";
 import { api, useLoad, ErrorBox, Loading } from "./client";
 export default function ReportReader({
   id,
@@ -83,6 +84,7 @@ export default function ReportReader({
     );
   if (!d) return <Loading />;
   const guide = readingGuide(d.report);
+  const figures = reportFigures(d.report.chart.element);
   return (
     <>
       <p className="eyebrow">
@@ -227,6 +229,23 @@ export default function ReportReader({
           </a>
         </p>
       </section>
+      {figures && (
+        <section className="card gold" aria-label={figures.title}>
+          <p className="eyebrow">人物 · 세 갈래의 빛</p>
+          <h2>{figures.title}</h2>
+          <p>{figures.lead}</p>
+          {figures.people.map((person, i) => (
+            <section key={person.name}>
+              <h3>
+                {i + 1}. {person.name}
+              </h3>
+              <p>{person.work}</p>
+              <p className="quote">{person.lesson}</p>
+            </section>
+          ))}
+          <p className="hint">{figures.note}</p>
+        </section>
+      )}
       <details className="card report-method">
         <summary>계산 기준과 해석의 범위</summary>
         {d.report.notes.map((n: string) => (

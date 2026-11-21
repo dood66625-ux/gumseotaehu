@@ -1,4 +1,5 @@
 import { bookText, chapterTakeaway } from "./book";
+import { reportFigures } from "../../lib/report-figures";
 export {};
 type SavedReading = {
   id: string;
@@ -328,6 +329,35 @@ function draw(report: any) {
     });
     $("toc").append(a);
   });
+  const figures = reportFigures(report.chart.element, locale);
+  if (figures) {
+    const page = el("article", undefined, "book-page figure-page");
+    page.id = "book-figures";
+    page.append(
+      el("p", "人物", "eyebrow"),
+      el("h2", figures.title),
+      el("p", figures.lead),
+    );
+    for (const [i, person] of figures.people.entries()) {
+      const card = el("section", undefined, "figure-card");
+      card.append(
+        el("span", "一二三"[i], "figure-seal"),
+        el("h3", person.name),
+        el("p", person.work),
+        el("p", person.lesson, "figure-lesson"),
+      );
+      page.append(card);
+    }
+    page.append(el("p", figures.note, "figure-note"));
+    $("chapters").append(page);
+    const link = el("a", figures.title) as HTMLAnchorElement;
+    link.href = "#book-figures";
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      turnPage(report.chapters.length);
+    });
+    $("toc").append(link);
+  }
   const element = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" }[
     report.chart.element as "목"
   ];
@@ -359,7 +389,7 @@ function draw(report: any) {
   closingLink.href = "#book-ending";
   closingLink.addEventListener("click", (event) => {
     event.preventDefault();
-    turnPage(report.chapters.length);
+    turnPage(report.chapters.length + (figures ? 1 : 0));
   });
   $("toc").append(closingLink);
   $("book-prev").textContent = locale === "ko" ? "← 이전 장" : "← 上一章";

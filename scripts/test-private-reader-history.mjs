@@ -114,19 +114,33 @@ try {
     )
       throw Error("TAKEAWAY_LOCALE");
     await page.locator("#book-next").click();
-    if ((await page.locator("#book-position").textContent()) !== "2 / 10")
+    if ((await page.locator("#book-position").textContent()) !== "2 / 11")
       throw Error("BOOK_NEXT_FAILED");
     await page.locator("#book-prev").click();
     await page.locator("#toc a").nth(3).click();
     await page.reload();
     await page.getByText(report(1).intro, { exact: true }).waitFor();
-    if ((await page.locator("#book-position").textContent()) !== "4 / 10")
+    if ((await page.locator("#book-position").textContent()) !== "4 / 11")
       throw Error("BOOK_PAGE_NOT_REMEMBERED");
+    await page.locator('#toc a[href="#book-figures"]').click();
+    if ((await page.locator("#book-figures .figure-card").count()) !== 3)
+      throw Error("FIGURE_COUNT");
+    if (!(await page.locator("#book-figures").textContent()).includes("莫札特"))
+      throw Error("FIGURE_TW_LOCALE");
+    if (
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      )
+    )
+      throw Error("FIGURE_OVERFLOW");
+    await page
+      .locator("#book")
+      .screenshot({ path: `var/private-reader/figures-tw-${width}.png` });
     await page.locator("#toc a").last().click();
     if (!(await page.locator("#book-next").isDisabled()))
       throw Error("BOOK_END_BOUNDARY");
     await page.emulateMedia({ media: "print" });
-    if ((await page.locator("#chapters article:visible").count()) !== 9)
+    if ((await page.locator("#chapters article:visible").count()) !== 10)
       throw Error("PRINT_LOST_CHAPTERS");
     await page.emulateMedia({ media: "screen", reducedMotion: "reduce" });
     await page.locator("#toc a").first().click();
@@ -153,6 +167,14 @@ try {
     await page.locator("#notes-title").click();
     if (!(await page.locator("#notes").textContent()).includes(calculationNote))
       throw Error("CALCULATION_DISCLOSURE_LOST");
+    await page.locator('#toc a[href="#book-figures"]').click();
+    if (
+      !(await page.locator("#book-figures").textContent()).includes("모차르트")
+    )
+      throw Error("FIGURE_KO_LOCALE");
+    await page
+      .locator("#book")
+      .screenshot({ path: `var/private-reader/figures-ko-${width}.png` });
     await page.locator("#toc a").first().click();
     if (
       (await page
@@ -202,6 +224,8 @@ try {
       historySelection: true,
       chapterPaging: true,
       chapterTakeaways: true,
+      historicalFigures: true,
+      localizedFigures: true,
       rememberedPage: true,
       printAllChapters: true,
       reducedMotion: true,
