@@ -1,3 +1,4 @@
+import { reportBook } from "./report-book";
 import PDFDocument from "pdfkit";
 import { chapterArt } from "./report-art";
 import { readingGuide } from "./report-reading-guide";
@@ -11,6 +12,7 @@ export async function reportPdf(
   data: ReturnType<typeof getReport>,
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
+    const book = reportBook(data.report);
     const doc = new PDFDocument({
         size: "A4",
         margins: { top: 84, bottom: 66, left: 58, right: 58 },
@@ -141,6 +143,14 @@ export async function reportPdf(
         .fontSize(23)
         .fillColor(ink)
         .text(c.title, { lineGap: 5 });
+      if (book.chapters[i].takeaway) {
+        doc.moveDown(0.8).fontSize(9).fillColor(gold).text("이 장의 한마디");
+        doc
+          .moveDown(0.4)
+          .fontSize(11)
+          .fillColor(ink)
+          .text(book.chapters[i].takeaway, { lineGap: 5 });
+      }
       const artY = doc.y + 18;
       doc.image(path.resolve("public" + chapterArt[i].src), 58, artY, {
         width: W - 116,
@@ -161,7 +171,7 @@ export async function reportPdf(
         .moveDown(1.3)
         .fontSize(10.5)
         .fillColor(ink)
-        .text(c.text, { lineGap: 7, align: "left" });
+        .text(book.chapters[i].text, { lineGap: 7, align: "left" });
     });
     const guide = readingGuide(data.report);
     doc.addPage();
@@ -269,7 +279,7 @@ export async function reportPdf(
     doc
       .moveDown(1.3)
       .fontSize(10)
-      .text(data.report.notes.join("\n\n"), { lineGap: 7 });
+      .text(book.notes.join("\n\n"), { lineGap: 7 });
     doc
       .moveDown(1.5)
       .fontSize(9)

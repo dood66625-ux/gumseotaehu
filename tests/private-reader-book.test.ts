@@ -66,3 +66,56 @@ it("does not rewrite everyday words that merely contain the same syllables", () 
     "주관성을 돌아보거라.",
   );
 });
+
+it("shares cleaned chapter summaries and deduplicated endnotes without mutating stored content", async () => {
+  const { reportBook } = await import("../lib/report-book");
+  const note =
+    "한국 음력·절기 독립 대조 및 전문가 검수가 완료되지 않은 로컬 검증 결과입니다.";
+  const chapterWarning = "시각 미상이므로 시주는 풀이하지 않느니라.";
+  const report = {
+    chapters: [
+      {
+        text: "돈을 쓰기 전에 꼭 필요한지 생각해 보거라.\nuncertainty: " + note,
+      },
+      { text: chapterWarning },
+    ],
+    notes: [note],
+    chart: { notes: [note, chapterWarning] },
+  };
+  const original = JSON.stringify(report),
+    book = reportBook(report);
+  expect(book.chapters[0].text).not.toContain("uncertainty");
+  expect(book.chapters[0].takeaway).toBe(
+    "돈을 쓰기 전에 꼭 필요한지 생각해 보거라.",
+  );
+  expect(book.chapters[1].text).toBe(chapterWarning);
+  expect(book.notes).toEqual([note, chapterWarning]);
+  expect(JSON.stringify(report)).toBe(original);
+});
+it("retains a legacy chapter-only technical disclosure in the final notes", async () => {
+  const { reportBook } = await import("../lib/report-book");
+  const book = reportBook({
+    chapters: [
+      {
+        text: "오늘 마음을 살펴보거라.\nuncertainty: 과거 계산 기록은 별도 검수 필요",
+      },
+    ],
+    chart: {},
+  });
+  expect(book.notes).toEqual(["과거 계산 기록은 별도 검수 필요"]);
+  expect(book.chapters[0].text).toBe("오늘 마음을 살펴보거라.");
+});
+it("keeps a month heading separate from its short everyday advice", () => {
+  const text =
+    "각 월의 간지는 양력 15일을 대표 시점으로 삼은 기록이며, 실제 명리월은 절입 시각에 바뀌느니라.\n1월 · 대표 명리월 辛丑 · 천간 십성 비견\n스스로 결정할 일과 함께 의논할 일을 구분해 보거라.";
+  expect(chapterTakeaway(text, "ko")).toBe(
+    "스스로 결정할 일과 함께 의논할 일을 구분해 보거라.",
+  );
+});
+it("prefers the actual closing action to a sentence introducing it", () => {
+  const text =
+    "그대의 금서를 덮기 전에 한 가지만 기억하거라. 오늘 고마움을 전할 사람 하나를 적어 보거라.";
+  expect(chapterTakeaway(text, "ko")).toBe(
+    "오늘 고마움을 전할 사람 하나를 적어 보거라.",
+  );
+});

@@ -1,4 +1,5 @@
 "use client";
+import { reportBook } from "../lib/report-book";
 import Link from "next/link";
 import { chapterArt } from "../lib/report-art";
 import { readingGuide } from "../lib/report-reading-guide";
@@ -84,6 +85,7 @@ export default function ReportReader({
       </>
     );
   if (!d) return <Loading />;
+  const book = reportBook(d.report);
   const guide = readingGuide(d.report);
   const figures = reportFigures(d.report.chart.element);
   return (
@@ -157,6 +159,12 @@ export default function ReportReader({
         <article id={"chapter-" + i} key={c.title} className="report-chapter">
           <p className="eyebrow">CHAPTER {String(i + 1).padStart(2, "0")}</p>
           <h2>{c.title}</h2>
+          {book.chapters[i].takeaway && (
+            <aside className="card gold" aria-label="이 장의 한마디">
+              <p className="eyebrow">이 장의 한마디</p>
+              <p className="quote">{book.chapters[i].takeaway}</p>
+            </aside>
+          )}
           <figure className="chapter-illustration">
             <img
               src={assetBase + chapterArt[i].src}
@@ -167,7 +175,7 @@ export default function ReportReader({
             />
             <figcaption>{chapterArt[i].title}</figcaption>
           </figure>
-          <p>{c.text}</p>
+          <p>{book.chapters[i].text}</p>
           <details className="chapter-evidence">
             <summary>풀이 근거 살펴보기</summary>
             <small className="chapter-fact">
@@ -250,7 +258,7 @@ export default function ReportReader({
       )}
       <details className="card report-method">
         <summary>계산 기준과 해석의 범위</summary>
-        {d.report.notes.map((n: string) => (
+        {book.notes.map((n: string) => (
           <p className="hint" key={n}>
             {n}
           </p>
