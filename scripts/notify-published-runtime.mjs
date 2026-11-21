@@ -3,7 +3,11 @@ import {
   boundedJson,
   notifyEndpoint,
   repository,
+  repositoryId,
+  repositoryOwnerId,
   workflowRef,
+  githubKeyCache,
+  verifyUpdateIdentity,
 } from "./update-notify-identity.mjs";
 
 /** Diagnostic comparisons only: never return token contents, identity values, or headers. */
@@ -20,7 +24,8 @@ export function identityChecks(
       issuer: claims.iss === "https://token.actions.githubusercontent.com",
       audience: claims.aud === notifyEndpoint,
       repository: claims.repository === repository,
-      subject: claims.sub === "repo:" + repository + ":ref:refs/heads/main",
+      repositoryId: claims.repository_id === repositoryId,
+      ownerId: claims.repository_owner_id === repositoryOwnerId,
       ref: claims.ref === "refs/heads/main",
       workflow: claims.workflow_ref === workflowRef,
       sha: claims.sha === sha,
@@ -86,11 +91,26 @@ export async function notifyPublishedRuntime(
   }).catch(() => {
     throw Error("UPDATE_SIGNAL_NETWORK_FAILED");
   });
-  if (response.status === 401)
+  if (response.status === 401) {
     console.log(
       "UPDATE_IDENTITY_CHECKS " +
         JSON.stringify(identityChecks(identity.value, sha)),
     );
+    try {
+      verifyUpdateIdentity(
+        identity.value,
+        await githubKeyCache(fetcher)(),
+        sha,
+      );
+      console.log(
+        "UPDATE_IDENTITY_LOCAL_VERIFIED; server verifier installation requires refresh",
+      );
+    } catch {
+      console.log(
+        "UPDATE_IDENTITY_LOCAL_UNVERIFIED; no identity values logged",
+      );
+    }
+  }
   if (response.status !== 202)
     throw Error("UPDATE_SIGNAL_HTTP_" + response.status);
   return { state: "accepted" };

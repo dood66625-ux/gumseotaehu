@@ -8,6 +8,8 @@ import {
   verifyUpdateIdentity,
   notifyEndpoint,
   repository,
+  repositoryId,
+  repositoryOwnerId,
   workflowRef,
 } from "../scripts/update-notify-identity.mjs";
 import { notificationHandler } from "../scripts/update-notify-server.mjs";
@@ -24,6 +26,8 @@ const base = {
   iss: "https://token.actions.githubusercontent.com",
   aud: notifyEndpoint,
   repository,
+  repository_id: repositoryId,
+  repository_owner_id: repositoryOwnerId,
   sub: "repo:" + repository + ":ref:refs/heads/main",
   ref: "refs/heads/main",
   workflow_ref: workflowRef,
@@ -59,10 +63,23 @@ afterEach(() => {
 it("accepts a signed current main workflow identity without a shared secret", () => {
   expect(verifyUpdateIdentity(token(), [jwk], sha, now)).toEqual({ sha });
 });
+it("binds immutable signed identities rather than assuming a configurable subject format", () => {
+  expect(
+    verifyUpdateIdentity(
+      token({ sub: "custom-github-subject-format" }),
+      [jwk],
+      sha,
+      now,
+    ),
+  ).toEqual({ sha });
+});
 it.each([
   { aud: "other" },
   { repository: "other/repo" },
-  { sub: "repo:other/repo:ref:refs/heads/main" },
+  { repository_id: "123" },
+  { repository_owner_id: "123" },
+  { repository_id: undefined },
+  { sub: "" },
   { ref: "refs/heads/other" },
   { workflow_ref: repository + "/.github/workflows/other.yml@refs/heads/main" },
   { sha: "b".repeat(40) },

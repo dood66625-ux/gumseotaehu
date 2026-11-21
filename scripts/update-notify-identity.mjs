@@ -2,6 +2,9 @@
 import { createPublicKey, verify } from "node:crypto";
 export const notifyEndpoint = "https://gumseo.kr/_internal/update-notify";
 export const repository = "dood66625-ux/gumseotaehu";
+// Immutable GitHub identities prevent repository/owner name reuse from granting access.
+export const repositoryId = "1456702842";
+export const repositoryOwnerId = "313947680";
 export const workflowRef =
   repository + "/.github/workflows/private-runtime.yml@refs/heads/main";
 export function verifyUpdateIdentity(
@@ -62,7 +65,11 @@ export function verifyUpdateIdentity(
     claims.iss !== "https://token.actions.githubusercontent.com" ||
     claims.aud !== notifyEndpoint ||
     claims.repository !== repository ||
-    claims.sub !== "repo:" + repository + ":ref:refs/heads/main" ||
+    claims.repository_id !== repositoryId ||
+    claims.repository_owner_id !== repositoryOwnerId ||
+    typeof claims.sub !== "string" ||
+    claims.sub.length < 1 ||
+    claims.sub.length > 1024 ||
     claims.ref !== "refs/heads/main" ||
     claims.workflow_ref !== workflowRef ||
     claims.sha !== sha ||
