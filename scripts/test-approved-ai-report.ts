@@ -126,6 +126,26 @@ try {
     await expect(
       page.locator('aside[aria-label="이 장의 한마디"]'),
     ).toHaveCount(9);
+    expect(
+      await page.locator(".report-chapter").evaluateAll((articles) =>
+        articles.every((article) => {
+          const body =
+            article.querySelector(":scope > figure")?.nextElementSibling;
+          const summary = article.querySelector(
+            'aside[aria-label="이 장의 한마디"]',
+          );
+          return (
+            !!body &&
+            body.tagName === "P" &&
+            !!summary &&
+            !!(
+              body.compareDocumentPosition(summary) &
+              Node.DOCUMENT_POSITION_FOLLOWING
+            )
+          );
+        }),
+      ),
+    ).toBe(true);
     await page
       .locator(".chapter-illustration img")
       .evaluateAll(async (images) => {
@@ -168,6 +188,7 @@ try {
     widths: [390, 1440],
     chapterImages: 9,
     chapterTakeaways: 9,
+    chapterTakeawaysAfterBody: true,
     horizontalOverflow: false,
     pdfDownloadMatches: true,
     providerRequests: 0,

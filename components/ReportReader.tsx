@@ -159,12 +159,6 @@ export default function ReportReader({
         <article id={"chapter-" + i} key={c.title} className="report-chapter">
           <p className="eyebrow">CHAPTER {String(i + 1).padStart(2, "0")}</p>
           <h2>{c.title}</h2>
-          {book.chapters[i].takeaway && (
-            <aside className="card gold" aria-label="이 장의 한마디">
-              <p className="eyebrow">이 장의 한마디</p>
-              <p className="quote">{book.chapters[i].takeaway}</p>
-            </aside>
-          )}
           <figure className="chapter-illustration">
             <img
               src={assetBase + chapterArt[i].src}
@@ -176,6 +170,12 @@ export default function ReportReader({
             <figcaption>{chapterArt[i].title}</figcaption>
           </figure>
           <p>{book.chapters[i].text}</p>
+          {book.chapters[i].takeaway && (
+            <aside className="card gold" aria-label="이 장의 한마디">
+              <p className="eyebrow">이 장의 한마디</p>
+              <p className="quote">{book.chapters[i].takeaway}</p>
+            </aside>
+          )}
           <details className="chapter-evidence">
             <summary>풀이 근거 살펴보기</summary>
             <small className="chapter-fact">

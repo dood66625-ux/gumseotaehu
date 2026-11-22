@@ -310,6 +310,9 @@ function draw(report: any) {
     const cleaned = bookText(chapter.text, sharedNotes);
     movedNotes.push(...cleaned.moved);
     const takeaway = chapterTakeaway(cleaned.text, locale);
+    article.append(image);
+    for (const paragraph of cleaned.text.split(/\n\s*\n/).filter(Boolean))
+      article.append(el("p", paragraph, "chapter-copy"));
     if (takeaway) {
       const callout = el("aside", undefined, "chapter-takeaway");
       callout.append(
@@ -318,9 +321,6 @@ function draw(report: any) {
       );
       article.append(callout);
     }
-    article.append(image);
-    for (const paragraph of cleaned.text.split(/\n\s*\n/).filter(Boolean))
-      article.append(el("p", paragraph, "chapter-copy"));
     $("chapters").append(article);
     const a = el("a", i + 1 + ". " + c.titles[i]) as HTMLAnchorElement;
     a.href = "#" + article.id;

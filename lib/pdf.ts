@@ -143,14 +143,6 @@ export async function reportPdf(
         .fontSize(23)
         .fillColor(ink)
         .text(c.title, { lineGap: 5 });
-      if (book.chapters[i].takeaway) {
-        doc.moveDown(0.8).fontSize(9).fillColor(gold).text("이 장의 한마디");
-        doc
-          .moveDown(0.4)
-          .fontSize(11)
-          .fillColor(ink)
-          .text(book.chapters[i].takeaway, { lineGap: 5 });
-      }
       const artY = doc.y + 18;
       doc.image(path.resolve("public" + chapterArt[i].src), 58, artY, {
         width: W - 116,
@@ -172,6 +164,24 @@ export async function reportPdf(
         .fontSize(10.5)
         .fillColor(ink)
         .text(book.chapters[i].text, { lineGap: 7, align: "left" });
+      if (book.chapters[i].takeaway) {
+        // Keep the closing label with its text if the chapter flows onto another page.
+        const closingHeight =
+          doc
+            .fontSize(11)
+            .heightOfString(book.chapters[i].takeaway, {
+              width: W - 116,
+              lineGap: 5,
+            }) + 44;
+        if (doc.y + closingHeight > doc.page.height - doc.page.margins.bottom)
+          doc.addPage();
+        doc.moveDown(0.8).fontSize(9).fillColor(gold).text("이 장의 한마디");
+        doc
+          .moveDown(0.4)
+          .fontSize(11)
+          .fillColor(ink)
+          .text(book.chapters[i].takeaway, { lineGap: 5 });
+      }
     });
     const guide = readingGuide(data.report);
     doc.addPage();

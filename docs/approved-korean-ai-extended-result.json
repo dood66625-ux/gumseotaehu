@@ -26,7 +26,7 @@
   ],
   "notesPreserved": true,
   "reportDigest": "dab9e80f23a096cfdbe8fa1521ba85fa230bdac6a82afb173f076df7f30d3952",
-  "pdfBytes": 1005087,
+  "pdfBytes": 1005082,
   "livePayments": false,
   "realMail": false,
   "customerDataTransmitted": false,
@@ -45,6 +45,7 @@
     ],
     "chapterImages": 9,
     "chapterTakeaways": 9,
+    "chapterTakeawaysAfterBody": true,
     "horizontalOverflow": false,
     "pdfDownloadMatches": true,
     "providerRequests": 0,
@@ -73,12 +74,15 @@
   "previousApprovalCalls": 1,
   "previousApprovalState": "uncertain",
   "historicalSyntheticCalls": 4,
-  "pdfSha256": "175f035cdf10a0e242e185a10c674737937c50bd1eace1d7be634fac5cce7e42",
+  "pdfSha256": "133f938d9e911811ecf11c329912dec5a818513edc0dab2e14102753e461d3b9",
   "displayOnlyFollowup": {
     "authoringTemplateDeferredToEndnotes": true,
     "chapterSpecificLimitsPreserved": true,
     "sourceReportUnchanged": true,
     "newProviderRequests": 0,
     "simplerSummaryWording": true
-  }
+  },
+  "takeawayPlacement": "after-chapter-body",
+  "pdfTakeawaysAfterBody": true,
+  "privateReaderTakeawaysAfterBody": true
 }

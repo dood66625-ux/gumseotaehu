@@ -102,6 +102,21 @@ try {
     });
     await page.goto("http://127.0.0.1:3460/private-reading#reading=" + ids[1]);
     await page.getByText(report(1).intro, { exact: true }).waitFor();
+    if (
+      !(await page.locator("#chapter-0").evaluate((article) => {
+        const summary = article.querySelector(".chapter-takeaway"),
+          body = article.querySelector(".chapter-copy:last-of-type");
+        return (
+          !!summary &&
+          !!body &&
+          !!(
+            body.compareDocumentPosition(summary) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+          )
+        );
+      }))
+    )
+      throw Error("CHAPTER_TAKEAWAY_NOT_AFTER_BODY");
     if ((await page.locator("#chapters article:visible").count()) !== 1)
       throw Error("BOOK_NOT_SINGLE_PAGE");
     if (
