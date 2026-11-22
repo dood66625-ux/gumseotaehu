@@ -8,7 +8,7 @@ export const business = {
   address: "경기도 고양시 일산서구 일현로 26, 701호",
   phone: null,
   email: "mjreview3@gmail.com",
-  commerceRegistration: null,
+  commerceRegistration: "2022-고양일산서-0241",
   hostingProvider: null,
   supportMode: "web-request",
 } as const;

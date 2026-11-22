@@ -16,6 +16,10 @@ export default function BusinessInfo() {
           <dd>{business.registrationNumber}</dd>
         </div>
         <div>
+          <dt>통신판매업 신고번호</dt>
+          <dd>{business.commerceRegistration}</dd>
+        </div>
+        <div>
           <dt>사업장 주소</dt>
           <dd>{business.address}</dd>
         </div>
@@ -29,9 +33,10 @@ export default function BusinessInfo() {
       <section className="card">
         <h2>출시 전 추가 고지</h2>
         <p className="hint">
-          연락 전화번호, 통신판매업 신고 정보(해당 시), 호스팅 제공자 등은 확인
-          후 등록합니다. 실제 판매는 필요한 고지와 운영 검토가 끝난 뒤
-          시작합니다.
+          통신판매업 신고번호는 운영자가 제공한 값입니다. 별도 문의 전화는
+          운영하지 않으며 이메일·웹 요청으로 안내합니다. 연락처의 필수 고지
+          요건과 호스팅 제공자 등은 출시 전 추가 확인합니다. 실제 판매는 필요한
+          고지와 운영 검토가 끝난 뒤 시작합니다.
         </p>
       </section>
       <section className="card">
