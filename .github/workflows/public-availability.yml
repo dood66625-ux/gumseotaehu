@@ -1,7 +1,13 @@
 name: Public availability check
+run-name: ${{ github.event_name == 'workflow_dispatch' && inputs.test_alert && 'ALERT DELIVERY TEST - no service outage' || 'Public availability check' }}
 # Fixed public probes only. GitHub notification delivery depends on the owner account settings.
 on:
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: Intentional notification test; does not stop or change the service
+        type: boolean
+        default: false
   schedule:
     - cron: '17,47 * * * *'
 permissions:
@@ -14,6 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - name: Intentional alert delivery test - no service outage
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_alert }}
+        shell: bash
+        run: |
+          echo "::error title=ALERT DELIVERY TEST::This is an intentional notification test. No service outage was caused."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:

@@ -9,3 +9,7 @@
 ## 알림 확인
 
 GitHub의 Settings → Notifications → Actions에서 workflow 알림과 원하는 이메일/웹 수신을 확인한다: https://github.com/settings/notifications . GitHub Actions 실패 상태는 알림 수신 성공을 증명하지 않는다. 수신 여부를 확인하기 위해 실제 서비스를 중단하거나 거짓 정상 결과를 만들지 않는다. 공개 가용성 점검은 OpenAI/Resend/실결제 요청을 하지 않지만 GitHub Actions 실행 시간을 사용한다. 계정의 사용량/예산 제한, 예약 지연/중지와 알림 설정의 영향은 남는다. 예약 선언/수동 실행 성공을 실제 예약 실행 또는 수신 검증으로 바꾸어 기록하지 않는다.
+
+## 중단 없는 알림 전달 시험
+
+수동 실행의 test_alert=true는 별도 이름 ALERT DELIVERY TEST - no service outage로 의도적으로 실패한다. 이 실행은 checkout/실제 가용성 점검 전에 멈추며 서비스를 정지하거나 네트워크/키/발송 설정을 바꾸지 않는다. 입력 기본값은 false이고 schedule 이벤트에는 적용되지 않는다. 정상 점검은 별도 실행해 시험 실패와 실제 장애를 구분한다. 의도한 실패 기록만으로 이메일/웹 알림이 수신됐다고 표시하지 않으며 운영자 수신 확인이 필요하다.
