@@ -1,0 +1,77 @@
+{
+  "approvalId": "owner-20261122-known-v3-extended-one-call",
+  "syntheticOnly": true,
+  "requestProfile": "synthetic-review-v1",
+  "fixture": "known",
+  "provider": "openai",
+  "promptVersion": "taehou-ai-3",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "newCalls": 1,
+  "totalApprovedCalls": 1,
+  "budgetUsdMicros": 100000,
+  "maximumEstimatedUsdMicros": 72000,
+  "estimatedActualUsdMicros": 14121,
+  "pricingBasis": "configured conservative list price; not a verified invoice",
+  "chapters": 9,
+  "chapterCharacters": [
+    367,
+    380,
+    400,
+    397,
+    413,
+    362,
+    456,
+    495,
+    351
+  ],
+  "notesPreserved": true,
+  "reportDigest": "dab9e80f23a096cfdbe8fa1521ba85fa230bdac6a82afb173f076df7f30d3952",
+  "pdfBytes": 1005066,
+  "livePayments": false,
+  "realMail": false,
+  "customerDataTransmitted": false,
+  "professionalQualityApproved": false,
+  "savedReopenMatches": true,
+  "reopenProviderRequests": 0,
+  "dateKst": "2026-11-22",
+  "reviewDisposition": "Current Korean known-time synthetic sample passed basic contract and display checks; not final expert or operating acceptance",
+  "browserCheck": {
+    "scope": "saved synthetic AI content; mocked report/PDF delivery; local real browser rendering",
+    "syntheticOnly": true,
+    "promptVersion": "taehou-ai-3",
+    "widths": [
+      390,
+      1440
+    ],
+    "chapterImages": 9,
+    "chapterTakeaways": 9,
+    "horizontalOverflow": false,
+    "pdfDownloadMatches": true,
+    "providerRequests": 0,
+    "realDeviceVerified": false,
+    "liveAuthenticationVerified": false,
+    "screenshots": [
+      "approved-report-390.png",
+      "approved-report-1440.png"
+    ]
+  },
+  "pdfChapterTakeaways": 9,
+  "pdfPages": 18,
+  "pdfMethodNotesPresent": true,
+  "reviewNotes": [
+    "9 chapters; each351–495characters;12month labels and required fact IDs validated",
+    "Court speech and explicit calculation notes preserved",
+    "Practical summary selection corrected without regenerating stored report",
+    "Known-time case only; actual devices/operating routes/expert acceptance remain open"
+  ],
+  "usage": {
+    "inputTokens": 1698,
+    "outputTokens": 2855,
+    "estimatedUsdMicros": 14121,
+    "verifiedInvoice": false
+  },
+  "previousApprovalCalls": 1,
+  "previousApprovalState": "uncertain",
+  "historicalSyntheticCalls": 4,
+  "pdfSha256": "20eec79473ecc182cc5cf221d256dfc6a8de1c422dbaddb441ca497728171c1f"
+}

@@ -13,12 +13,18 @@ import { createHash } from "node:crypto";
 import {
   runApprovedKnownReview,
   reviewApproval,
+  extendedReviewApproval,
 } from "../lib/approved-synthetic-review";
 import { config } from "../lib/config";
 import { reportPdf } from "../lib/pdf";
 import { reportBook } from "../lib/report-book";
 import type { getReport } from "../lib/service";
-if (process.argv.slice(2).join(" ") !== "--live-approved-20261122") {
+const flag = process.argv.slice(2).join(" ");
+if (
+  !["--live-approved-20261122", "--live-approved-20261122-extended"].includes(
+    flag,
+  )
+) {
   console.error("APPROVED_REVIEW_FLAG_REQUIRED; no API call performed");
   process.exit(1);
 }
@@ -28,7 +34,13 @@ try {
   const c = config(),
     key = process.env.OPENAI_API_KEY;
   if (!key) throw Error("AI_CREDENTIAL_REQUIRED");
-  const root = resolve("var/approved-korean-review-20261122");
+  const extended = flag === "--live-approved-20261122-extended";
+  const approval = extended ? extendedReviewApproval : reviewApproval;
+  const root = resolve(
+    extended
+      ? "var/approved-korean-review-20261122-extended"
+      : "var/approved-korean-review-20261122",
+  );
   mkdirSync(root, { recursive: true, mode: 0o700 });
   if (lstatSync(root).isSymbolicLink() || realpathSync(root) !== root)
     throw Error("PRIVATE_REVIEW_DIRECTORY_REQUIRED");
@@ -42,7 +54,13 @@ try {
   db = new DatabaseSync(path);
   chmodSync(path, 0o600);
   db.exec("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000");
-  const result = await runApprovedKnownReview(db, c.key, key),
+  const result = await runApprovedKnownReview(
+      db,
+      c.key,
+      key,
+      fetch,
+      extended ? "extended" : "original",
+    ),
     report = result.report,
     created = Date.now();
   const pdf = await reportPdf({
@@ -50,15 +68,16 @@ try {
     name: "가상검증",
     created,
     order: {
-      id: reviewApproval.orderId,
+      id: approval.orderId,
       version: 1,
       expires: created + 86400000,
     },
   } as ReturnType<typeof getReport>);
   writeFileSync(join(root, "known-v3.pdf"), pdf, { mode: 0o600 });
   const evidence = {
-    approvalId: reviewApproval.id,
+    approvalId: approval.id,
     syntheticOnly: true,
+    requestProfile: extended ? "synthetic-review-v1" : "standard",
     fixture: "known",
     provider: report.provider,
     promptVersion: report.promptVersion,

@@ -129,3 +129,40 @@ it("persists client trace before network failure and keeps server headers when l
     }
   }
 });
+it("keeps the longer review isolated, reserves only once and reopens without generation", async () => {
+  const db = new DatabaseSync(":memory:");
+  const send = vi.fn(async (_url: any, init: any) => {
+    const body = JSON.parse(init.body);
+    expect(body.max_output_tokens).toBe(12000);
+    expect(body.reasoning).toEqual({ effort: "none" });
+    return Response.json(response());
+  });
+  try {
+    const first = await runApprovedKnownReview(
+      db,
+      key,
+      apiKey,
+      send as typeof fetch,
+      "extended",
+    );
+    expect(first.maximumEstimatedUsdMicros).toBe(72000);
+    expect(first.newCalls).toBe(1);
+    expect(
+      (
+        await runApprovedKnownReview(
+          db,
+          key,
+          apiKey,
+          send as typeof fetch,
+          "extended",
+        )
+      ).newCalls,
+    ).toBe(0);
+    await expect(
+      runApprovedKnownReview(db, key, apiKey, send as typeof fetch, "original"),
+    ).rejects.toThrow("AI_SPEND_LIMIT_REACHED");
+    expect(send).toHaveBeenCalledTimes(1);
+  } finally {
+    db.close();
+  }
+});

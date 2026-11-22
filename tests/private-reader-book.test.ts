@@ -128,3 +128,17 @@ it("uses court speech only in a legacy summary while retaining its advice and ne
   );
   expect(raw).toContain("권합니다");
 });
+it("prefers everyday resting advice to element counts in a generated chapter", () => {
+  const text =
+    "오행 수를 보면 화가 4로 가장 많고, 목 1과 금 1, 수 2가 뒤를 받치며, 토 0은 드러난 바가 없느니라. 불이 밝을수록 그 빛을 담는 그릇이 필요하니, 휴식과 정리의 자리를 곁에 두거라.";
+  expect(chapterTakeaway(text, "ko")).toBe(
+    "불이 밝을수록 그 빛을 담는 그릇이 필요하니, 휴식과 정리의 자리를 곁에 두거라.",
+  );
+});
+it("prefers general monthly wellbeing advice over a technical date convention", () => {
+  const text =
+    "월별로는 양력 매월 15일 대표 시점의 기록이라 하였으니, 절입 전체 구간으로 넓혀 말하지 말아야 하느니라. 각 달은 별개로 보되, 그때그때 몸과 마음의 리듬을 먼저 살피는 것이 좋느니라.";
+  expect(chapterTakeaway(text, "ko")).toBe(
+    "각 달은 별개로 보되, 그때그때 몸과 마음의 리듬을 먼저 살피는 것이 좋느니라.",
+  );
+});

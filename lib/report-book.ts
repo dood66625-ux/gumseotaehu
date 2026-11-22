@@ -112,7 +112,7 @@ export function chapterTakeaway(text: string, locale: "ko" | "zh-TW") {
   });
   const practical =
     locale === "ko"
-      ? /기록|살펴|정해|확인|골라|돌보|보거라|하거라|말거라/
+      ? /기록|살펴|살피|정해|확인|골라|돌보|보거라|하거라|말거라|두거라/
       : /記錄|留意|選擇|試著|不妨|可以|照顧/;
   const incomplete = /^(하지만|그러나|다만|반면|因此|但是|不過|然而)/;
   const jargon =
@@ -125,7 +125,7 @@ export function chapterTakeaway(text: string, locale: "ko" | "zh-TW") {
       i,
       score:
         (practical.test(source) ? 4 : 0) +
-        (locale === "ko" && /(?:보거라|하거라|말거라)[.!?]$/.test(source)
+        (locale === "ko" && /(?:보거라|하거라|말거라|두거라)[.!?]$/.test(source)
           ? 4
           : 0) +
         (sentence.length >= 10 && sentence.length <= 70 ? 4 : 0) -
