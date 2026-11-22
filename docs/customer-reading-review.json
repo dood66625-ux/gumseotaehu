@@ -1,0 +1,70 @@
+{
+  "dateKst": "2026-11-22",
+  "scope": "Korean product content presentation and readability review; not expert/production/device acceptance",
+  "conditionId": "1.1.5",
+  "reportFixture": "saved current Korean taehou-ai-3 invented known-time report",
+  "reportChapterCount": 9,
+  "pdfChapterCount": 9,
+  "pdfContentsPageNumbersChecked": true,
+  "takeawaysAfterBody": true,
+  "chapterImagesLoaded": 9,
+  "browserWidths": [
+    390,
+    1440
+  ],
+  "reportBrowser": {
+    "scope": "saved synthetic AI content; mocked report/PDF delivery; local real browser rendering",
+    "syntheticOnly": true,
+    "promptVersion": "taehou-ai-3",
+    "widths": [
+      390,
+      1440
+    ],
+    "chapterImages": 9,
+    "chapterTakeaways": 9,
+    "chapterTakeawaysAfterBody": true,
+    "horizontalOverflow": false,
+    "reportAccessibilityViolations": 0,
+    "evidenceAndMethodOpenedForCheck": true,
+    "evidenceContrastAtLeast": 4.5,
+    "evidenceFontAtLeastPx": 12,
+    "pdfDownloadMatches": true,
+    "providerRequests": 0,
+    "realDeviceVerified": false,
+    "liveAuthenticationVerified": false,
+    "screenshots": [
+      "approved-report-390.png",
+      "approved-report-1440.png"
+    ]
+  },
+  "evidenceTextContrast": {
+    "method": "WCAG relative luminance against each computed paper gradient stop",
+    "minimumBefore": 1.078122558751519,
+    "minimumAfter": 6.130847209780921,
+    "minimumEvidenceFontBeforePx": 9,
+    "minimumEvidenceFontAfterPx": 12
+  },
+  "syntheticJourney": {
+    "projects": [
+      "mobile-chromium",
+      "desktop-chromium"
+    ],
+    "checks": [
+      "landing responsive and reduced motion, API blocked, accessibility",
+      "birth-preview-consent-mock-checkout-report-PDF-recovery-inquiry-admin-refund",
+      "simplified input consent and Korea default",
+      "JavaScript-disabled image and native CTA"
+    ],
+    "coveredChecks": 8,
+    "initialPassed": 6,
+    "initialFailedDueToRemovedStorySkipSelector": 2,
+    "correctedSelectorRerunPassed": 2
+  },
+  "newGenerationRequests": 0,
+  "realDeviceVerified": false,
+  "independentCalendarExpertReview": false,
+  "finalCurrentAiQualityApproved": false,
+  "livePaymentsVerified": false,
+  "legalApproval": false,
+  "productionDeploymentVerified": false
+}

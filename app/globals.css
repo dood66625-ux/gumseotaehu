@@ -2842,9 +2842,15 @@ body {
   cursor: pointer;
   min-height: 36px;
 }
+.chapter-evidence summary,
+.chapter-evidence summary:after {
+  color: #5d482e;
+}
 .chapter-evidence .chapter-fact {
   display: block;
   padding-top: 12px;
+  color: #5d482e;
+  font-size: 12px;
 }
 .report-method summary {
   font: 17px/1.8 var(--serif);

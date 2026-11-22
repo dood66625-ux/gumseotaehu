@@ -1,3 +1,5 @@
+import { measureReportEvidence } from "./report-readability.mjs";
+import AxeBuilder from "@axe-core/playwright";
 /** Display QA for the immutable paid synthetic sample. Payload delivery is mocked; no auth/PG/AI claims. */
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes, createHash } from "node:crypto";
@@ -159,6 +161,40 @@ try {
         () => document.documentElement.scrollWidth > innerWidth,
       ),
     ).toBe(false);
+    await page
+      .locator(".chapter-evidence,.report-method")
+      .evaluateAll((nodes) =>
+        nodes.forEach((node) => ((node as HTMLDetailsElement).open = true)),
+      );
+    const accessibility = await new AxeBuilder({ page })
+      .include(".report-chapter")
+      .include(".report-method")
+      .include(".reading-guide")
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    console.log(
+      JSON.stringify({
+        width,
+        accessibilityViolations: accessibility.violations.map((v) => ({
+          id: v.id,
+          impact: v.impact,
+          targets: v.nodes.flatMap((n) => n.target),
+        })),
+      }),
+    );
+    expect(accessibility.violations).toEqual([]);
+    const readability = await page
+      .locator(".report-chapter")
+      .evaluateAll(measureReportEvidence);
+    console.log(JSON.stringify({ width, readability }));
+    expect(readability.minimumContrast).toBeGreaterThanOrEqual(4.5);
+    expect(readability.minimumEvidenceFontPx).toBeGreaterThanOrEqual(12);
+
+    await page
+      .locator(".chapter-evidence,.report-method")
+      .evaluateAll((nodes) =>
+        nodes.forEach((node) => ((node as HTMLDetailsElement).open = false)),
+      );
     const file = "approved-report-" + width + ".png";
     await page
       .locator(".report-chapter")
@@ -190,6 +226,10 @@ try {
     chapterTakeaways: 9,
     chapterTakeawaysAfterBody: true,
     horizontalOverflow: false,
+    reportAccessibilityViolations: 0,
+    evidenceAndMethodOpenedForCheck: true,
+    evidenceContrastAtLeast: 4.5,
+    evidenceFontAtLeastPx: 12,
     pdfDownloadMatches: true,
     providerRequests: 0,
     realDeviceVerified: false,

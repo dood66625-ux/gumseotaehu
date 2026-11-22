@@ -43,9 +43,9 @@
             },
             {
               "title": "출시 상품 전체 내용·가독성 최종 검수",
-              "status": "pending",
-              "remainingKind": "verification",
-              "id": "1.1.5"
+              "status": "done",
+              "id": "1.1.5",
+              "evidence": "docs/customer-reading-review.md"
             }
           ],
           "id": "1.1"
