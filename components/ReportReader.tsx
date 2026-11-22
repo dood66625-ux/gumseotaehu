@@ -125,6 +125,10 @@ export default function ReportReader({
           이메일로 받기
         </button>
       </div>
+      <p className="fine">
+        카카오톡 안에서 PDF가 저장되지 않으면 메뉴에서 ‘다른 브라우저로 열기’를
+        선택해 Chrome 또는 Safari에서 저장해주세요.
+      </p>
       {message && (
         <p className="success" role="status">
           {message}

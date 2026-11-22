@@ -175,7 +175,7 @@ try {
     if ((await page.locator("#book-figures .figure-card").count()) !== 3)
       throw Error("FIGURE_COUNT");
     if (
-      !(await page.locator("#book-figures").textContent()).includes("모차르트")
+      !(await page.locator("#book-figures").textContent()).includes("허난설헌")
     )
       throw Error("FIGURE_KOREAN_ONLY");
     if (
@@ -220,7 +220,7 @@ try {
       throw Error("CALCULATION_DISCLOSURE_LOST");
     await page.locator('#toc a[href="#book-figures"]').click();
     if (
-      !(await page.locator("#book-figures").textContent()).includes("모차르트")
+      !(await page.locator("#book-figures").textContent()).includes("허난설헌")
     )
       throw Error("FIGURE_KO_LOCALE");
     await page
