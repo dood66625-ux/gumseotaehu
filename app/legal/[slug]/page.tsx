@@ -1,3 +1,4 @@
+import { business } from "@/lib/business";
 import ContentGuide from "@/components/ContentGuide";
 import { PRODUCT_PRICE_TEXT } from "@/lib/product";
 import Link from "next/link";
@@ -54,7 +55,7 @@ const policies: Record<
       },
       {
         title: "권리 행사",
-        text: "이메일 인증 후 고객센터에서 열람·정정·삭제·처리정지 등을 요청할 수 있습니다. 안전한 본인 확인과 법정 보유 근거를 구분합니다. 삭제 요청에 따라 운명서·출생정보를 파기하더라도 법률상 보존 대상 거래기록은 목적을 제한해 별도 보관합니다. 실제 개인정보보호 책임자와 연락처는 사업자 정보 확정 후 제공해야 합니다.",
+        text: "이메일 인증 후 고객센터에서 열람·정정·삭제·처리정지 등을 요청할 수 있습니다. 안전한 본인 확인과 법정 보유 근거를 구분합니다. 삭제 요청에 따라 운명서·출생정보를 파기하더라도 법률상 보존 대상 거래기록은 목적을 제한해 별도 보관합니다. 개인정보보호 책임자와 연락처는 아래 안내에서 확인할 수 있습니다.",
       },
     ],
   },
@@ -92,7 +93,7 @@ const policies: Record<
     sections: [
       {
         title: "공개 운영 중이 아닙니다",
-        text: "상호·사업자등록번호·연락 이메일은 운영자가 제공했습니다. 대표자와 사업장 주소도 운영자가 제공했습니다. 통신판매업 신고번호도 운영자가 제공했습니다. 별도 문의 전화는 없으며 이메일·웹 요청 경로를 안내합니다. 제공 정보의 정확성과 필수 연락처 요건, 개인정보보호 책임자는 추가 확인이 필요합니다. 호스팅서비스 제공자는 주식회사 스마일서브(iwinv)입니다. 허위 정보를 표시하지 않습니다. OWNER_ACTION_REQUIRED.md 항목을 확정하기 전 실제 고객 판매와 공개 배포는 금지합니다.",
+        text: "상호·사업자등록번호·연락 이메일은 운영자가 제공했습니다. 대표자와 사업장 주소도 운영자가 제공했습니다. 통신판매업 신고번호도 운영자가 제공했습니다. 별도 문의 전화는 없으며 이메일·웹 요청 경로를 안내합니다. 개인정보보호 책임자는 대표자 유승학으로 지정했습니다. 제공 정보의 정확성과 필수 연락처 요건은 추가 검토가 필요합니다. 호스팅서비스 제공자는 주식회사 스마일서브(iwinv)입니다. 허위 정보를 표시하지 않습니다. OWNER_ACTION_REQUIRED.md 항목을 확정하기 전 실제 고객 판매와 공개 배포는 금지합니다.",
       },
       {
         title: "현재 프로젝트 상태",
@@ -129,6 +130,20 @@ export default async function Page({
           <p>{s.text}</p>
         </section>
       ))}
+      {slug === "privacy" && (
+        <section aria-labelledby="privacy-officer-title">
+          <h2 id="privacy-officer-title">개인정보 문의 담당</h2>
+          <p>개인정보보호 책임자: {business.privacyOfficer}</p>
+          <p>
+            연락 이메일:{" "}
+            <a href={`mailto:${business.email}`}>{business.email}</a>
+          </p>
+          <p>
+            열람·정정·삭제·처리정지 요청을 접수합니다. 비밀번호나 인증번호는
+            보내지 마세요.
+          </p>
+        </section>
+      )}
       <Link className="button secondary" href="/help">
         문의·권리 행사 접수
       </Link>

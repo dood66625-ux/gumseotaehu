@@ -1,3 +1,4 @@
+import { business } from "../../lib/business";
 import { PRODUCT_PRICE_KRW, PRODUCT_PRICE_TEXT } from "../../lib/product";
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -254,6 +255,16 @@ if (screen !== "home") {
           재열람을 목표로 개발 중입니다. 법률·정확성·운영 검수가 완료되기 전
           실제 판매하지 않습니다.
         </p>
+        {screen === "privacy" && (
+          <section aria-labelledby="privacy-contact-title">
+            <h2 id="privacy-contact-title">개인정보 문의 담당</h2>
+            <p>개인정보보호 책임자: {business.privacyOfficer}</p>
+            <p>
+              연락 이메일:{" "}
+              <a href={`mailto:${business.email}`}>{business.email}</a>
+            </p>
+          </section>
+        )}
         <a
           className="button secondary"
           href="https://github.com/dood66625-ux/gumseotaehu/blob/main/docs/test-report.md"
