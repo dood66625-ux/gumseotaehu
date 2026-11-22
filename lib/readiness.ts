@@ -1,7 +1,48 @@
+import plan from "../docs/launch-progress.json";
 import { business } from "./business";
+type ChecklistTask = {
+  id: string;
+  title: string;
+  status: string;
+  remainingKind?: string;
+};
 /** No credentials are returned and no external provider is contacted. */
 export function launchReadiness() {
+  const tasks = plan.majors.flatMap<ChecklistTask>((major) =>
+    major.sections.flatMap<ChecklistTask>((section) => section.tasks),
+  );
+  const completed = tasks.filter((task) => task.status === "done").length;
+  const remainingWork = tasks
+    .filter((task) => task.status !== "done")
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      kind: task.remainingKind,
+    }));
   return {
+    scope: "repository-checklist-not-live-runtime",
+    checklist: {
+      updatedKst: plan.updatedKst,
+      completed,
+      total: tasks.length,
+      remaining: remainingWork.length,
+      percent: tasks.length
+        ? Math.round((completed / tasks.length) * 1000) / 10
+        : 0,
+      remainingByKind: {
+        development: remainingWork.filter((task) => task.kind === "development")
+          .length,
+        verification: remainingWork.filter(
+          (task) => task.kind === "verification",
+        ).length,
+        decision: remainingWork.filter((task) => task.kind === "decision")
+          .length,
+      },
+      remainingWork,
+      excludedFutureScope: plan.excludedFutureScope,
+      productionApprovalInferred: false,
+    },
     mode: "local-mock",
     launchReady: false,
     externalEffectsEnabled: false,
@@ -85,13 +126,13 @@ export function launchReadiness() {
         id: "admin",
         kind: "implementation",
         detail:
-          "Multi-user role lifecycle, managed MFA enrollment/recovery and production credential rotation remain incomplete; only one local operator is supported.",
+          "Single-operator credential provisioning, MFA enrollment/recovery and credential-bound session revocation are implemented. Actual operating-device enrollment and host acceptance remain separate. Multi-user administration is not an added launch requirement.",
       },
       {
         id: "traffic",
         kind: "implementation-and-infrastructure",
         detail:
-          "Trusted reverse proxy/WAF/distributed limits, advertising consent/attribution and real-user Web Vitals remain incomplete.",
+          "Authenticated proxy metadata and IP limits passed real local Caddy/app tests. Actual host proxy/WAF, direct-port blocking, NAT/IPv6 and operating load acceptance remain incomplete. Paid advertising and multi-host expansion are excluded future scope, not launch blockers.",
       },
       {
         id: "legal",

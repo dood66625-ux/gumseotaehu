@@ -19,3 +19,5 @@ npm run mail:owner -- --send --approve <prepared-approvalHash>
 
 
 2026-11-16 실제 시험: 운영자가 대화에서 미리보기/수신 주소의 1회 발송을 승인했다. 고정 메시지를 Resend에 한 번 요청했고 정상 응답을 받아 ledger에 accepted로 저장했다. API 키 원문과 provider 응답 본문은 출력하지 않았다. 추가/자동 재발송은 하지 않았다. 실제 받은편지함 수신은 운영자 확인 대기이며 accepted를 delivered로 표시하지 않는다. 고객 대상 발송·앱 모드·외부 발송 worker는 변경하지 않았다.
+
+최신 기록 대조(2026-11-22): OWNER_ACTION_REQUIRED.md의 최신 순서2에는 발신 도메인 Verified와 운영자 단독 시험 메일 수신 보고가 기록돼 있다. 위 ‘수신 확인 대기’는2026-11-16 실행 당시의 상태다. 이를 근거로 운영자 시험을 다시 요구하지 않는다. 공급자 접수 원장 accepted를 자동으로 delivered로 바꾸거나 고객 OTP/거래/반송 검증 완료로 확대하지 않는다. 현재 발송 전용 키의 /domains 조회401 restricted_api_key는 조회 권한 제한이며, 키 무효의 증거가 아니다. 실제 고객 메일 전환·웹훅/반송 검증은 여전히 남아 있다.
