@@ -102,10 +102,26 @@ try {
         throw Error("LIVE_CHECKOUT_USED_MOCK_PAYMENT");
       await route.fulfill({ status, json: result });
     });
+    async function advanceCheckout() {
+      await page.locator(".checkout-flow").waitFor();
+      for (let stage = 0; stage < 8; stage++) {
+        for (const input of await page
+          .locator('.checkout-flow input[type="checkbox"][required]')
+          .all())
+          if (await input.isVisible()) await input.check();
+        const next = page
+          .locator(".screen-flow-controls")
+          .getByRole("button", { name: "다음 →" });
+        if (!(await next.count())) return;
+        await next.click();
+      }
+      throw Error("CHECKOUT_PAGING_LOOP");
+    }
     mode = "mock";
     posts = [];
     const before = sdkLoads;
     await page.goto(origin);
+    await advanceCheckout();
     await page
       .getByRole("button", { name: "운명서 펼치기 · 체험 결제" })
       .waitFor();
@@ -113,6 +129,7 @@ try {
     mode = "review";
     posts = [];
     await page.goto(origin + "/?review=1");
+    await advanceCheckout();
     const reviewLink = page.getByRole("link", {
       name: "운명서 펼치기 · 토스 테스트 결제",
     });
@@ -126,10 +143,9 @@ try {
     mode = "live";
     posts = [];
     await page.goto(origin);
+    await advanceCheckout();
     const choose = page.getByRole("button", { name: "카드 결제 수단 선택" });
     await choose.waitFor();
-    for (const input of await page.locator("input[required]").all())
-      await input.check();
     await choose.click();
     await page
       .getByRole("button", { name: "카드 약관 동의" })

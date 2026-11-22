@@ -167,7 +167,16 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
     path: "docs/" + info.project.name + "-preview.png",
     fullPage: true,
   });
+  await page.locator(".screen-flow").waitFor();
+  while (
+    !(await page
+      .getByRole("link", { name: "종합 운명서 구매 살펴보기" })
+      .isVisible())
+  )
+    await page.locator(".screen-flow-controls button").last().click();
   await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
+  await page.locator(".checkout-flow").waitFor();
+  await page.getByRole("button", { name: "다음 →" }).click();
   await expect(page.locator(".price")).toContainText("22,000원");
   await page.getByLabel("이메일 주소").fill(email);
   await page.getByRole("button", { name: "인증번호 요청" }).click();
@@ -178,13 +187,22 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await expect(
     page.getByText("구매 이메일 인증이 완료되었습니다."),
   ).toBeVisible();
-  for (const c of await page
-    .locator("form")
-    .last()
-    .getByRole("checkbox")
-    .all()) {
-    const name = await c.getAttribute("name");
-    if (name !== "marketing") await c.check();
+  for (let stage = 0; stage < 3; stage++)
+    await page.getByRole("button", { name: "다음 →" }).click();
+  for (let consentPage = 0; consentPage < 2; consentPage++) {
+    await page.getByRole("button", { name: "다음 →" }).click();
+    await expect(
+      page.locator(`[data-consent-page="${consentPage + 4}"]`),
+    ).toBeVisible();
+    for (const c of await page
+      .locator("form")
+      .last()
+      .getByRole("checkbox")
+      .all()) {
+      const name = await c.getAttribute("name");
+      if (name !== "marketing") await c.check();
+    }
+    await page.getByRole("button", { name: "다음 →" }).click();
   }
   await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await expect(

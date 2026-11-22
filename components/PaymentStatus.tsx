@@ -44,7 +44,7 @@ export default function PaymentStatus({ id }: { id: string }) {
   const view = customerOrderState(o);
   const ready = view.canRead;
   return (
-    <>
+    <section className="payment-status-screen">
       <img
         className="payment-portrait"
         src="/empress-avatar-v2.webp"
@@ -102,6 +102,6 @@ export default function PaymentStatus({ id }: { id: string }) {
           복구·환불 문의
         </Link>
       </div>
-    </>
+    </section>
   );
 }

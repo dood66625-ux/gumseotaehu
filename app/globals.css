@@ -3285,3 +3285,238 @@ body:has(.birth-wizard) .page > .notice {
     margin-bottom: 8px;
   }
 }
+.screen-flow {
+  max-width: 560px;
+  margin: auto;
+  outline: none;
+}
+.screen-flow-heading {
+  display: flex;
+  justify-content: space-between;
+  color: var(--gold);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.screen-flow-page[hidden] {
+  display: none !important;
+}
+.screen-flow-page > h1 {
+  font-size: 23px;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+.screen-flow-page .card {
+  padding: 18px;
+  margin: 12px 0;
+}
+.screen-flow-page .quote {
+  font-size: 18px;
+  line-height: 1.8;
+}
+.screen-flow-page h2 {
+  font-size: 19px;
+  margin: 8px 0;
+}
+.screen-flow-page .pillars {
+  margin: 20px 0;
+}
+.screen-flow-page .element-bars {
+  min-height: 140px;
+}
+.screen-flow-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+.screen-flow-controls button {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px;
+}
+body:has(.screen-flow) footer {
+  display: none;
+}
+body:has(.screen-flow) .page {
+  max-width: 600px;
+  padding: 14px 20px 0;
+  margin-bottom: 0;
+}
+body:has(.screen-flow) .page:before {
+  display: none;
+}
+@media (max-height: 650px) {
+  body:has(.screen-flow) .header {
+    height: 58px;
+  }
+  .screen-flow-page > h1 {
+    font-size: 20px;
+    margin: 8px 0;
+  }
+  .screen-flow-page .card {
+    padding: 12px;
+    margin: 8px 0;
+  }
+  .screen-flow-page .quote {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+}
+
+.checkout-flow [hidden] {
+  display: none !important;
+}
+.checkout-flow {
+  max-width: 560px;
+  margin: auto;
+}
+.checkout-flow > h1 {
+  font-size: 23px;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+.checkout-flow .card {
+  padding: 14px;
+  margin: 10px 0;
+}
+.checkout-flow h2 {
+  font-size: 18px;
+  margin: 6px 0;
+}
+.checkout-flow p,
+.checkout-flow .check {
+  font-size: 12px;
+  line-height: 1.65;
+}
+.checkout-flow .check {
+  margin: 10px 0;
+  gap: 10px;
+}
+.checkout-flow .notice {
+  font-size: 12px;
+  padding: 12px;
+}
+.checkout-flow .checkout-book-tag {
+  display: none;
+}
+.checkout-flow .price {
+  font-size: 28px;
+}
+body:has(.checkout-flow) footer {
+  display: none;
+}
+body:has(.checkout-flow) .page {
+  max-width: 600px;
+  padding: 12px 20px 0;
+  margin-bottom: 0;
+}
+body:has(.checkout-flow) .page:before {
+  display: none;
+}
+@media (max-height: 650px) {
+  body:has(.checkout-flow) .header {
+    height: 58px;
+  }
+  .checkout-flow > h1 {
+    font-size: 20px;
+  }
+}
+
+body:has(.payment-status-screen) footer {
+  display: none;
+}
+body:has(.payment-status-screen) .page {
+  max-width: 560px;
+  padding: 14px 20px;
+  margin-bottom: 0;
+}
+.payment-status-screen .payment-portrait {
+  width: 64px;
+  height: 80px;
+  margin: 0 auto 10px;
+}
+.payment-status-screen h1 {
+  font-size: 23px;
+  margin: 12px 0;
+}
+.payment-status-screen .card {
+  padding: 14px;
+  margin: 12px 0;
+}
+.payment-status-screen .quote {
+  font-size: 16px;
+  line-height: 1.65;
+}
+.payment-status-screen dd {
+  overflow-wrap: anywhere;
+}
+.payment-status-screen .actions {
+  margin-top: 12px;
+}
+@media (max-height: 650px) {
+  body:has(.payment-status-screen) .header {
+    height: 58px;
+  }
+  .payment-status-screen .payment-portrait {
+    display: none;
+  }
+}
+.screen-flow .chapter-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+  font-size: 12px;
+}
+.screen-flow .chapter-list li {
+  padding: 4px 0;
+}
+.screen-flow-page .price {
+  font-size: 28px;
+  margin: 14px 0;
+}
+.screen-flow-page .hint {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.checkout-flow .data-list > div {
+  padding: 7px 0;
+}
+.checkout-flow .data-list dt,
+.checkout-flow .data-list dd {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.checkout-flow .data-list {
+  margin: 10px 0;
+}
+.checkout-flow > h1 {
+  margin: 8px 0;
+}
+.checkout-flow > .screen-flow-heading {
+  margin: 0 0 6px;
+}
+.checkout-flow .field {
+  margin: 8px 0;
+  min-width: 0;
+}
+.checkout-flow input:not([type="checkbox"]) {
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 16px;
+}
+.checkout-flow .card:has(#otp-input) > form:first-of-type .field,
+.checkout-flow .card:has(#otp-input) > .hint {
+  display: none;
+}
+.checkout-flow .card:has(#otp-input) .notice {
+  margin: 8px 0;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.checkout-flow .card:has(#otp-input) .text-button {
+  font-size: 11px;
+  margin: 4px 10px 4px 0;
+}
+.checkout-flow .otp-code {
+  font-size: 22px;
+}

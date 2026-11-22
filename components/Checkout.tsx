@@ -1,7 +1,6 @@
 "use client";
 import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Link from "next/link";
-import Journey from "./Journey";
 import { openLiveWidget, type LiveWidget } from "../lib/toss-widget-client";
 import { useEffect, useRef, useState } from "react";
 import { api, useLoad, Loading, EmailAuth, ErrorBox } from "./client";
@@ -12,6 +11,7 @@ export default function Checkout({
   id: string;
   testReviewHref?: string;
 }) {
+  const [checkoutPage, setCheckoutPage] = useState(0);
   const review = testReviewHref === "https://pay.gumseo.kr/";
   const {
     data: r,
@@ -67,6 +67,7 @@ export default function Checkout({
   }, []);
   async function pay(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (checkoutPage !== 6) return;
     if (locked.current || !mode || submitted) return;
     locked.current = true;
     const f = new FormData(e.currentTarget);
@@ -184,15 +185,24 @@ export default function Checkout({
       </div>
     );
   return (
-    <>
-      <Journey step={3} />
-      <p className="eyebrow">BEFORE THE SEAL IS BROKEN · 封</p>
+    <section className="checkout-flow">
+      <p className="screen-flow-heading">
+        한 권의 운명서 · {checkoutPage + 1} / 7
+      </p>
       <h1>
-        그대만의 한 권을
-        <br />
-        간직할 시간.
+        {
+          [
+            "출생정보 확인",
+            "구매 이메일 확인",
+            "그대가 간직할 금서",
+            "구매 전 안내",
+            "필수 사항 확인",
+            "정보 처리와 제공 동의",
+            "결제 수단 확인",
+          ][checkoutPage]
+        }
       </h1>
-      <div className="card">
+      <div className="card" hidden={checkoutPage !== 0}>
         <h2>출생정보 최종 확인</h2>
         <dl className="data-list">
           <div>
@@ -220,18 +230,31 @@ export default function Checkout({
           입력정보 수정하기 ↗
         </Link>
       </div>
-      {review ? (
-        <p className="notice">
-          심사용 가상 주문입니다. 이메일 인증 없이 토스 테스트 카드 결제창을
-          확인할 수 있습니다. 실제 청구는 없습니다.
-        </p>
-      ) : !verified ? (
-        <EmailAuth onVerified={() => setVerified(true)} />
-      ) : (
-        <p className="success">구매 이메일 인증이 완료되었습니다.</p>
-      )}
-      <form onSubmit={pay}>
-        <section className="card gold">
+      <div hidden={checkoutPage !== 1}>
+        {review ? (
+          <p className="notice">
+            심사용 가상 주문입니다. 이메일 인증 없이 토스 테스트 카드 결제창을
+            확인할 수 있습니다. 실제 청구는 없습니다.
+          </p>
+        ) : !verified ? (
+          <EmailAuth onVerified={() => setVerified(true)} />
+        ) : (
+          <p className="success">구매 이메일 인증이 완료되었습니다.</p>
+        )}
+      </div>
+      <form
+        onSubmit={pay}
+        onInvalidCapture={(event) =>
+          setCheckoutPage(
+            (event.target as HTMLElement)
+              .closest("[data-consent-page]")
+              ?.getAttribute("data-consent-page") === "5"
+              ? 5
+              : 4,
+          )
+        }
+      >
+        <section className="card gold" hidden={checkoutPage !== 2}>
           <div className="checkout-book-tag" aria-hidden="true">
             禁書
           </div>
@@ -251,139 +274,193 @@ export default function Checkout({
               : "자동 구독이나 추가 과금은 없습니다. 현재 체험에서는 실제 금액을 청구하지 않습니다."}
           </p>
         </section>
-        <section className="card">
-          <h2>구매 전 안내와 동의</h2>
-          <div className="notice">
-            디지털콘텐츠의 제공 개시 후 청약철회 제한이 적용될 수 있지만, 법정
-            요건 충족 여부를 개별 판단합니다. 이중결제·시스템 오류·콘텐츠
-            미제공·계약 불일치 등 법정 권리는 보장됩니다. 미성년자 계약 취소권도
-            배제하지 않습니다.
-            <br />
-            <Link href="/legal/refund">환불 및 취소 규정 전체 보기 ↗</Link>
+        <section className="checkout-agreements">
+          <div className="card" hidden={checkoutPage !== 3}>
+            <h2>구매 전 안내와 동의</h2>
+            <div className="notice">
+              제공 개시 후 법정 요건을 충족하면 청약철회가 제한될 수 있습니다.
+              중복결제·오류·미제공·계약 불일치 및 미성년 계약 취소 등 법정
+              권리는 보장합니다.
+              <br />
+              <Link href="/legal/refund">환불 및 취소 규정 전체 보기 ↗</Link>
+            </div>
+            <p className="hint">
+              무료 미리보기를 제공했습니다. 금서태후는 창작 캐릭터이며 AI 해석은
+              미래 예측·전문 조언을 대신하지 않습니다.
+              {mode !== "live" &&
+                " 현재는 실제 AI를 호출하지 않는 규칙 기반 검증판입니다."}
+            </p>
           </div>
-          <p className="hint">
-            무료 미리보기를 제공했습니다. 금서태후는 창작 캐릭터이며 AI 기반
-            해석은 미래 예측이나 전문 조언을 대신하지 않습니다.
-            {mode !== "live" &&
-              " 현재는 실제 AI를 호출하지 않는 규칙 기반 검증판입니다."}
-          </p>
-          {!review && (
-            <>
-              <label className="check">
-                <input name="buyerAdult" type="checkbox" required />
-                <span>
-                  구매자 본인은 만 19세 이상입니다. (필수)
-                  <small className="hint" style={{ display: "block" }}>
-                    만 14~18세는 보호자 확인 절차가 준비되기 전까지 무료 풀이만
-                    이용할 수 있습니다.
-                  </small>
-                </span>
-              </label>
-              <label className="check">
-                <input name="confirmedBirth" type="checkbox" required />
-                출생정보와 시간 미상 시 해석 한계를 확인했습니다. (필수)
-              </label>
-              <label className="check">
-                <input name="terms" type="checkbox" required />
-                <span>
-                  <Link href="/legal/terms" target="_blank">
-                    이용약관
-                  </Link>
-                  과 상품 구성·가격·1년 열람기간을 확인했습니다. (필수)
-                </span>
-              </label>
-              <label className="check">
-                <input name="privacy" type="checkbox" required />
-                <span>
-                  <Link href="/legal/privacy" target="_blank">
-                    주문 이행을 위한 개인정보 처리
-                  </Link>
-                  에 동의합니다. (필수)
-                </span>
-              </label>
-              <label className="check">
-                <input name="withdrawal" type="checkbox" required />
-                미리보기와 청약철회·환불 고지를 확인하고, 결제 확인 후 콘텐츠
-                작성을 요청합니다. 법정 권리는 유지됩니다. (필수)
-              </label>
-              <label className="check">
-                <input name="marketing" type="checkbox" />
-                혜택·소식 수신에 동의합니다. (선택 · 현재 발송하지 않음)
-              </label>
-            </>
-          )}
-          {mode === "live" && (
-            <section aria-label="카드 결제 수단">
-              <div id={"live-payment-methods-" + id} />
-              <div id={"live-payment-agreement-" + id} />
-              {!liveOrder && (
-                <p className="hint">
-                  아래 버튼을 누르면 카드 결제 수단을 선택할 수 있습니다.
-                </p>
-              )}
-            </section>
-          )}
-          {mode === "mock" && !testReviewHref && (
-            <details className="report-disclosure">
-              <summary>다른 체험 결제 상황 살펴보기</summary>{" "}
-              <div className="field">
-                <label htmlFor="scenario">체험 결제 옵션</label>
-                <select
-                  id="scenario"
-                  value={scenario}
-                  onChange={(e) => setScenario(e.target.value)}
-                >
-                  <option value="success">정상 체험</option>
-                  <option value="decline">결제 거절</option>
-                  <option value="close">화면을 닫은 뒤 다시 찾기</option>
-                </select>
-              </div>
-            </details>
-          )}
-          {submitted && liveOrder && (
-            <Link
-              className="button secondary"
-              href={"/checkout/success?orderId=" + liveOrder.id}
-            >
-              같은 주문 결제 상태 확인
-            </Link>
-          )}
-          <ErrorBox error={error} />
-          {review ? (
-            <a
-              className="button"
-              style={{ width: "100%" }}
-              href="https://pay.gumseo.kr/"
-            >
-              운명서 펼치기 · 토스 테스트 결제
-            </a>
-          ) : (
-            <>
-              <button
+          <div
+            className="card"
+            hidden={checkoutPage !== 4 && checkoutPage !== 5}
+          >
+            {!review && (
+              <>
+                <div data-consent-page="4" hidden={checkoutPage !== 4}>
+                  <label className="check">
+                    <input name="buyerAdult" type="checkbox" required />
+                    <span>
+                      구매자 본인은 만 19세 이상입니다. (필수)
+                      <small className="hint" style={{ display: "block" }}>
+                        만 14~18세는 보호자 확인 절차가 준비되기 전까지 무료
+                        풀이만 이용할 수 있습니다.
+                      </small>
+                    </span>
+                  </label>
+                  <label className="check">
+                    <input name="confirmedBirth" type="checkbox" required />
+                    출생정보와 시간 미상 시 해석 한계를 확인했습니다. (필수)
+                  </label>
+                  <label className="check">
+                    <input name="terms" type="checkbox" required />
+                    <span>
+                      <Link href="/legal/terms" target="_blank">
+                        이용약관
+                      </Link>
+                      과 상품 구성·가격·1년 열람기간을 확인했습니다. (필수)
+                    </span>
+                  </label>
+                </div>
+                <div data-consent-page="5" hidden={checkoutPage !== 5}>
+                  <label className="check">
+                    <input name="privacy" type="checkbox" required />
+                    <span>
+                      <Link href="/legal/privacy" target="_blank">
+                        주문 이행을 위한 개인정보 처리
+                      </Link>
+                      에 동의합니다. (필수)
+                    </span>
+                  </label>
+                  <label className="check">
+                    <input name="withdrawal" type="checkbox" required />
+                    미리보기와 청약철회·환불 고지를 확인하고, 결제 확인 후
+                    콘텐츠 작성을 요청합니다. 법정 권리는 유지됩니다. (필수)
+                  </label>
+                  <label className="check">
+                    <input name="marketing" type="checkbox" />
+                    혜택·소식 수신에 동의합니다. (선택 · 현재 발송하지 않음)
+                  </label>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="card" hidden={checkoutPage !== 6}>
+            {mode === "live" && (
+              <section aria-label="카드 결제 수단">
+                <div id={"live-payment-methods-" + id} />
+                <div id={"live-payment-agreement-" + id} />
+                {!liveOrder && (
+                  <p className="hint">
+                    아래 버튼을 누르면 카드 결제 수단을 선택할 수 있습니다.
+                  </p>
+                )}
+              </section>
+            )}
+            {mode === "mock" && !testReviewHref && (
+              <details className="report-disclosure">
+                <summary>다른 체험 결제 상황 살펴보기</summary>{" "}
+                <div className="field">
+                  <label htmlFor="scenario">체험 결제 옵션</label>
+                  <select
+                    id="scenario"
+                    value={scenario}
+                    onChange={(e) => setScenario(e.target.value)}
+                  >
+                    <option value="success">정상 체험</option>
+                    <option value="decline">결제 거절</option>
+                    <option value="close">화면을 닫은 뒤 다시 찾기</option>
+                  </select>
+                </div>
+              </details>
+            )}
+            {submitted && liveOrder && (
+              <Link
+                className="button secondary"
+                href={"/checkout/success?orderId=" + liveOrder.id}
+              >
+                같은 주문 결제 상태 확인
+              </Link>
+            )}
+            <ErrorBox error={error} />
+            {review ? (
+              <a
                 className="button"
                 style={{ width: "100%" }}
-                disabled={
-                  busy ||
-                  submitted ||
-                  !verified ||
-                  !mode ||
-                  (mode === "live" && !!widget.current && !agreed)
-                }
+                href="https://pay.gumseo.kr/"
               >
-                {busy
-                  ? "주문 확인 중…"
-                  : mode === "live"
-                    ? liveOrder && widget.current
-                      ? "카드로 결제하기"
-                      : "카드 결제 수단 선택"
-                    : testReviewHref
-                      ? "운명서 펼치기 · 토스 테스트 결제"
-                      : "운명서 펼치기 · 체험 결제"}
-              </button>
-            </>
-          )}
+                운명서 펼치기 · 토스 테스트 결제
+              </a>
+            ) : (
+              <>
+                <button
+                  className="button"
+                  style={{ width: "100%" }}
+                  disabled={
+                    busy ||
+                    submitted ||
+                    !verified ||
+                    !mode ||
+                    (mode === "live" && !!widget.current && !agreed)
+                  }
+                >
+                  {busy
+                    ? "주문 확인 중…"
+                    : mode === "live"
+                      ? liveOrder && widget.current
+                        ? "카드로 결제하기"
+                        : "카드 결제 수단 선택"
+                      : testReviewHref
+                        ? "운명서 펼치기 · 토스 테스트 결제"
+                        : "운명서 펼치기 · 체험 결제"}
+                </button>
+              </>
+            )}
+          </div>
         </section>
       </form>
-    </>
+      <nav className="screen-flow-controls" aria-label="구매 단계">
+        <button
+          type="button"
+          className="button secondary"
+          disabled={checkoutPage === 0 || busy || submitted}
+          onClick={() =>
+            setCheckoutPage(review && checkoutPage === 6 ? 3 : checkoutPage - 1)
+          }
+        >
+          이전
+        </button>
+        {checkoutPage < 6 && (
+          <button
+            type="button"
+            className="button"
+            disabled={busy || (checkoutPage === 1 && !verified && !review)}
+            onClick={() => {
+              if (checkoutPage === 4 || checkoutPage === 5) {
+                const invalid = [
+                  ...document.querySelectorAll<HTMLInputElement>(
+                    ".checkout-flow input:required:invalid",
+                  ),
+                ].find((n) => n.offsetParent !== null);
+                if (invalid) {
+                  invalid.reportValidity();
+                  return;
+                }
+              }
+              setCheckoutPage(
+                review && checkoutPage === 3 ? 6 : checkoutPage + 1,
+              );
+              window.scrollTo(0, 0);
+            }}
+          >
+            다음 →
+          </button>
+        )}
+      </nav>
+      <nav className="birth-policy-links">
+        <a href="/legal/refund">환불 규정</a>
+        <a href="/legal/business">사업자 정보</a>
+      </nav>
+    </section>
   );
 }
