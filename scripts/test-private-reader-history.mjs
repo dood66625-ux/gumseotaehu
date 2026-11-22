@@ -1,7 +1,7 @@
 /** Browser-only recovery fixture. A POST is a failure; no AI credentials or provider are used. */
 import { createServer } from "node:http";
 import { readFileSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 const ids = [
   "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
@@ -92,7 +92,8 @@ const server = createServer(async (req, res) => {
   json({ code: "NOT_FOUND" }, 404);
 });
 await new Promise((r) => server.listen(3460, "127.0.0.1", r));
-const browser = await chromium.launch();
+const engine = process.env.READER_BROWSER === "webkit" ? webkit : chromium;
+const browser = await engine.launch();
 mkdirSync("var/private-reader", { recursive: true, mode: 0o700 });
 try {
   for (const width of [390, 1440]) {
@@ -193,6 +194,39 @@ try {
     await page.emulateMedia({ media: "print" });
     if ((await page.locator("#chapters article:visible").count()) !== 11)
       throw Error("PRINT_LOST_CHAPTERS");
+    const printStyle = await page.locator("#book-figures").evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        background: style.backgroundImage,
+        color: style.backgroundColor,
+        transform: style.transform,
+        radius: style.borderTopLeftRadius,
+        perspective: getComputedStyle(document.getElementById("book"))
+          .perspective,
+      };
+    });
+    if (
+      printStyle.background !== "none" ||
+      printStyle.color !== "rgb(245, 233, 206)" ||
+      printStyle.transform !== "none" ||
+      printStyle.radius !== "0px" ||
+      printStyle.perspective !== "none"
+    )
+      throw Error("PRINT_UNSAFE_PARCHMENT_EFFECTS");
+    if (width === 390) {
+      await page
+        .locator("#book-figures")
+        .screenshot({
+          path: "var/private-reader/figures-print-" + engine.name() + ".png",
+        });
+      if (engine.name() === "chromium")
+        await page.pdf({
+          path: "var/private-reader/print-regression.pdf",
+          printBackground: true,
+          format: "A4",
+        });
+    }
+
     await page.emulateMedia({ media: "screen", reducedMotion: "reduce" });
     await page.locator("#toc a").first().click();
     if (

@@ -637,3 +637,28 @@ html[lang="zh-TW"] body {
     border: 1px solid #947342;
   }
 }
+
+/* Safari PDF export: avoid transparent gradient layers and 3D compositing
+   across printed page fragments. Keep the screen parchment unchanged. */
+@media print {
+  :root {
+    color-scheme: light;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #book {
+    perspective: none;
+  }
+  .book-page {
+    background: #f5e9ce;
+    color: #443622;
+    border-radius: 0;
+    animation: none !important;
+    transform: none !important;
+    box-shadow: none;
+  }
+  .figure-card,
+  .chapter-takeaway {
+    background: #f8efd9;
+  }
+}
