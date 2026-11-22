@@ -1,3 +1,4 @@
+import { verifyExternalBackup } from "../lib/offsite-restore-drill";
 import { finishErasure } from "../lib/financial-erasure";
 import {
   configuredExternalLedger,
@@ -18,48 +19,57 @@ import {
 // Local encrypted archive and offline restore drill. No provider calls or live restore.
 try {
   const c = config();
-  const directory = join(dirname(c.db), "backups");
-  mkdirSync(directory, { recursive: true, mode: 0o700 });
-  const checkpoint = publishPrivacyCheckpoint(
-    db(),
-    privacyCheckpointDirectory(c.db, c.key),
-    c.key,
-  );
-  const archive = join(directory, `gumseo-${Date.now()}-${randomUUID()}.gsb`);
-  await createEncryptedBackup(db(), archive, c.key);
-  const latest = readPrivacyCheckpoint(checkpoint.path, c.key);
-  const remote = configuredExternalLedger();
-  if (remote) {
-    finishErasure(db());
-    await remote.publish({
-      sourceId: latest.sourceId,
-      generatedAt: latest.generatedAt,
-      rows: latest.rows,
-      pending: false,
-    });
-  }
-  const temporary = mkdtempSync(join(directory, ".drill-"));
-  try {
-    await withExternalDeletionProof(latest.sourceId, latest.rows, () =>
-      restoreEncryptedBackup(
-        archive,
-        join(temporary, "offline.sqlite"),
-        c.key,
-        latest.rows,
-        latest.sourceId,
-      ),
+  const args = process.argv.slice(2);
+  if (args.length) {
+    if (args.length !== 3 || args[0] !== "--verify-external")
+      throw Error("BACKUP_DRILL_USAGE");
+    console.log(
+      JSON.stringify(await verifyExternalBackup(args[1], args[2], c.key)),
     );
-  } finally {
-    rmSync(temporary, { recursive: true, force: true });
+  } else {
+    const directory = join(dirname(c.db), "backups");
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    const checkpoint = publishPrivacyCheckpoint(
+      db(),
+      privacyCheckpointDirectory(c.db, c.key),
+      c.key,
+    );
+    const archive = join(directory, `gumseo-${Date.now()}-${randomUUID()}.gsb`);
+    await createEncryptedBackup(db(), archive, c.key);
+    const latest = readPrivacyCheckpoint(checkpoint.path, c.key);
+    const remote = configuredExternalLedger();
+    if (remote) {
+      finishErasure(db());
+      await remote.publish({
+        sourceId: latest.sourceId,
+        generatedAt: latest.generatedAt,
+        rows: latest.rows,
+        pending: false,
+      });
+    }
+    const temporary = mkdtempSync(join(directory, ".drill-"));
+    try {
+      await withExternalDeletionProof(latest.sourceId, latest.rows, () =>
+        restoreEncryptedBackup(
+          archive,
+          join(temporary, "offline.sqlite"),
+          c.key,
+          latest.rows,
+          latest.sourceId,
+        ),
+      );
+    } finally {
+      rmSync(temporary, { recursive: true, force: true });
+    }
+    console.log(
+      JSON.stringify({
+        archive,
+        checkpoint: checkpoint.path,
+        offlineRestore: "passed",
+        offsite: false,
+      }),
+    );
   }
-  console.log(
-    JSON.stringify({
-      archive,
-      checkpoint: checkpoint.path,
-      offlineRestore: "passed",
-      offsite: false,
-    }),
-  );
 } catch {
   console.error(
     "BACKUP_OR_OFFLINE_RESTORE_FAILED; live database not replaced; details suppressed",
