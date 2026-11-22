@@ -90,3 +90,42 @@ it.each(["network", "invalid-shape", "overspend"])(
     }
   },
 );
+it("persists client trace before network failure and keeps server headers when later validation fails", async () => {
+  for (const mode of ["network", "invalid"]) {
+    const db = new DatabaseSync(":memory:");
+    const send = vi.fn(async (_url: any, init: any) => {
+      const call = db.prepare("SELECT id FROM ai_spend_calls").get()!;
+      expect(init.headers["X-Client-Request-Id"]).toBe(call.id);
+      expect(
+        db
+          .prepare("SELECT client_request_id FROM approved_review_http_trace")
+          .get()?.client_request_id,
+      ).toBe(call.id);
+      if (mode === "network") throw Error("synthetic network failure");
+      return Response.json(
+        { ...response(), output_text: "{}" },
+        { headers: { "x-request-id": "req_trace_preserved" } },
+      );
+    });
+    try {
+      await expect(
+        runApprovedKnownReview(db, key, apiKey, send as typeof fetch),
+      ).rejects.toThrow();
+      const row = db
+        .prepare(
+          "SELECT server_request_id,http_status FROM approved_review_http_trace",
+        )
+        .get()!;
+      expect(row.server_request_id).toBe(
+        mode === "network" ? null : "req_trace_preserved",
+      );
+      expect(row.http_status).toBe(mode === "network" ? null : 200);
+      expect(db.prepare("SELECT state FROM ai_spend_calls").get()?.state).toBe(
+        "uncertain",
+      );
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally {
+      db.close();
+    }
+  }
+});

@@ -91,6 +91,11 @@ type OpenAiHttpOptions = {
   onUsage?: (usage: AiCallTelemetry) => void;
   onResponse?: (response: Record<string, any>) => void;
   fetch?: typeof fetch;
+  clientRequestId?: () => string;
+  onResponseHeaders?: (trace: {
+    requestId: string | null;
+    httpStatus: number;
+  }) => void;
 };
 export const approvedOpenAiModel = syntheticModel;
 export function createSyntheticOpenAiTransport(
@@ -155,6 +160,13 @@ function pinnedTransport(
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
+      const clientRequestId = options.clientRequestId?.();
+      if (
+        clientRequestId !== undefined &&
+        (typeof clientRequestId !== "string" ||
+          !/^[A-Za-z0-9_-]{1,160}$/.test(clientRequestId))
+      )
+        throw new AiHttpError("AI_INVALID_CLIENT_REQUEST_ID");
       const response = await (options.fetch ?? fetch)(
         "https://api.openai.com/v1/responses",
         {
@@ -162,6 +174,9 @@ function pinnedTransport(
           headers: {
             "Content-Type": "application/json",
             Authorization: "Bearer " + options.apiKey,
+            ...(clientRequestId
+              ? { "X-Client-Request-Id": clientRequestId }
+              : {}),
           },
           body,
           redirect: "error",
@@ -169,6 +184,16 @@ function pinnedTransport(
           signal: controller.signal,
         },
       );
+      try {
+        const id = response.headers.get("x-request-id");
+        options.onResponseHeaders?.({
+          requestId: id && /^[A-Za-z0-9_-]{1,160}$/.test(id) ? id : null,
+          httpStatus: response.status,
+        });
+      } catch {
+        await response.body?.cancel().catch(() => {});
+        throw new AiHttpError("AI_TRACE_PERSIST_FAILED");
+      }
       if (!response.ok) {
         // Inspect only a bounded error code in memory. Never retain provider prose.
         let providerCode: unknown;

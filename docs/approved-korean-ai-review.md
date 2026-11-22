@@ -23,3 +23,11 @@ node --use-env-proxy --import tsx scripts/review-approved-known.ts --live-approv
 승인된1회 요청은45초에 AI_TIMEOUT_UNCERTAIN으로 종료됐다. 응답/usage/보고서는 저장되지 않았다. 새 원장에 uncertain1건을 남겼고 재요청·예약 해제·기존4회 예산 변경은 하지 않았다. 공급자 실제 완료나 과금이0/특정 금액이라고 주장하지 않는다. [최소 결과 기록](approved-korean-ai-review-result.json).
 
 같은 환경에서 인증키 없이 /v1/models에 연결한 확인은 HTTP401로 약0.14초에 응답했다. 이는 해당 시각의 연결 경로 확인이며 실패한 생성의 인증/과금/모델 상태를 검증하지 않는다. 새 생성 요청은 더 보내지 않았다. 실제 사용량은 https://platform.openai.com/usage 에서 운영자 계정의 프로젝트·시각과 대조해야 한다. 현재 원장은 응답 유실 시 자동 재시도를 차단하므로 추가 생성에는 별도의 명시적 승인이 필요하다. 이번 결과를 현재 한국어 AI의 품질 통과나 출시 조건 완료로 세지 않는다.
+
+## 추적 정보 보강 (새 호출 없음)
+
+OpenAI 공식 문서의 X-Client-Request-Id 방식을 따라, 승인 검수 경로가 비용 예약UUID를 HTTP 요청 전에 내구성 있게 기록하고 같은 값을 요청 헤더로 전달하도록 연결했다. X-Request-Id/HTTP상태는 응답 본문을 읽기 전에 별도 기록한다. 본문 손상/응답 유실/저장 실패 시에도 얻은 추적 정보를 보존하고 자동 재시도를 하지 않는다. 추적 저장 실패는 성공으로 넘기지 않는다. 키나 원문 본문은 이 추적 테이블에 저장하지 않는다.
+
+이전45초 초과 요청에는 이 번호를 보냈던 기록이 없으므로 과거 ID를 꾸며 넣거나 소급해 조회 가능하다고 표시하지 않는다. 실제 추가 호출/예산 변경 없이 모의 요청으로 관련60개·타입/worker 빌드·비밀값 검사를 확인했다. 실제 과금/완료와 알림 수신은 여전히 미확인이다.
+
+근거: https://developers.openai.com/api/reference/overview 의 ‘Supplying your own request ID with X-Client-Request-Id’. 자체 번호는 중복 방지 키나 응답 복원 API가 아니며 공급자 문의 시 대조에 쓰는 식별자다. 현재 지원되지 않는 usage 계정 연결을 추정하거나 관리자 키를 요청하지 않는다.

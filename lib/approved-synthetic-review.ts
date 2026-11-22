@@ -42,7 +42,7 @@ export async function runApprovedKnownReview(
     reservationUsdMicros: 100000,
   });
   db.exec(
-    "CREATE TABLE IF NOT EXISTS approved_review(id TEXT PRIMARY KEY,report_enc TEXT NOT NULL);CREATE TABLE IF NOT EXISTS approved_review_response(id TEXT PRIMARY KEY,response_enc TEXT NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS approved_review(id TEXT PRIMARY KEY,report_enc TEXT NOT NULL);CREATE TABLE IF NOT EXISTS approved_review_response(id TEXT PRIMARY KEY,response_enc TEXT NOT NULL);CREATE TABLE IF NOT EXISTS approved_review_http_trace(client_request_id TEXT PRIMARY KEY,server_request_id TEXT,http_status INTEGER,created INTEGER NOT NULL,headers_received INTEGER)",
   );
   const existing = db
     .prepare("SELECT report_enc FROM approved_review WHERE id=?")
@@ -66,6 +66,20 @@ export async function runApprovedKnownReview(
       fetch: send,
       reserve() {
         callId = ledger.reserve(reviewApproval.orderId, 1);
+        db.prepare(
+          "INSERT INTO approved_review_http_trace(client_request_id,created) VALUES(?,?)",
+        ).run(callId, Date.now());
+      },
+      clientRequestId() {
+        return callId!;
+      },
+      onResponseHeaders(trace) {
+        const changed = db
+          .prepare(
+            "UPDATE approved_review_http_trace SET server_request_id=?,http_status=?,headers_received=? WHERE client_request_id=?",
+          )
+          .run(trace.requestId, trace.httpStatus, Date.now(), callId!);
+        if (changed.changes !== 1) throw Error("AI_TRACE_RECORD_REQUIRED");
       },
       onUsage(value) {
         usage = value;

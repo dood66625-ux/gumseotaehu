@@ -355,3 +355,63 @@ it("per-order transport pins chart at construction and records usage before retu
   events.push("returned");
   expect(events).toEqual(["reserved", "network", "usage", "returned"]);
 });
+
+it("records sanitized response headers before a body failure and sends an explicit client trace", async () => {
+  const reserve = vi.fn(),
+    headers = vi.fn(),
+    send = vi.fn(
+      async () =>
+        new Response("invalid-json", {
+          headers: {
+            "x-request-id": "req_trace_test",
+            "content-type": "application/json",
+          },
+        }),
+    );
+  const transport = createSyntheticOpenAiTransport({
+    approval: "synthetic-only",
+    fixture: "known",
+    apiKey: fakeKey,
+    reserve,
+    fetch: send as typeof fetch,
+    clientRequestId: () => "client_trace_test",
+    onResponseHeaders: headers,
+  });
+  await expect(transport(request())).rejects.toThrow("AI_INVALID_JSON");
+  expect(headers).toHaveBeenCalledWith({
+    requestId: "req_trace_test",
+    httpStatus: 200,
+  });
+  const options = (send.mock.calls as unknown as [string, RequestInit][])[0][1];
+  expect(options.headers).toMatchObject({
+    "X-Client-Request-Id": "client_trace_test",
+  });
+  expect(send).toHaveBeenCalledTimes(1);
+});
+it("refuses invalid trace IDs before sending and never retries when trace persistence fails", async () => {
+  const send = vi.fn(async () => response());
+  const invalid = createSyntheticOpenAiTransport({
+    approval: "synthetic-only",
+    fixture: "known",
+    apiKey: fakeKey,
+    reserve() {},
+    fetch: send as typeof fetch,
+    clientRequestId: () => "unsafe\nvalue",
+  });
+  await expect(invalid(request())).rejects.toThrow(
+    "AI_INVALID_CLIENT_REQUEST_ID",
+  );
+  expect(send).not.toHaveBeenCalled();
+  const failed = createSyntheticOpenAiTransport({
+    approval: "synthetic-only",
+    fixture: "known",
+    apiKey: fakeKey,
+    reserve() {},
+    fetch: send as typeof fetch,
+    onResponseHeaders() {
+      throw Error("private storage failure");
+    },
+  });
+  await expect(failed(request())).rejects.toThrow("AI_TRACE_PERSIST_FAILED");
+  expect(send).toHaveBeenCalledTimes(1);
+});
