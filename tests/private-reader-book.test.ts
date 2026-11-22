@@ -119,3 +119,12 @@ it("prefers the actual closing action to a sentence introducing it", () => {
     "오늘 고마움을 전할 사람 하나를 적어 보거라.",
   );
 });
+
+it("uses court speech only in a legacy summary while retaining its advice and negation", () => {
+  const raw =
+    "무리하지 않는 것이 좋습니다. 메모와 우선순위 설정부터 다듬어 보시기를 권합니다.";
+  expect(easyTakeaway(raw, "ko")).toBe(
+    "무리하지 않는 것이 좋겠구나. 메모와 먼저 할 일 정하기부터 다듬어 보거라.",
+  );
+  expect(raw).toContain("권합니다");
+});

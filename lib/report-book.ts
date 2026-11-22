@@ -89,7 +89,10 @@ export function easyTakeaway(text: string, locale: "ko" | "zh-TW") {
       ),
       plain,
     );
-  return result;
+  return result
+    .replace(/보시기를 권합니다(?=[.!?]|$)/g, "보거라")
+    .replace(/것이 좋습니다(?=[.!?]|$)/g, "것이 좋겠구나")
+    .replace(/우선순위 설정/g, "먼저 할 일 정하기");
 }
 /** Prefer short everyday sentences; never cut off a condition or invent a personal claim. */
 export function chapterTakeaway(text: string, locale: "ko" | "zh-TW") {

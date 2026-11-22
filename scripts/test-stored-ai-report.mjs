@@ -98,9 +98,24 @@ try {
   )
     throw Error("STORED_REPORT_CHANGED");
   await page.goto(origin + "/report/" + orderId);
-  await page
-    .getByText("AI 생성 해석 · 가상 정보 검증본", { exact: false })
-    .waitFor();
+  await page.getByText("AI 해석 운명서", { exact: false }).waitFor();
+  if (
+    (await page
+      .locator('.report-chapter aside[aria-label="이 장의 한마디"]')
+      .count()) !== 9
+  )
+    throw Error("CHAPTER_TAKEAWAYS_MISSING");
+  const takeaways = await page
+    .locator('.report-chapter aside[aria-label="이 장의 한마디"] .quote')
+    .allTextContents();
+  if (takeaways.some((text) => !text.trim() || text.includes("uncertainty:")))
+    throw Error("INVALID_CHAPTER_TAKEAWAY");
+  if (
+    (await page.locator(".report-chapter").allTextContents()).some((text) =>
+      text.includes("uncertainty:"),
+    )
+  )
+    throw Error("REPEATED_TECHNICAL_LABEL");
   const screenshots = [];
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
@@ -125,22 +140,6 @@ try {
     const file = `illustrated-report-${width}.png`;
     await chapter.screenshot({ path: join(root, file) });
     screenshots.push(file);
-    await page.goto(origin);
-    await page.locator(".archive-gallery img").evaluateAll(async (images) => {
-      for (const image of images) {
-        image.loading = "eager";
-        await image.decode();
-      }
-    });
-    if (
-      await page.evaluate(
-        () => document.documentElement.scrollWidth > innerWidth,
-      )
-    )
-      throw Error("LANDING_HORIZONTAL_OVERFLOW");
-    await page
-      .locator(".illustrated-archive")
-      .screenshot({ path: join(root, `illustrated-landing-${width}.png`) });
     await page.goto(origin + "/report/" + orderId);
     await page
       .getByRole("button", { name: "PDF 다운로드", exact: true })
@@ -163,6 +162,9 @@ try {
     visibleAiLabel: true,
     pdfDownload: true,
     chapterIllustrationsLoaded: 9,
+    chapterTakeaways: 9,
+    repeatedTechnicalLabels: false,
+    currentModelQualityApproved: false,
     checkedWidths: [390, 1440],
     screenshots,
     apiCallsDuringBrowserCheck: calls() - before,

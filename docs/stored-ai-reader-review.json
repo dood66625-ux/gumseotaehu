@@ -1,0 +1,28 @@
+{
+  "fixture": "unknown",
+  "browser": "mobile Chromium",
+  "copiedSyntheticDatabase": true,
+  "sameSavedReport": true,
+  "visibleAiLabel": true,
+  "pdfDownload": true,
+  "chapterIllustrationsLoaded": 9,
+  "chapterTakeaways": 9,
+  "repeatedTechnicalLabels": false,
+  "currentModelQualityApproved": false,
+  "checkedWidths": [
+    390,
+    1440
+  ],
+  "screenshots": [
+    "illustrated-report-390.png",
+    "illustrated-report-1440.png"
+  ],
+  "apiCallsDuringBrowserCheck": 0,
+  "livePayments": false,
+  "realMail": false,
+  "dateKst": "2026-11-22",
+  "scope": "historical synthetic AI fixture; UI/PDF regression only",
+  "pdfTakeaways": 9,
+  "pdfFinalMethodNotes": true,
+  "pdfRepeatedTechnicalLabels": false
+}
