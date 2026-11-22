@@ -39,8 +39,10 @@ try {
     )
       throw Error("Personal input not locked: " + name);
   }
-  await page.getByRole("checkbox").nth(1).check();
-  await page.getByRole("checkbox").nth(2).check();
+  await page.getByRole("button", { name: "다음 →" }).click();
+  await page.getByRole("button", { name: "다음 →" }).click();
+  await page.getByRole("checkbox", { name: /풀이 대상자는 본인/ }).check();
+  await page.getByRole("checkbox", { name: /개인정보 수집/ }).check();
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
   await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
   await page.getByLabel("이메일 주소").waitFor();

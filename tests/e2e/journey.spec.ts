@@ -154,10 +154,12 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.goto("/start");
   await page.getByLabel("어떻게 불러드릴까요?").fill("가온");
   await page.getByLabel("생년월일").fill("1995-05-15");
+  await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByLabel("출생시간", { exact: true }).fill("10:30");
   await page.getByLabel("전통 대운 계산 구분").selectOption("female");
-  await page.getByRole("checkbox").nth(1).check();
-  await page.getByRole("checkbox").nth(2).check();
+  await page.getByRole("button", { name: "다음 →" }).click();
+  await page.getByRole("checkbox", { name: /풀이 대상자는 본인/ }).check();
+  await page.getByRole("checkbox", { name: /개인정보 수집/ }).check();
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
   await expect(page.getByText("만세력 계산 완료 · 첫 번째 풀이")).toBeVisible();
   await expect(page.locator(".price")).toContainText("22,000원");
@@ -386,16 +388,20 @@ test("simplified input keeps 14+ consent and Korea default without age/country s
   await expect(page.getByLabel("이용자·구매자 연령")).toHaveCount(0);
   await expect(page.getByLabel("출생 국가·시간대 확인")).toHaveCount(0);
   await expect(page.getByLabel("생년월일")).toBeVisible();
+  await page.getByLabel("어떻게 불러드릴까요?").fill("가온");
+  await page.getByLabel("생년월일").fill("1995-05-15");
+  await page.getByRole("button", { name: "다음 →" }).click();
   await expect(
     page.getByText(
       "한국 표준시(Asia/Seoul) 기준으로 계산합니다. 해외 출생은 현재 지원하지 않습니다.",
     ),
   ).toBeVisible();
+  await page.getByLabel("출생시간을 모릅니다").check();
+  await expect(page.getByLabel("출생시간", { exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "다음 →" }).click();
   await expect(
     page.getByRole("checkbox", { name: /만 14세 이상/ }),
   ).toBeVisible();
-  await page.getByLabel("출생시간을 모릅니다").check();
-  await expect(page.getByLabel("출생시간", { exact: true })).toBeDisabled();
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations).toEqual([]);
   expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
@@ -582,4 +588,33 @@ test("test PG webhook stays disabled and cannot be used as a browser payment cal
     error: "TOSS_TEST_WEBHOOK_DISABLED",
   });
   expect(response.headers()["cache-control"]).toContain("no-store");
+});
+
+test("birth steps validate before advancing and preserve entries when going back", async ({
+  page,
+}) => {
+  let writes = 0;
+  await page.route("**/api/readings", (route) => {
+    writes++;
+    return route.abort();
+  });
+  await page.goto("/start");
+  await page.getByRole("button", { name: "다음 →" }).click();
+  await expect(page.locator(".birth-step")).toContainText("1 / 3");
+  await page.getByLabel("어떻게 불러드릴까요?").fill("가온");
+  await page.getByLabel("생년월일").fill("1995-05-15");
+  await page.getByRole("button", { name: "다음 →" }).click();
+  await expect(page.locator(".birth-step")).toContainText("2 / 3");
+  await page.getByLabel("출생시간", { exact: true }).fill("10:30");
+  await page.getByRole("button", { name: "다음 →" }).click();
+  await expect(page.locator(".birth-step")).toContainText("3 / 3");
+  await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
+  expect(writes).toBe(0);
+  await page.getByRole("button", { name: "이전", exact: true }).click();
+  await expect(page.getByLabel("출생시간", { exact: true })).toHaveValue(
+    "10:30",
+  );
+  await page.getByRole("button", { name: "이전", exact: true }).click();
+  await expect(page.getByLabel("어떻게 불러드릴까요?")).toHaveValue("가온");
+  await expect(page.getByLabel("생년월일")).toHaveValue("1995-05-15");
 });

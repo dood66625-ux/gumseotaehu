@@ -1,14 +1,36 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, ErrorBox } from "./client";
 export default function StartForm() {
+  const [step, setStep] = useState(0);
+  const heading = useRef<HTMLParagraphElement>(null);
+  function changeStep(value: number) {
+    setStep(value);
+    requestAnimationFrame(() => heading.current?.focus());
+  }
   const [calendar, setCalendar] = useState("solar"),
     [unknown, setUnknown] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
+    if (busy) return;
+    const form = e.currentTarget;
+    const fields = [
+      ...form.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+        `fieldset[data-step="${step}"] input, fieldset[data-step="${step}"] select`,
+      ),
+    ];
+    const invalid = fields.find((field) => !field.checkValidity());
+    if (invalid) {
+      invalid.reportValidity();
+      return;
+    }
+    if (step < 2) {
+      changeStep(step + 1);
+      return;
+    }
+    const f = new FormData(form);
     setBusy(true);
     setError("");
     try {
@@ -32,14 +54,21 @@ export default function StartForm() {
   }
   return (
     <>
-      <form onSubmit={submit}>
-        <div className="card">
-          <p className="eyebrow">그대의 생이 시작된 순간</p>
-          <h2>태어난 순간을 들려주거라.</h2>
+      <form onSubmit={submit} noValidate className="birth-wizard">
+        <p
+          ref={heading}
+          tabIndex={-1}
+          className="birth-step"
+          aria-live="polite"
+        >
+          {step + 1} / 3 ·{" "}
+          {["그대의 이름과 생일", "태어난 시각", "확인하고 펼치기"][step]}
+        </p>
+        <fieldset className="card" data-step="0" hidden={step !== 0}>
+          <legend className="sr-only">이름과 생일</legend>
           <p className="hint">
-            실명은 필요 없습니다. 현재 지원 범위는 1989년 이후 한국 출생, 대상자
-            본인 만 14세 이상. 해외 출생·역사 시간대·제3자 입력은 지원하지
-            않습니다.
+            실명은 필요 없느니라. 1989년 이후 한국 출생, 만 14세 이상 본인만
+            풀이할 수 있느니라.
           </p>
           <div className="field">
             <label htmlFor="name">어떻게 불러드릴까요?</label>
@@ -90,6 +119,9 @@ export default function StartForm() {
               음력 윤달에 태어났습니다
             </label>
           )}
+        </fieldset>
+        <fieldset className="card" data-step="1" hidden={step !== 1}>
+          <legend className="sr-only">태어난 시각과 대운 계산</legend>
           <div className="field">
             <label htmlFor="time">출생시간</label>
             <input
@@ -127,9 +159,10 @@ export default function StartForm() {
             한국 표준시(Asia/Seoul) 기준으로 계산합니다. 해외 출생은 현재
             지원하지 않습니다.
           </p>
-        </div>
-        <div className="card">
-          <h3>그대의 정보는 조심히 다루겠습니다.</h3>
+        </fieldset>
+        <fieldset className="card" data-step="2" hidden={step !== 2}>
+          <legend className="sr-only">정보 처리 확인</legend>
+          <h2>그대의 정보는 조심히 다루겠습니다.</h2>
           <p className="hint">
             출생정보와 별명을 사주 계산에 사용합니다. 미구매 정보는 24시간 후
             정리하며 구매 정보는 1년 재열람 정책에 따라 보관합니다. 외부 전송은
@@ -152,13 +185,29 @@ export default function StartForm() {
             </span>
           </label>
           <ErrorBox error={error} />
-          <button className="button" style={{ width: "100%" }} disabled={busy}>
-            {busy ? "실제 계산 중…" : "무료 사주풀이 펼치기 ↗"}
-          </button>
           <p className="fine">
             브라우저 저장소에 출생정보를 보관하지 않습니다. 전통 해석은 미래를
             확정하지 않습니다.
           </p>
+        </fieldset>
+        <div className="birth-step-actions">
+          {step > 0 && (
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => changeStep(step - 1)}
+            >
+              이전
+            </button>
+          )}
+          <button type="submit" className="button" disabled={busy}>
+            {busy
+              ? "실제 계산 중…"
+              : step < 2
+                ? "다음 →"
+                : "무료 사주풀이 펼치기 ↗"}
+          </button>
         </div>
       </form>
     </>

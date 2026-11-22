@@ -2892,3 +2892,273 @@ body {
   outline: 3px solid #d9ba80;
   outline-offset: 2px;
 }
+
+/* The main path starts in one viewport; optional detail remains available. */
+.landing-stage {
+  position: relative;
+}
+.landing-stage .hero {
+  height: calc(100svh - 126px);
+  min-height: 480px;
+  max-height: none;
+}
+.landing-more > summary {
+  position: absolute;
+  top: calc(100svh - 245px);
+  left: 64px;
+  z-index: 2;
+  cursor: pointer;
+  color: #d9bd88;
+  padding: 10px 0;
+  font-size: 13px;
+  list-style: none;
+}
+.landing-more > summary::-webkit-details-marker {
+  display: none;
+}
+.landing-more > summary span {
+  margin-left: 12px;
+}
+.landing-more[open] > summary span {
+  display: inline-block;
+  transform: rotate(45deg);
+}
+.landing-links {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+}
+body:has(.landing-stage):not(:has(.landing-more[open])) footer {
+  display: none;
+}
+@keyframes empress-breathe {
+  0%,
+  100% {
+    transform: scale(1.012) translateY(0);
+  }
+  50% {
+    transform: scale(1.026) translateY(-3px);
+  }
+}
+.hero-portrait img {
+  transform-origin: 55% 35%;
+  animation: empress-breathe 9s ease-in-out infinite;
+}
+.hero-cta {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+.hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 24px #c7a76822;
+}
+.hero-cta:active {
+  transform: translateY(1px);
+}
+@media (max-width: 600px) {
+  .landing-stage .hero {
+    height: calc(100svh - 102px);
+    min-height: 460px;
+  }
+  .landing-stage .hero-content {
+    bottom: 98px;
+  }
+  .landing-stage .hero-bottom {
+    bottom: 15px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .landing-more > summary {
+    top: calc(100svh - 193px);
+    left: 26px;
+    font-size: 12px;
+  }
+  .landing-links {
+    gap: 12px;
+    font-size: 10px;
+  }
+}
+@media (max-height: 700px) and (max-width: 600px) {
+  .landing-stage .hero h1 {
+    font-size: 34px;
+    line-height: 1.35;
+    margin-bottom: 10px;
+  }
+  .landing-stage .hero-copy {
+    margin-bottom: 12px;
+  }
+  .landing-stage .hero .eyebrow {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce), print {
+  .hero-portrait img {
+    animation: none !important;
+    transform: none;
+  }
+  .hero-cta {
+    transition: none;
+  }
+}
+
+.portrait-motion-control {
+  position: absolute;
+  top: 18px;
+  right: 26px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid #d2b37655;
+  border-radius: 4px;
+  background: #100e0cb8;
+  color: #ead7b2;
+  font-size: 11px;
+  cursor: pointer;
+}
+.portrait-motion-control input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #c8a66b;
+}
+.hero:has(#portrait-motion:checked) .hero-portrait img {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce), print {
+  .portrait-motion-control {
+    display: none;
+  }
+}
+
+.landing-more > summary:after {
+  content: none;
+}
+
+.landing-more:not([open]) {
+  padding: 0;
+  border: 0;
+}
+
+.birth-wizard fieldset {
+  min-width: 0;
+  margin: 0;
+}
+.birth-wizard fieldset[hidden] {
+  display: none;
+}
+.birth-step {
+  color: var(--gold);
+  font-size: 13px;
+  margin: 12px 0;
+}
+.birth-step-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.birth-step-actions button {
+  flex: 1;
+}
+@media (max-width: 600px) {
+  .start-experience {
+    max-width: 520px;
+    margin: auto;
+  }
+  .start-experience > .eyebrow,
+  .start-experience > .page-intro {
+    display: none;
+  }
+  .start-experience > h1 {
+    font-size: 24px;
+    line-height: 1.4;
+    margin: 12px 0;
+  }
+  .start-experience > h1 br {
+    display: none;
+  }
+  .start-experience .reading-journey {
+    margin-bottom: 12px;
+  }
+  .birth-wizard .card {
+    padding: 18px;
+  }
+  .birth-wizard h2 {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .birth-wizard .field {
+    margin-bottom: 12px;
+  }
+  .birth-wizard .hint {
+    font-size: 11px;
+    line-height: 1.65;
+  }
+  .birth-wizard .check {
+    font-size: 13px;
+  }
+}
+
+.birth-wizard legend.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@keyframes birth-step-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.birth-wizard fieldset:not([hidden]) {
+  animation: birth-step-reveal 220ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .birth-wizard fieldset:not([hidden]) {
+    animation: none;
+  }
+}
+
+body:has(.birth-wizard) footer {
+  display: none;
+}
+.birth-policy-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 18px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  body:has(.birth-wizard) .page {
+    padding-top: 16px;
+  }
+  body:has(.birth-wizard) .page > .notice {
+    margin-top: 0;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+  .start-experience > h1 {
+    font-size: 22px;
+  }
+  .birth-wizard .card > .hint:first-of-type {
+    margin-top: 0;
+  }
+  .birth-wizard .row {
+    gap: 12px;
+  }
+}
