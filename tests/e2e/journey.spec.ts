@@ -392,9 +392,7 @@ test("simplified input keeps 14+ consent and Korea default without age/country s
   await page.getByLabel("생년월일").fill("1995-05-15");
   await page.getByRole("button", { name: "다음 →" }).click();
   await expect(
-    page.getByText(
-      "한국 표준시(Asia/Seoul) 기준으로 계산합니다. 해외 출생은 현재 지원하지 않습니다.",
-    ),
+    page.getByText("한국 표준시(Asia/Seoul) 기준 · 해외 출생 미지원"),
   ).toBeVisible();
   await page.getByLabel("출생시간을 모릅니다").check();
   await expect(page.getByLabel("출생시간", { exact: true })).toBeDisabled();

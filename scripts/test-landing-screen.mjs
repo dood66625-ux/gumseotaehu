@@ -39,13 +39,8 @@ try {
       );
     });
     if (!fits) throw Error("LANDING_NOT_ONE_SCREEN_" + width);
-    await page.locator("#portrait-motion").check();
-    if (
-      (await page
-        .locator(".hero-portrait img")
-        .evaluate((n) => getComputedStyle(n).animationPlayState)) !== "paused"
-    )
-      throw Error("PAUSE_FAILED");
+    if (await page.locator("#portrait-motion").count())
+      throw Error("PAUSE_CONTROL_REMAINS");
     await page.screenshot({
       path: "var/landing-motion/main-" + width + ".png",
     });
@@ -62,26 +57,53 @@ try {
       throw Error("REDUCED_MOTION_FAILED");
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("http://127.0.0.1:3200/?screen=start");
-  await page.locator(".birth-wizard").waitFor();
-  for (let step = 0; step < 3; step++) {
-    await page.waitForTimeout(250);
-    if (
-      await page
-        .locator(".birth-step-actions")
-        .evaluate((n) => n.getBoundingClientRect().bottom > innerHeight)
-    )
-      throw Error("BIRTH_ACTION_BELOW_SCREEN_" + step);
-    await page.screenshot({
-      path: "var/landing-motion/input-" + step + ".png",
-    });
-    if (step < 2) await page.getByRole("button", { name: "다음 →" }).click();
+  for (const [width, height] of [
+    [390, 664],
+    [375, 667],
+    [320, 568],
+    [1440, 900],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("http://127.0.0.1:3200/?screen=start");
+    await page.locator(".birth-wizard").waitFor();
+    for (let step = 0; step < 3; step++) {
+      await page.waitForTimeout(250);
+      await page.evaluate(() => scrollTo(0, 0));
+      if (
+        await page
+          .locator(".birth-step-actions")
+          .evaluate((n) => n.getBoundingClientRect().bottom > innerHeight)
+      )
+        throw Error(
+          "BIRTH_ACTION_BELOW_SCREEN_" +
+            width +
+            "_" +
+            step +
+            "_" +
+            (await page
+              .locator(".birth-step-actions")
+              .evaluate((n) => n.getBoundingClientRect().bottom)),
+        );
+      const contained = await page
+        .locator(".birth-wizard fieldset:visible")
+        .evaluate((frame) => {
+          const bounds = frame.getBoundingClientRect();
+          return [...frame.querySelectorAll("input,select")].every((n) => {
+            const r = n.getBoundingClientRect();
+            return r.left >= bounds.left && r.right <= bounds.right;
+          });
+        });
+      if (!contained) throw Error("INPUT_OUTSIDE_FRAME_" + width + "_" + step);
+      await page.screenshot({
+        path: "var/landing-motion/input-" + step + ".png",
+      });
+      if (step < 2) await page.getByRole("button", { name: "다음 →" }).click();
+    }
+    await page.getByRole("button", { name: "이전", exact: true }).click();
+    await page.getByRole("button", { name: "이전", exact: true }).click();
+    if ((await page.getByLabel("어떻게 불러드릴까요?").inputValue()) !== "가온")
+      throw Error("LOST_BIRTH_INPUT");
   }
-  await page.getByRole("button", { name: "이전", exact: true }).click();
-  await page.getByRole("button", { name: "이전", exact: true }).click();
-  if ((await page.getByLabel("어떻게 불러드릴까요?").inputValue()) !== "가온")
-    throw Error("LOST_BIRTH_INPUT");
   const nativePage = await browser.newPage({
     javaScriptEnabled: false,
     viewport: { width: 390, height: 844 },
@@ -93,7 +115,7 @@ try {
     JSON.stringify({
       oneScreen: true,
       widths: [390, 375, 320, 1440],
-      motionPause: true,
+      pauseControlRemoved: true,
       reducedMotion: true,
       nativeDetails: true,
       javascriptDisabled: true,

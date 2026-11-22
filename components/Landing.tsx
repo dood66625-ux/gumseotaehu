@@ -25,10 +25,6 @@ export default function Landing({
             />
           </picture>
         </div>
-        <label className="portrait-motion-control">
-          <input id="portrait-motion" type="checkbox" />
-          움직임 멈추기
-        </label>
         <div className="hero-shade" aria-hidden="true" />
         <div className="hero-grain" aria-hidden="true" />
         <div className="imperial-script" aria-hidden="true">

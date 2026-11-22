@@ -141,7 +141,7 @@ export default function StartForm() {
             출생시간을 모릅니다
           </label>
           <p className="hint">
-            미상인 경우 시주와 대운 시작시각을 만들지 않습니다.
+            시각을 모르면 시주·대운 시작시각은 제외하느니라.
           </p>
           <div className="field">
             <label htmlFor="sex">전통 대운 계산 구분</label>
@@ -151,13 +151,11 @@ export default function StartForm() {
               <option value="female">여 기준</option>
             </select>
             <p className="hint">
-              전통 학파의 대운 순역 계산에만 사용하며, 성 정체성을 추론하지
-              않습니다.
+              대운의 순역 계산에만 사용하며 성 정체성을 추론하지 않습니다.
             </p>
           </div>
           <p className="hint">
-            한국 표준시(Asia/Seoul) 기준으로 계산합니다. 해외 출생은 현재
-            지원하지 않습니다.
+            한국 표준시(Asia/Seoul) 기준 · 해외 출생 미지원
           </p>
         </fieldset>
         <fieldset className="card" data-step="2" hidden={step !== 2}>
