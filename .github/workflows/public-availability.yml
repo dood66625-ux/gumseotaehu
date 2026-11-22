@@ -1,7 +1,9 @@
 name: Public availability check
-# Manual until the owner chooses an alert channel and confirms notification delivery.
+# Fixed public probes only. GitHub notification delivery depends on the owner account settings.
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
 permissions:
   contents: read
 concurrency:
@@ -17,4 +19,14 @@ jobs:
         with:
           node-version: '24'
       - name: Check fixed public HTTPS endpoints
-        run: node scripts/public-availability.mjs
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if node scripts/public-availability.mjs; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep 10
+            fi
+          done
+          exit 1
