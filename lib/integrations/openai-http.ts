@@ -1,3 +1,4 @@
+import { aiRequestPolicy, type AiGenerationProfile } from "./ai-request-policy";
 /** Pinned HTTP adapters. Customer transport is registered only by explicitly enrolled workers. */
 import type { Chart } from "../astrology";
 import { buildAiRequest } from "./ai-contract";
@@ -102,13 +103,25 @@ export function createSyntheticOpenAiTransport(
   options: OpenAiHttpOptions & {
     approval?: "synthetic-only";
     fixture: SyntheticFixture;
+    profile?: AiGenerationProfile;
+    reviewBudgetUsdMicros?: 100000;
   },
 ): Transport {
   return pinnedTransport(
     options,
-    () => options.approval === "synthetic-only",
-    () => buildAiRequest(syntheticChart(options.fixture), syntheticModel),
+    () =>
+      options.approval === "synthetic-only" &&
+      (options.profile !== "synthetic-review-v1" ||
+        options.reviewBudgetUsdMicros === 100000),
+    () =>
+      buildAiRequest(
+        syntheticChart(options.fixture),
+        syntheticModel,
+        "ko",
+        options.profile,
+      ),
     "SYNTHETIC_REQUEST_MISMATCH",
+    aiRequestPolicy(options.profile).timeoutMs,
   );
 }
 /** Explicit future opt-in only. Approval is supplied by trusted integration, never request input. */
@@ -132,6 +145,7 @@ function pinnedTransport(
   approved: () => boolean,
   expectedRequest: () => ReturnType<typeof buildAiRequest>,
   mismatch: string,
+  maximumTimeoutMs = 45000,
 ): Transport {
   return async (request) => {
     if (!approved())
@@ -153,7 +167,7 @@ function pinnedTransport(
     if (
       !Number.isInteger(request.timeoutMs) ||
       request.timeoutMs < 1 ||
-      request.timeoutMs > 45000
+      request.timeoutMs > maximumTimeoutMs
     )
       throw new AiHttpError("AI_INVALID_TIMEOUT");
     options.reserve(); // Durable reservation before any network effect, including uncertain outcomes.

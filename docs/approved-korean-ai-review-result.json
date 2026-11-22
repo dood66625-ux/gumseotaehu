@@ -25,5 +25,15 @@
   "realMail": false,
   "livePayments": false,
   "productionSettingsChanged": false,
-  "professionalQualityApproved": false
+  "professionalQualityApproved": false,
+  "operatorObservedDailyUsage": {
+    "source": "operator-provided OpenAI usage screen",
+    "scope": "selected project 2026-11-22 UTC aggregate; individual completion not visible",
+    "requests": 1,
+    "inputTokens": 1698,
+    "outputTokens": 9000,
+    "estimatedUsdMicrosAtConfiguredPrices": 41774,
+    "invoiceVerified": false,
+    "responseCompletionVerified": false
+  }
 }

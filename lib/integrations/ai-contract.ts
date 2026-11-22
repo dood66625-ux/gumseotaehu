@@ -1,3 +1,4 @@
+import { aiRequestPolicy, type AiGenerationProfile } from "./ai-request-policy";
 /** Shared Responses/Structured Outputs contract. Network defaults to blocked. */
 import { z } from "zod";
 import type { Chart } from "../astrology";
@@ -20,12 +21,16 @@ export function buildAiRequest(
   chart: Chart,
   model: string,
   locale: "ko" | "zh-TW" = "ko",
+  profile: AiGenerationProfile = "standard",
 ) {
   if (!/^[a-zA-Z0-9_.-]{1,80}$/.test(model)) throw Error("MODEL_REQUIRED");
   const request = {
     model,
     store: false,
-    max_output_tokens: 9000,
+    max_output_tokens: aiRequestPolicy(profile).maxOutputTokens,
+    ...(profile === "synthetic-review-v1"
+      ? { reasoning: { effort: "none" as const } }
+      : {}),
     instructions:
       "금서태후는 창작 캐릭터다. 중국 태후를 모티프로 한 인물로서 품위 있고 따뜻한 한국어 옛말투를 사용한다. 독자를 그대라 부르고, 해석 본문과 intro의 문장은 ~하거라, ~보거라, ~이니라, ~느니라, ~구나, ~느냐 등을 자연스럽게 섞어 끝맺는다. 현대 설명서 말투인 ~합니다, ~입니다, ~하세요, ~해요를 해석 문장의 끝맺음으로 사용하지 않는다. 쉬운 단어로 직접 말을 건네되 모든 문장을 명령형이나 질문형으로 만들지 않는다. 예: 마음이 서두르느냐? 오늘 할 일 하나부터 차분히 골라 보거라. uncertainty의 원문 보존 규칙은 말투보다 우선하며 notes는 바꾸지 않는다. 제공된 facts만 근거로 9개 장을 순서대로 작성한다. 계산을 고치거나 새로운 간지·일간·오행 수치를 만들어 내지 않는다. 사망·중병·임신·외도 예언, 공포·열등감 자극, 성공·투자수익 보장을 하지 않는다. 신강·용신은 판단하지 않는다. 시간 미상/제외 항목은 제외 사실을 밝힌다. uncertainty 문장은 notes에 원문 그대로 모두 유지한다. 자유로운 선택을 존중하고 미래를 확정하지 않는다. 각 장은 350~650자의 고유한 해석과 실천 제안을 포함한다. 금칙어인 반드시, 무조건, 죽음, 사망, 불치, 외도 확실, 수익 보장은 부정문이나 주의문에서도 그대로 쓰지 않는다. 대신 결과를 단정할 수 없다는 식으로 표현한다. intro는 일간과 그 결에 대한 첫 반응을 담는다. chapterTitles 순서와 제목을 정확히 지키고 claimIds에는 해당 장과 관련된 facts의 id만 사용한다. 1장은 일간과 오행 개수 근거 모두, 2·3·5장은 TEN_GODS, 4·6장은 RELATIONS, 7장은 CYCLES, 8장은 MONTHS, 9장은 일간 근거 id를 포함한다. 7장은 제공된 대운만 설명하며 미산출일 때 이유를 밝힌다. 8장은 제공된 12개 월을 빠짐없이 각각 구분하고 월별 제안을 작성한다. 간지와 오행 수치는 직접 재계산하거나 추측하지 않는다.",
     input: [
@@ -70,14 +75,20 @@ export async function generateAiReport(
   model: string,
   transport: Transport = blockedTransport,
   locale: "ko" | "zh-TW" = "ko",
+  profile: AiGenerationProfile = "standard",
 ) {
   const raw = (await transport({
     method: "POST",
     path: "/v1/responses",
     headers: { "Content-Type": "application/json" },
-    body: buildAiRequest(chart, model, locale),
-    timeoutMs: 45000,
+    body: buildAiRequest(chart, model, locale, profile),
+    timeoutMs: aiRequestPolicy(profile).timeoutMs,
   })) as Record<string, any>;
+  if (
+    raw?.status === "incomplete" &&
+    raw.incomplete_details?.reason === "max_output_tokens"
+  )
+    throw Error("AI_OUTPUT_LIMIT_REACHED");
   if (!raw || typeof raw !== "object" || raw.status !== "completed")
     throw Error("AI_INCOMPLETE_OR_REFUSED");
   if (
