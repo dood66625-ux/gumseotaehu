@@ -1,0 +1,20 @@
+name: Public availability check
+# Manual until the owner chooses an alert channel and confirms notification delivery.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: public-availability
+  cancel-in-progress: false
+jobs:
+  public-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check fixed public HTTPS endpoints
+        run: node scripts/public-availability.mjs

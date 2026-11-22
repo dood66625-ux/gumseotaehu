@@ -1,0 +1,13 @@
+{
+  "dateKst": "2026-11-22",
+  "source": "operator-provided execution screenshot",
+  "returnedCopyChecksum": "passed",
+  "externalCopyRestore": "passed",
+  "productionReplaced": false,
+  "temporaryDatabaseRemoved": true,
+  "checkpointChecked": true,
+  "liveDatabaseMounted": false,
+  "networkEnabled": false,
+  "externalStoreFreshnessVerified": false,
+  "continuousAlertingVerified": false
+}
