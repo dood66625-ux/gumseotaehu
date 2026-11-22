@@ -1,4 +1,4 @@
-/** Display-only cleanup: stored report, calculation evidence and PDF data stay intact. */
+/** Display-only cleanup: the immutable report and calculation evidence stay intact. */
 export function bookText(text: string, notes: string[]) {
   const moved: string[] = [];
   let body = text;
@@ -14,6 +14,14 @@ export function bookText(text: string, notes: string[]) {
     /\buncertainty\s*[:：]\s*([^\n]*)/gi,
     (_, note: string) => {
       if (note.trim()) moved.push(note.trim());
+      return "";
+    },
+  );
+  // Only this explicit authoring-template sentence is deferred; substantive limits stay in the chapter.
+  body = body.replace(
+    /[1-9]장의 판단은 [^.!?。\n]{1,100}주어진 근거에만 기대었느니라[.。]/g,
+    (note) => {
+      moved.push(note);
       return "";
     },
   );
@@ -67,6 +75,7 @@ export function easyTakeaway(text: string, locale: "ko" | "zh-TW") {
     ["대운", "오랜 시간에 걸친 삶의 흐름"],
     ["월운", "한 달의 흐름"],
     ["세운", "한 해의 흐름"],
+    ["납득하는 방식", "이해할 수 있는 방식"],
     ["도모하거라", "해 보거라"],
     ["유념하거라", "기억하거라"],
     ["숙고하거라", "천천히 생각해 보거라"],

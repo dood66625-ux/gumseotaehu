@@ -26,7 +26,7 @@
   ],
   "notesPreserved": true,
   "reportDigest": "dab9e80f23a096cfdbe8fa1521ba85fa230bdac6a82afb173f076df7f30d3952",
-  "pdfBytes": 1005066,
+  "pdfBytes": 1005087,
   "livePayments": false,
   "realMail": false,
   "customerDataTransmitted": false,
@@ -73,5 +73,12 @@
   "previousApprovalCalls": 1,
   "previousApprovalState": "uncertain",
   "historicalSyntheticCalls": 4,
-  "pdfSha256": "20eec79473ecc182cc5cf221d256dfc6a8de1c422dbaddb441ca497728171c1f"
+  "pdfSha256": "175f035cdf10a0e242e185a10c674737937c50bd1eace1d7be634fac5cce7e42",
+  "displayOnlyFollowup": {
+    "authoringTemplateDeferredToEndnotes": true,
+    "chapterSpecificLimitsPreserved": true,
+    "sourceReportUnchanged": true,
+    "newProviderRequests": 0,
+    "simplerSummaryWording": true
+  }
 }

@@ -142,3 +142,32 @@ it("prefers general monthly wellbeing advice over a technical date convention", 
     "각 달은 별개로 보되, 그때그때 몸과 마음의 리듬을 먼저 살피는 것이 좋느니라.",
   );
 });
+it("defers the known authoring-template sentence while preserving the original and local limits", async () => {
+  const { reportBook } = await import("../lib/report-book");
+  const meta =
+    "1장의 판단은 일간과 오행 개수라는 주어진 근거에만 기대었느니라.";
+  const local = "시각 미상이므로 시주는 풀이하지 않느니라.";
+  const report = {
+    chapters: [
+      { text: "휴식과 정리의 자리를 곁에 두거라. " + meta + "\n" + local },
+    ],
+    chart: { notes: [] },
+    notes: [],
+  };
+  const original = JSON.stringify(report),
+    book = reportBook(report);
+  expect(book.chapters[0].text).not.toContain(meta);
+  expect(book.notes).toContain(meta);
+  expect(book.chapters[0].text).toContain(local);
+  expect(JSON.stringify(report)).toBe(original);
+  expect(bookText("1장의 판단은 시각 미상 때문에 제한되느니라.", []).text).toBe(
+    "1장의 판단은 시각 미상 때문에 제한되느니라.",
+  );
+});
+it("uses a simpler equivalent in a summary without rewriting the saved sentence", () => {
+  const raw = "그대가 납득하는 방식으로 하루를 짜 보거라.";
+  expect(chapterTakeaway(raw, "ko")).toBe(
+    "그대가 이해할 수 있는 방식으로 하루를 짜 보거라.",
+  );
+  expect(raw).toContain("납득하는 방식");
+});
