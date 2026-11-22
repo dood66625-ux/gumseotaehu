@@ -67,6 +67,8 @@ export default function Shell({
           <br />
           통신판매업 신고번호 {business.commerceRegistration}
           <br />
+          호스팅서비스 제공자: {business.hostingProvider}
+          <br />
           사업장 주소: {business.address}
           <br />
           연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>

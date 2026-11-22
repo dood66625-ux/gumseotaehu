@@ -9,6 +9,6 @@ export const business = {
   phone: null,
   email: "mjreview3@gmail.com",
   commerceRegistration: "2022-고양일산서-0241",
-  hostingProvider: null,
+  hostingProvider: "주식회사 스마일서브 (iwinv)",
   supportMode: "web-request",
 } as const;
