@@ -137,6 +137,24 @@ try {
     .filter({ hasText: "컬러픽쳐스" })
     .waitFor();
   await page.getByText("567-15-01262", { exact: true }).waitFor();
+  await go("terms");
+  await page
+    .getByRole("heading", { name: "이용약관 · 검토용 초안", exact: true })
+    .waitFor();
+  await page
+    .getByRole("heading", { name: "상품과 이용기간", exact: true })
+    .waitFor();
+  await go("privacy");
+  await page
+    .getByRole("heading", {
+      name: "개인정보 처리방침 · 검토용 초안",
+      exact: true,
+    })
+    .waitFor();
+  await page
+    .getByRole("heading", { name: "수탁·국외이전", exact: true })
+    .waitFor();
+  await page.locator("#privacy-officer-title").waitFor();
   await go("content");
   await page
     .getByRole("heading", { name: "운명서와 콘텐츠 안내", exact: true })
