@@ -55,7 +55,6 @@ try {
     .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
     .click();
   await page.locator(".checkout-flow").waitFor();
-  await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByLabel("이메일 주소").waitFor();
   if (!(await page.locator(".price").textContent()).includes("22,000"))
     throw Error("Checkout price mismatch");
@@ -86,17 +85,7 @@ try {
   });
   if (tampered !== 400)
     throw Error("Old price incorrectly accepted by preview adapter");
-  for (let stage = 0; stage < 3; stage++)
-    await page.getByRole("button", { name: "다음 →" }).click();
-  for (let consentPage = 0; consentPage < 2; consentPage++) {
-    for (const c of await page
-      .locator("form")
-      .last()
-      .getByRole("checkbox")
-      .all())
-      if ((await c.getAttribute("name")) !== "marketing") await c.check();
-    await page.getByRole("button", { name: "다음 →" }).click();
-  }
+  await page.getByRole("checkbox", { name: /필수 사항 모두 동의/ }).check();
   await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await page.getByRole("link", { name: "운명서 전체 읽기" }).click();
   await page.getByRole("heading", { name: "가온 님의 종합 운명서" }).waitFor();

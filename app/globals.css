@@ -3987,3 +3987,196 @@ body:has(.screen-flow) .page {
   top: 50vh;
   top: 50dvh;
 }
+/* Single checkout: scoped headings never inherit the reading overlay header. */
+body:has(.checkout-flow) .header {
+  display: none;
+}
+.checkout-flow .checkout-eyebrow {
+  position: static;
+  display: block;
+  margin: 0 0 6px;
+  color: var(--gold);
+  font-size: 11px;
+}
+.checkout-flow > h1 {
+  position: static;
+  font-size: 22px;
+  line-height: 1.4;
+  margin: 0 0 12px;
+}
+.checkout-flow > .card.gold {
+  position: relative;
+  padding: 12px 14px;
+}
+.checkout-flow > .card.gold h2 {
+  font-size: 16px;
+}
+.checkout-flow > .card.gold .price {
+  margin: 6px 0;
+  font-size: 26px;
+}
+.checkout-flow > .card.gold p {
+  margin: 4px 0;
+}
+.checkout-birth {
+  position: relative;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+}
+.checkout-birth h2 {
+  font-size: 14px;
+  margin: 0;
+}
+.checkout-birth p {
+  font-size: 12px;
+  margin: 4px 0;
+  padding-right: 60px;
+  overflow-wrap: anywhere;
+}
+.checkout-birth > a {
+  position: absolute;
+  right: 0;
+  top: 12px;
+  font-size: 12px;
+  color: var(--gold);
+}
+.checkout-flow .checkout-policy-details,
+.checkout-flow .checkout-consent-details {
+  padding: 8px 0;
+}
+.checkout-flow summary {
+  min-height: 30px;
+  font-size: 12px;
+}
+.checkout-flow .checkout-consents {
+  padding: 8px 12px;
+}
+.checkout-flow .consent-all {
+  margin: 6px 0;
+}
+.consent-all span {
+  font-weight: 600;
+}
+.consent-all small {
+  display: block;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.checkout-flow .checkout-consent-details .check {
+  font-size: 12px;
+}
+.screen-flow-copy .preview-explanation {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 12px 0;
+}
+@media (max-height: 650px) {
+  .screen-flow-copy .preview-explanation {
+    font-size: 12px;
+    line-height: 1.65;
+    margin: 8px 0;
+  }
+  .preview-explained .pillars {
+    margin: 6px 0;
+  }
+  .screen-flow-copy .preview-explained .pillar {
+    padding: 4px 2px;
+  }
+  .screen-flow-copy .preview-explained .element-bars {
+    height: 88px;
+  }
+}
+.checkout-product-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.checkout-product-summary h2 {
+  margin: 0 !important;
+}
+.checkout-product-summary .price {
+  white-space: nowrap;
+  font-size: 25px !important;
+  margin: 0 !important;
+}
+.checkout-flow > div > .card > .hint {
+  display: none;
+}
+.checkout-flow .button {
+  min-height: 44px;
+  padding: 9px 12px;
+}
+body:has(.checkout-flow) .page {
+  padding-top: 6px;
+}
+@media (max-height: 650px) {
+  .checkout-flow > .card.gold .hint {
+    display: none;
+  }
+  .checkout-flow .card {
+    padding: 10px;
+  }
+  .checkout-flow > h1 {
+    font-size: 19px;
+    margin-bottom: 8px;
+  }
+  .checkout-flow h2 {
+    font-size: 16px;
+  }
+  .checkout-product-summary .price {
+    font-size: 23px !important;
+  }
+  .checkout-flow .field {
+    margin: 6px 0;
+  }
+  .checkout-birth {
+    padding: 6px 0;
+    margin-bottom: 6px;
+  }
+}
+.checkout-birth p {
+  padding-right: 0;
+}
+.checkout-flow .success {
+  padding: 8px 10px;
+  margin: 8px 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.checkout-flow .checkout-payment {
+  margin-top: 8px;
+  padding: 10px;
+}
+.checkout-flow .checkout-consent-details .notice {
+  margin: 8px 0;
+}
+@media (max-height: 650px) {
+  .checkout-flow .success {
+    padding: 4px 0;
+    margin: 4px 0;
+    border: 0;
+    background: none;
+  }
+  .checkout-flow .checkout-consents,
+  .checkout-flow .checkout-payment {
+    margin: 4px 0;
+  }
+  body:has(.checkout-flow) .birth-policy-links {
+    margin: 4px 0;
+  }
+}
+@media (max-height: 650px) {
+  body:has(.checkout-flow) .page {
+    padding-top: 4px;
+  }
+  .checkout-flow > .checkout-eyebrow {
+    margin-bottom: 4px;
+  }
+  .checkout-flow .checkout-payment {
+    padding: 8px;
+  }
+}

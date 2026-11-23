@@ -30,6 +30,21 @@ try {
       await page
         .locator(screen === "preview" ? ".screen-flow" : ".checkout-flow")
         .waitFor();
+      if (screen === "checkout") {
+        if (await page.getByRole("button", { name: "다음 →" }).count())
+          throw Error("CHECKOUT_STEPS_REMAIN");
+        const heading = await page.locator(".checkout-flow > h1").boundingBox();
+        const eyebrow = await page.locator(".checkout-eyebrow").boundingBox();
+        if (!heading || !eyebrow || eyebrow.y + eyebrow.height > heading.y)
+          throw Error("OVERLAPPING_HEADINGS");
+        if (
+          await page.evaluate(
+            () => document.documentElement.scrollWidth > innerWidth,
+          )
+        )
+          throw Error("CHECKOUT_WIDTH");
+        continue;
+      }
       let index = 0;
       const expressions = new Set();
       while (true) {

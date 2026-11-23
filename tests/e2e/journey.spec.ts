@@ -179,7 +179,6 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
     .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
     .click();
   await page.locator(".checkout-flow").waitFor();
-  await page.getByRole("button", { name: "다음 →" }).click();
   await expect(page.locator(".price")).toContainText("22,000원");
   await page.getByLabel("이메일 주소").fill(email);
   await page.getByRole("button", { name: "인증번호 요청" }).click();
@@ -190,23 +189,19 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await expect(
     page.getByText("구매 이메일 인증이 완료되었습니다."),
   ).toBeVisible();
-  for (let stage = 0; stage < 3; stage++)
-    await page.getByRole("button", { name: "다음 →" }).click();
-  for (let consentPage = 0; consentPage < 2; consentPage++) {
-    await page.getByRole("button", { name: "다음 →" }).click();
-    await expect(
-      page.locator(`[data-consent-page="${consentPage + 4}"]`),
-    ).toBeVisible();
-    for (const c of await page
-      .locator("form")
-      .last()
-      .getByRole("checkbox")
-      .all()) {
-      const name = await c.getAttribute("name");
-      if (name !== "marketing") await c.check();
-    }
-    await page.getByRole("button", { name: "다음 →" }).click();
-  }
+  await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
+  await expect(page.locator('input[name="buyerAdult"]')).toBeVisible();
+  await page.getByRole("checkbox", { name: /필수 사항 모두 동의/ }).check();
+  await expect(page.locator('input[name="marketing"]')).not.toBeChecked();
+  await expect(
+    page.locator(".checkout-flow input[required]:checked"),
+  ).toHaveCount(5);
+  await page.locator('input[name="terms"]').uncheck();
+  await expect(
+    page.getByRole("checkbox", { name: /필수 사항 모두 동의/ }),
+  ).not.toBeChecked();
+  await page.getByRole("checkbox", { name: /필수 사항 모두 동의/ }).check();
+
   await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await expect(
     page.getByRole("link", { name: "운명서 전체 읽기" }),
@@ -636,4 +631,33 @@ test("birth steps validate before advancing and preserve entries when going back
   await page.getByRole("button", { name: "이전", exact: true }).click();
   await expect(page.getByLabel("어떻게 불러드릴까요?")).toHaveValue("가온");
   await expect(page.getByLabel("생년월일")).toHaveValue("1995-05-15");
+});
+
+test("single checkout has no next steps and fits a small screen before and after authentication", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await post(page, "session");
+  const response = await post(page, "readings", birth);
+  expect(response.ok()).toBeTruthy();
+  const reading = await response.json();
+  await page.goto("/checkout?id=" + reading.id);
+  await expect(page.getByLabel("이메일 주소")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollHeight),
+  ).toBeLessThanOrEqual(568);
+  await expect(page.getByRole("button", { name: "다음 →" })).toHaveCount(0);
+  await auth(page, "single-checkout@example.invalid");
+  await page.reload();
+  await expect(
+    page.getByRole("checkbox", { name: /필수 사항 모두 동의/ }),
+  ).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollHeight),
+  ).toBeLessThanOrEqual(568);
+  const heading = await page.locator(".checkout-flow > h1").boundingBox();
+  const eyebrow = await page.locator(".checkout-eyebrow").boundingBox();
+  expect(eyebrow!.y + eyebrow!.height).toBeLessThanOrEqual(heading!.y);
 });

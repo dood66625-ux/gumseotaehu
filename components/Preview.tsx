@@ -4,6 +4,7 @@ import { preload } from "react-dom";
 import { taehouNarration } from "../lib/taehou-narration";
 import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Link from "next/link";
+import { previewExplanations } from "../lib/preview-explanations";
 import ScreenFlow from "./ScreenFlow";
 import { useLoad, Loading, ErrorBox } from "./client";
 import { chapterTitles } from "../lib/report-titles";
@@ -22,6 +23,7 @@ export default function Preview({ id }: { id: string }) {
   const { data: r, error } = useLoad<any>("readings/" + id);
   if (error) return <ErrorBox error={error} />;
   if (!r) return <Loading />;
+  const explanation = previewExplanations(r.chart);
   return (
     <>
       <ScreenFlow
@@ -35,32 +37,38 @@ export default function Preview({ id }: { id: string }) {
           {
             title: "그대의 사주 기둥",
             content: (
-              <div className="pillars">
-                {r.chart.pillars.map((p: string | null, i: number) => (
-                  <div className="pillar" key={i}>
-                    <small>{["년주", "월주", "일주", "시주"][i]}</small>
-                    <b>{p || "미상"}</b>
-                    <small>{r.chart.tenGods[i] || "산출 제외"}</small>
-                  </div>
-                ))}
-              </div>
+              <section className="preview-explained">
+                <div className="pillars">
+                  {r.chart.pillars.map((p: string | null, i: number) => (
+                    <div className="pillar" key={i}>
+                      <small>{["년주", "월주", "일주", "시주"][i]}</small>
+                      <b>{p || "미상"}</b>
+                      <small>{r.chart.tenGods[i] || "산출 제외"}</small>
+                    </div>
+                  ))}
+                </div>
+                <p className="preview-explanation">{explanation.pillars}</p>
+              </section>
             ),
           },
           {
             title: "그대의 오행",
             content: (
-              <div className="element-bars">
-                {Object.entries(r.chart.counts).map(([k, v]) => (
-                  <div className="element-bar" key={k}>
-                    <i
-                      style={{ height: Math.min(88, Number(v) * 12) + "px" }}
-                    />
-                    <span>
-                      {k} · {String(v)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <section className="preview-explained">
+                <div className="element-bars">
+                  {Object.entries(r.chart.counts).map(([k, v]) => (
+                    <div className="element-bar" key={k}>
+                      <i
+                        style={{ height: Math.min(88, Number(v) * 12) + "px" }}
+                      />
+                      <span>
+                        {k} · {String(v)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="preview-explanation">{explanation.elements}</p>
+              </section>
             ),
           },
           ...r.preview.cards.map((card: any) => ({

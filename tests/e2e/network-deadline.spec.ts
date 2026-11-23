@@ -100,7 +100,7 @@ test("checkout read timeout offers a read-only retry without creating an order",
   stalled = false;
   await page.getByRole("button", { name: "출생정보 다시 확인" }).click();
   await expect(
-    page.getByRole("heading", { name: "출생정보 최종 확인" }),
+    page.getByRole("heading", { name: "출생정보 확인" }),
   ).toBeVisible();
   expect(reads).toBe(2);
   expect(mutations).toBe(0);

@@ -104,18 +104,11 @@ try {
     });
     async function advanceCheckout() {
       await page.locator(".checkout-flow").waitFor();
-      for (let stage = 0; stage < 8; stage++) {
-        for (const input of await page
-          .locator('.checkout-flow input[type="checkbox"][required]')
-          .all())
-          if (await input.isVisible()) await input.check();
-        const next = page
-          .locator(".screen-flow-controls")
-          .getByRole("button", { name: "다음 →" });
-        if (!(await next.count())) return;
-        await next.click();
+      const agree = page.getByRole("checkbox", { name: /필수 사항 모두 동의/ });
+      if (mode !== "review") {
+        await agree.waitFor();
+        await agree.check();
       }
-      throw Error("CHECKOUT_PAGING_LOOP");
     }
     mode = "mock";
     posts = [];
