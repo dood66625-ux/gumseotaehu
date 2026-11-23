@@ -39,6 +39,26 @@ try {
       );
     });
     if (!fits) throw Error("LANDING_NOT_ONE_SCREEN_" + width);
+    const primary = await page.locator(".hero-cta").boundingBox();
+    const review = await page
+      .getByRole("link", { name: "토스 테스트 결제" })
+      .boundingBox();
+    if (
+      !primary ||
+      !review ||
+      Math.abs(primary.width - review.width) > 1 ||
+      review.y < primary.y + primary.height ||
+      review.y + review.height > height
+    )
+      throw Error("REVIEW_CTA_ALIGNMENT_" + width);
+    const scale = await page.locator(".hero-portrait picture").evaluate((n) => {
+      const value = getComputedStyle(n).transform;
+      return value === "none" ? 1 : new DOMMatrix(value).a;
+    });
+    if (width >= 901 && Math.abs(scale - 0.7) > 0.01)
+      throw Error("DESKTOP_PORTRAIT_SCALE");
+    if (width < 901 && scale !== 1) throw Error("MOBILE_PORTRAIT_CHANGED");
+
     if (await page.locator("#portrait-motion").count())
       throw Error("PAUSE_CONTROL_REMAINS");
     await page.screenshot({

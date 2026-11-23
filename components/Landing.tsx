@@ -41,12 +41,19 @@ export default function Landing({
             태어난 순간에 새겨진 기운.
             <br />그 오래된 이야기를, 이제 그대에게.
           </p>
-          <a className="button hero-cta" href="/start">
-            <span>내 사주 펼쳐보기</span>
-            <span className="cta-arrow" aria-hidden="true">
-              →
-            </span>
-          </a>
+          <div className="landing-cta-stack">
+            <a className="button hero-cta" href="/start">
+              <span>내 사주 펼쳐보기</span>
+              <span className="cta-arrow" aria-hidden="true">
+                →
+              </span>
+            </a>
+            {reviewHref && (
+              <a className="button secondary hero-review-cta" href={reviewHref}>
+                토스 테스트 결제 <span aria-hidden="true">↗</span>
+              </a>
+            )}
+          </div>
           <Intro />
         </div>
         <div className="hero-bottom">
@@ -57,7 +64,6 @@ export default function Landing({
             <a href="/legal/business">사업자 정보</a>
             <a href="/legal/privacy">개인정보</a>
             <a href="/legal/terms">약관</a>
-            {reviewHref && <a href={reviewHref}>TEST 결제</a>}
           </div>
         </div>
       </section>
