@@ -3635,3 +3635,336 @@ body:has(.payment-status-screen) .page {
     margin: 6px 0;
   }
 }
+/* Immersive free reading: portrait above, text below, controls on the sides. */
+body:has(.screen-flow) .header {
+  display: none;
+}
+body:has(.screen-flow) .test-banner {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 12;
+  min-height: 24px;
+  background: #100e0c55;
+  font-size: 9px;
+}
+body:has(.screen-flow) .page {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+.screen-flow {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  min-height: 100svh;
+  perspective: 1600px;
+  overflow-x: clip;
+  background: #100e0c;
+}
+.screen-flow-heading {
+  position: absolute;
+  top: 34px;
+  left: 24px;
+  right: 24px;
+  z-index: 4;
+  margin: 0;
+  color: #ead6b1;
+  text-shadow: 0 1px 5px #000;
+}
+.screen-flow-page {
+  min-height: 100svh;
+}
+.screen-flow-portrait {
+  height: 46svh;
+  position: relative;
+  overflow: hidden;
+  background: #100e0c;
+}
+.screen-flow-portrait .empress-expression {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(100vw, 600px);
+  height: min(100vw, 600px);
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.screen-flow-portrait:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 48%,
+    #100e0c20 62%,
+    #100e0cba 82%,
+    #100e0c 100%
+  );
+}
+.screen-flow-copy {
+  width: calc(100% - 100px);
+  max-width: 620px;
+  margin: auto;
+  padding: 4px 0 54px;
+  position: relative;
+}
+.screen-flow-copy h1 {
+  font-size: 24px;
+  line-height: 1.4;
+  margin: 0 0 14px;
+  color: #e5c58d;
+}
+.screen-flow-copy p {
+  font-size: 15px;
+  line-height: 1.85;
+  margin: 10px 0;
+}
+.screen-flow-copy .quote {
+  font-size: 18px;
+  line-height: 1.85;
+}
+.screen-flow-copy .pillars {
+  margin: 12px 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+}
+.screen-flow-copy .pillar {
+  padding: 8px 2px;
+  min-width: 0;
+}
+.screen-flow-copy .pillar b {
+  font-size: 26px;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+.screen-flow-copy .element-bars {
+  height: 110px;
+  min-height: 0;
+  padding: 0;
+}
+.screen-flow-copy .hint {
+  font-size: 10px;
+  line-height: 1.6;
+}
+.screen-flow > .screen-flow-controls {
+  position: absolute;
+  inset: 65svh 12px auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  margin: 0;
+  z-index: 5;
+}
+.screen-flow > .screen-flow-controls button {
+  flex: none;
+  width: 36px;
+  height: 54px;
+  min-height: 44px;
+  padding: 0;
+  pointer-events: auto;
+  background: #241b1255;
+  border: 1px solid #b3915855;
+  color: #e1c18d;
+  font-size: 30px;
+}
+.screen-flow-controls button:disabled {
+  opacity: 0.18;
+}
+.screen-flow > .birth-policy-links {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 10px;
+}
+.preview-purchase > .button {
+  width: 100%;
+  font-size: 14px;
+  white-space: normal;
+  line-height: 1.6;
+  padding: 12px 8px;
+  margin: 4px 0;
+}
+.chapter-list-trigger {
+  display: block;
+  background: none;
+  border: 0;
+  color: #c9b083;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+.chapter-dialog {
+  width: min(90vw, 480px);
+  max-height: 85svh;
+  overflow: auto;
+  padding: 28px 24px;
+  background: #f2e4c7;
+  color: #46321e;
+  border: 1px solid #a4854c;
+  border-radius: 4px;
+  box-shadow: 0 20px 80px #0009;
+}
+.chapter-dialog::backdrop {
+  background: #080604c9;
+  backdrop-filter: blur(5px);
+}
+.chapter-dialog h2 {
+  font-size: 23px;
+  color: #46321e;
+  margin: 16px 0;
+}
+.chapter-dialog ol {
+  padding-left: 24px;
+  line-height: 2.2;
+}
+.chapter-dialog p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.chapter-dialog .dialog-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 0;
+  color: #46321e;
+  font-size: 28px;
+  cursor: pointer;
+}
+@keyframes book-leaf-forward {
+  0% {
+    opacity: 0.35;
+    transform: perspective(1600px) rotateY(-32deg) translateX(18px);
+    filter: brightness(0.55);
+  }
+  55% {
+    opacity: 1;
+    filter: brightness(0.92);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes book-leaf-backward {
+  0% {
+    opacity: 0.35;
+    transform: perspective(1600px) rotateY(32deg) translateX(-18px);
+    filter: brightness(0.55);
+  }
+  55% {
+    opacity: 1;
+    filter: brightness(0.92);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+.screen-flow-page:not([hidden]) {
+  animation: book-leaf-forward 720ms cubic-bezier(0.16, 0.65, 0.22, 1) both;
+  transform-origin: left center;
+}
+.screen-flow[data-direction="backward"] .screen-flow-page:not([hidden]) {
+  animation-name: book-leaf-backward;
+  transform-origin: right center;
+}
+@media (max-height: 650px) {
+  .screen-flow-portrait {
+    height: 42svh;
+  }
+  .screen-flow-copy h1 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  .screen-flow-copy p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .screen-flow-copy .quote {
+    font-size: 16px;
+    line-height: 1.75;
+  }
+  .screen-flow-copy .pillar b {
+    font-size: 23px;
+  }
+  .screen-flow-copy .hint {
+    font-size: 9px;
+  }
+  .preview-purchase > .button {
+    font-size: 12px;
+    padding: 9px 6px;
+  }
+  .screen-flow-copy {
+    padding-bottom: 40px;
+  }
+  .screen-flow-copy .element-bars {
+    height: 96px;
+  }
+}
+@media (prefers-reduced-motion: reduce), print {
+  .screen-flow-page:not([hidden]) {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+.screen-flow-page {
+  position: relative;
+  backface-visibility: hidden;
+}
+@keyframes leaf-fold-shadow {
+  0% {
+    transform: translateX(-105%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(75%);
+    opacity: 0;
+  }
+}
+.screen-flow-page:not([hidden]):after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    90deg,
+    transparent 35%,
+    #0006 47%,
+    #f4dfaa44 51%,
+    transparent 61%
+  );
+  animation: leaf-fold-shadow 720ms ease-out both;
+}
+.screen-flow[data-direction="backward"] .screen-flow-page:not([hidden]):after {
+  animation-direction: reverse;
+}
+@media (prefers-reduced-motion: reduce), print {
+  .screen-flow-page:after {
+    display: none !important;
+  }
+}
+.chapter-dialog .eyebrow {
+  color: #77552c;
+}
+.chapter-dialog .dialog-close:focus-visible {
+  outline: 2px solid #77552c;
+  outline-offset: 2px;
+}

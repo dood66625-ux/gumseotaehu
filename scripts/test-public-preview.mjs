@@ -47,11 +47,13 @@ try {
   await page.locator(".screen-flow").waitFor();
   while (
     !(await page
-      .getByRole("link", { name: "종합 운명서 구매 살펴보기" })
+      .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
       .isVisible())
   )
     await page.locator(".screen-flow-controls button").last().click();
-  await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
+  await page
+    .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
+    .click();
   await page.locator(".checkout-flow").waitFor();
   await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByLabel("이메일 주소").waitFor();

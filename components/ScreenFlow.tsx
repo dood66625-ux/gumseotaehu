@@ -36,8 +36,7 @@ export default function ScreenFlow({
           hidden={page !== index}
           aria-label={item.title}
         >
-          <div className="screen-flow-page-heading">
-            <h1>{item.title}</h1>
+          <div className="screen-flow-portrait">
             <div
               className="empress-expression"
               role="img"
@@ -51,31 +50,36 @@ export default function ScreenFlow({
               }}
             />
           </div>
-          {item.content}
+          <div className="screen-flow-copy">
+            <h1>{item.title}</h1>
+            {item.content}
+          </div>
         </section>
       ))}
       <nav className="screen-flow-controls" aria-label="화면 넘기기">
         <button
           type="button"
           className="button secondary"
+          aria-label="이전"
           disabled={page === 0}
           onClick={() => {
             setDirection("backward");
             setPage(page - 1);
           }}
         >
-          이전
+          <span aria-hidden="true">〈</span>
         </button>
         <button
           type="button"
           className="button"
+          aria-label="다음 →"
           disabled={page === pages.length - 1}
           onClick={() => {
             setDirection("forward");
             setPage(page + 1);
           }}
         >
-          다음 →
+          <span aria-hidden="true">〉</span>
         </button>
       </nav>
       <nav className="birth-policy-links" aria-label="이용 정책">

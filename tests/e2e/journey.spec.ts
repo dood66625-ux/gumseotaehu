@@ -161,8 +161,9 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.getByRole("checkbox", { name: /풀이 대상자는 본인/ }).check();
   await page.getByRole("checkbox", { name: /개인정보 수집/ }).check();
   await page.getByRole("button", { name: "무료 사주풀이 펼치기" }).click();
-  await expect(page.getByText("만세력 계산 완료 · 첫 번째 풀이")).toBeVisible();
-  await expect(page.locator(".price")).toContainText("22,000원");
+  await expect(
+    page.getByRole("heading", { name: "가온 님의 기운", exact: true }),
+  ).toBeVisible();
   await page.screenshot({
     path: "docs/" + info.project.name + "-preview.png",
     fullPage: true,
@@ -170,11 +171,13 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.locator(".screen-flow").waitFor();
   while (
     !(await page
-      .getByRole("link", { name: "종합 운명서 구매 살펴보기" })
+      .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
       .isVisible())
   )
     await page.locator(".screen-flow-controls button").last().click();
-  await page.getByRole("link", { name: "종합 운명서 구매 살펴보기" }).click();
+  await page
+    .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
+    .click();
   await page.locator(".checkout-flow").waitFor();
   await page.getByRole("button", { name: "다음 →" }).click();
   await expect(page.locator(".price")).toContainText("22,000원");
