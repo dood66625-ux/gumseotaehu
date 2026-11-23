@@ -1,4 +1,5 @@
 "use client";
+import { taehouNarration } from "../lib/taehou-narration";
 import ReportFocus from "./ReportFocus";
 import ReportTop3 from "./ReportTop3";
 import { reportBook } from "../lib/report-book";
@@ -145,7 +146,7 @@ export default function ReportReader({
           height="108"
           alt="금서태후"
         />
-        <p className="quote">{d.report.intro}</p>
+        <p className="quote">{taehouNarration(d.report.intro)}</p>
         <p className="hint">
           입력: {d.birth.date} ·{" "}
           {d.birth.calendar === "solar" ? "양력" : "음력"}

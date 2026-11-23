@@ -1,3 +1,4 @@
+import { taehouNarration } from "./taehou-narration";
 import { reportTop3 } from "./report-extras";
 import { reportBook } from "./report-book";
 import PDFDocument from "pdfkit";
@@ -113,7 +114,10 @@ export async function reportPdf(
       .fontSize(23)
       .fillColor(ink)
       .text(`${data.name} 님에게`, { lineGap: 5 });
-    doc.moveDown(1.4).fontSize(12).text(data.report.intro, { lineGap: 9 });
+    doc
+      .moveDown(1.4)
+      .fontSize(12)
+      .text(taehouNarration(data.report.intro), { lineGap: 9 });
     doc
       .moveDown(2)
       .fontSize(9)

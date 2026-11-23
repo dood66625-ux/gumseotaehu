@@ -1,5 +1,7 @@
 "use client";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { preload } from "react-dom";
+import { taehouNarration } from "../lib/taehou-narration";
 import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Link from "next/link";
 import ScreenFlow from "./ScreenFlow";
@@ -7,6 +9,16 @@ import { useLoad, Loading, ErrorBox } from "./client";
 import { chapterTitles } from "../lib/report-titles";
 export default function Preview({ id }: { id: string }) {
   const list = useRef<HTMLDialogElement>(null);
+  preload("/empress-expressions-1.webp", {
+    as: "image",
+    fetchPriority: "high",
+  });
+  useEffect(() => {
+    preload("/empress-expressions-2.webp", {
+      as: "image",
+      fetchPriority: "low",
+    });
+  }, []);
   const { data: r, error } = useLoad<any>("readings/" + id);
   if (error) return <ErrorBox error={error} />;
   if (!r) return <Loading />;
@@ -16,7 +28,9 @@ export default function Preview({ id }: { id: string }) {
         pages={[
           {
             title: `${r.input.name} 님의 기운`,
-            content: <p className="quote">{r.preview.intro}</p>,
+            content: (
+              <p className="quote">{taehouNarration(r.preview.intro)}</p>
+            ),
           },
           {
             title: "그대의 사주 기둥",
@@ -51,12 +65,15 @@ export default function Preview({ id }: { id: string }) {
           },
           ...r.preview.cards.map((card: any) => ({
             title: card.title,
-            content: <p>{card.text}</p>,
+            content: <p>{taehouNarration(card.text)}</p>,
           })),
           {
             title: "금서에 담긴 아홉 장",
             content: (
               <section className="preview-purchase">
+                <p className="quote preview-invitation">
+                  자, 그대의 운명을 제대로 들여다볼 준비가 되었느냐?
+                </p>
                 {r.purchaseEligible !== false &&
                 r.input.age !== "14-18" &&
                 r.input.age !== "under14" ? (
@@ -65,8 +82,8 @@ export default function Preview({ id }: { id: string }) {
                   </Link>
                 ) : (
                   <p className="notice">
-                    만 14~18세 유료 구매는 보호자 확인 절차 준비 전까지
-                    제한합니다. 무료 풀이를 이용해주세요.
+                    만 14~18세 유료 구매는 보호자 확인 절차 준비 전까지 제한하고
+                    있느니라. 무료 풀이를 살펴보거라.
                   </p>
                 )}
                 <button
@@ -77,7 +94,7 @@ export default function Preview({ id }: { id: string }) {
                   아홉 장에 담긴 금기 목록 ↗
                 </button>
                 <p className="hint">
-                  현재 체험은 실제 청구가 없습니다. 웹·PDF · 1년 재열람 ·{" "}
+                  현재 체험은 실제 청구가 없느니라. 웹·PDF · 1년 재열람 ·{" "}
                   <Link href="/legal/refund">환불 규정</Link>
                 </p>
               </section>

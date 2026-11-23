@@ -2,8 +2,10 @@ import http from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 const types = {
-  "empress-expressions-1.png":"image/png",
-  "empress-expressions-2.png":"image/png",
+  "empress-expressions-1.webp": "image/webp",
+  "empress-expressions-2.webp": "image/webp",
+  "empress-expressions-1.png": "image/png",
+  "empress-expressions-2.png": "image/png",
   "build-info.json": "application/json; charset=utf-8",
   "index.html": "text/html; charset=utf-8",
   "refund.html": "text/html; charset=utf-8",

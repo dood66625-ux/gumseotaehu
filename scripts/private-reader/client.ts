@@ -1,3 +1,4 @@
+import { taehouNarration } from "../../lib/taehou-narration";
 import { reportFocusTopics } from "../../lib/report-focus";
 import { reportTop3, easyLuckText } from "../../lib/report-extras";
 import { bookText, chapterTakeaway } from "./book";
@@ -278,7 +279,7 @@ function draw(report: any) {
   $("intro").textContent =
     locale === "zh-TW"
       ? report.intro.replace(/\bfacts\b/g, "命盤依據")
-      : report.intro;
+      : taehouNarration(report.intro);
   $("pillars").replaceChildren();
   report.chart.pillars.forEach((p: string | null, i: number) => {
     const card = el("div", undefined, "pillar");
@@ -334,6 +335,7 @@ function draw(report: any) {
     image.height = 337;
     image.loading = "lazy";
     const cleaned = bookText(chapter.text, sharedNotes);
+    cleaned.text = taehouNarration(cleaned.text);
     movedNotes.push(...cleaned.moved);
     const displayText =
       i === 6

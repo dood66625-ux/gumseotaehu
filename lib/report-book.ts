@@ -1,3 +1,4 @@
+import { taehouNarration } from "./taehou-narration";
 import { easyLuckText } from "./report-extras";
 /** Display-only cleanup: the immutable report and calculation evidence stay intact. */
 export function bookText(text: string, notes: string[]) {
@@ -168,6 +169,7 @@ export function reportBook(report: {
   ];
   const chapters = report.chapters.map((chapter, index) => {
     const cleaned = bookText(chapter.text, notes);
+    cleaned.text = taehouNarration(cleaned.text);
     const displayText =
       index === 6
         ? easyLuckText(cleaned.text, report.chart.cycles, report.chart.target)

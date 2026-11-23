@@ -54,6 +54,25 @@ try {
         }
 
         if (screen === "preview") {
+          const arrow = await page
+            .locator(".screen-flow-controls button")
+            .last()
+            .evaluate((n) => {
+              const r = n.getBoundingClientRect(),
+                s = getComputedStyle(n);
+              return {
+                center: r.top + r.height / 2,
+                border: s.borderTopWidth,
+                background: s.backgroundColor,
+                height: innerHeight,
+              };
+            });
+          if (
+            Math.abs(arrow.center - arrow.height * 0.5) > 1 ||
+            arrow.border !== "0px" ||
+            arrow.background !== "rgba(0, 0, 0, 0)"
+          )
+            throw Error("ARROW_PRESENTATION");
           const face = page.locator(
             ".screen-flow-page:not([hidden]) .empress-expression",
           );
@@ -96,6 +115,18 @@ try {
             });
             await page.getByRole("button", { name: "금기 목록 닫기" }).click();
             if (await dialog.isVisible()) throw Error("CHAPTER_POPUP_CLOSE");
+            const invitation = await page
+              .locator(".preview-invitation")
+              .boundingBox();
+            const purchase = await page
+              .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
+              .boundingBox();
+            if (
+              !invitation ||
+              !purchase ||
+              invitation.y + invitation.height > purchase.y
+            )
+              throw Error("INVITATION_BEFORE_PURCHASE");
             await page.screenshot({
               path: `var/portrait-reading/final-${width}.png`,
             });
