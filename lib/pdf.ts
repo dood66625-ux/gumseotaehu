@@ -1,3 +1,4 @@
+import { reportTop3 } from "./report-extras";
 import { reportBook } from "./report-book";
 import PDFDocument from "pdfkit";
 import { chapterArt } from "./report-art";
@@ -167,12 +168,10 @@ export async function reportPdf(
       if (book.chapters[i].takeaway) {
         // Keep the closing label with its text if the chapter flows onto another page.
         const closingHeight =
-          doc
-            .fontSize(11)
-            .heightOfString(book.chapters[i].takeaway, {
-              width: W - 116,
-              lineGap: 5,
-            }) + 44;
+          doc.fontSize(11).heightOfString(book.chapters[i].takeaway, {
+            width: W - 116,
+            lineGap: 5,
+          }) + 44;
         if (doc.y + closingHeight > doc.page.height - doc.page.margins.bottom)
           doc.addPage();
         doc.moveDown(0.8).fontSize(9).fillColor(gold).text("이 장의 한마디");
@@ -258,6 +257,31 @@ export async function reportPdf(
           .text("· " + action),
       );
       doc.moveDown().fontSize(8.5).text(courtPortrait.note);
+      doc.addPage();
+    }
+    const top3 = reportTop3(data.report.chart.element);
+    if (top3) {
+      let topPage = 0;
+      for (const [title, items] of [
+        ["나와 맞는 직업 TOP3", top3.jobs],
+        ["나와 잘 맞는 사람 유형 TOP3", top3.people],
+      ] as const) {
+        if (topPage++ > 0) doc.addPage();
+        doc.fontSize(20).fillColor(ink).text(title);
+        items.forEach((item, index) => {
+          doc
+            .moveDown()
+            .fontSize(13)
+            .fillColor(gold)
+            .text(`${index + 1}. ${item.title}`);
+          doc
+            .moveDown(0.5)
+            .fontSize(11)
+            .fillColor(ink)
+            .text(item.text, { lineGap: 6 });
+        });
+        doc.moveDown().fontSize(8).text(top3.note);
+      }
       doc.addPage();
     }
     const figures = reportFigures(data.report.chart.element);

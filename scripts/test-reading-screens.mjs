@@ -39,7 +39,16 @@ try {
         if (rect.over || rect.bottom > height)
           throw Error(`${screen}_${width}_${index}_bottom_${rect.bottom}`);
         const next = controls.getByRole("button", { name: "다음 →" });
-        if (!(await next.count()) || (await next.isDisabled())) break;
+        if (!(await next.count()) || (await next.isDisabled())) {
+          if (
+            screen === "preview" &&
+            !(await page
+              .getByRole("link", { name: "종합 운명서 구매 살펴보기" })
+              .isVisible())
+          )
+            throw Error("PURCHASE_MUST_BE_LAST");
+          break;
+        }
         await next.click();
         index++;
         if (index > 40) throw Error("PAGING_LOOP");

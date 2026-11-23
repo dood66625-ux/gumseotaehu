@@ -1,4 +1,5 @@
 "use client";
+import ReportTop3 from "./ReportTop3";
 import { reportBook } from "../lib/report-book";
 import Link from "next/link";
 import { chapterArt } from "../lib/report-art";
@@ -242,6 +243,7 @@ export default function ReportReader({
           </a>
         </p>
       </section>
+      <ReportTop3 element={d.report.chart.element} />
       <CourtPortrait key={id} element={d.report.chart.element} />
       {figures && (
         <section className="card gold" aria-label={figures.title}>

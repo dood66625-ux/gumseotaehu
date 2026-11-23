@@ -1,3 +1,4 @@
+import { easyLuckText } from "./report-extras";
 /** Display-only cleanup: the immutable report and calculation evidence stay intact. */
 export function bookText(text: string, notes: string[]) {
   const moved: string[] = [];
@@ -156,16 +157,24 @@ export function chapterTakeaway(text: string, locale: "ko" | "zh-TW") {
 export function reportBook(report: {
   chapters: { text: string }[];
   notes?: string[];
-  chart: { notes?: string[] };
+  chart: {
+    notes?: string[];
+    cycles?: { age: number; startYear: number; endYear: number }[];
+    target?: number;
+  };
 }) {
   const notes = [
     ...new Set([...(report.notes ?? []), ...(report.chart.notes ?? [])]),
   ];
-  const chapters = report.chapters.map((chapter) => {
+  const chapters = report.chapters.map((chapter, index) => {
     const cleaned = bookText(chapter.text, notes);
+    const displayText =
+      index === 6
+        ? easyLuckText(cleaned.text, report.chart.cycles, report.chart.target)
+        : cleaned.text;
     return {
-      text: cleaned.text,
-      takeaway: chapterTakeaway(cleaned.text, "ko"),
+      text: displayText,
+      takeaway: chapterTakeaway(displayText, "ko"),
       moved: cleaned.moved,
     };
   });

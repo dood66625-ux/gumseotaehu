@@ -133,13 +133,13 @@ try {
     )
       throw Error("TAKEAWAY_LOCALE");
     await page.locator("#book-next").click();
-    if ((await page.locator("#book-position").textContent()) !== "2 / 12")
+    if ((await page.locator("#book-position").textContent()) !== "2 / 14")
       throw Error("BOOK_NEXT_FAILED");
     await page.locator("#book-prev").click();
     await page.locator("#toc a").nth(3).click();
     await page.reload();
     await page.getByText(report(1).intro, { exact: true }).waitFor();
-    if ((await page.locator("#book-position").textContent()) !== "4 / 12")
+    if ((await page.locator("#book-position").textContent()) !== "4 / 14")
       throw Error("BOOK_PAGE_NOT_REMEMBERED");
     if (
       (await page.locator("#locale").isVisible()) ||
@@ -188,11 +188,22 @@ try {
     await page
       .locator("#book")
       .screenshot({ path: `var/private-reader/figures-korean-${width}.png` });
+    for (const title of [
+      "나와 맞는 직업 TOP3",
+      "나와 잘 맞는 사람 유형 TOP3",
+    ]) {
+      await page
+        .locator("#toc")
+        .getByRole("link", { name: title, exact: true })
+        .click();
+      if ((await page.locator("#chapters article:visible h3").count()) !== 3)
+        throw Error("TOP3_COUNT");
+    }
     await page.locator("#toc a").last().click();
     if (!(await page.locator("#book-next").isDisabled()))
       throw Error("BOOK_END_BOUNDARY");
     await page.emulateMedia({ media: "print" });
-    if ((await page.locator("#chapters article:visible").count()) !== 11)
+    if ((await page.locator("#chapters article:visible").count()) !== 13)
       throw Error("PRINT_LOST_CHAPTERS");
     const printStyle = await page.locator("#book-figures").evaluate((node) => {
       const style = getComputedStyle(node);
@@ -214,11 +225,9 @@ try {
     )
       throw Error("PRINT_UNSAFE_PARCHMENT_EFFECTS");
     if (width === 390) {
-      await page
-        .locator("#book-figures")
-        .screenshot({
-          path: "var/private-reader/figures-print-" + engine.name() + ".png",
-        });
+      await page.locator("#book-figures").screenshot({
+        path: "var/private-reader/figures-print-" + engine.name() + ".png",
+      });
       if (engine.name() === "chromium")
         await page.pdf({
           path: "var/private-reader/print-regression.pdf",

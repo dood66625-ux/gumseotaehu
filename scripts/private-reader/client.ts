@@ -1,3 +1,4 @@
+import { reportTop3, easyLuckText } from "../../lib/report-extras";
 import { bookText, chapterTakeaway } from "./book";
 import { reportFigures } from "../../lib/report-figures";
 import { reportPortrait } from "../../lib/report-portrait";
@@ -309,9 +310,13 @@ function draw(report: any) {
     image.loading = "lazy";
     const cleaned = bookText(chapter.text, sharedNotes);
     movedNotes.push(...cleaned.moved);
-    const takeaway = chapterTakeaway(cleaned.text, locale);
+    const displayText =
+      i === 6
+        ? easyLuckText(cleaned.text, report.chart.cycles, report.chart.target)
+        : cleaned.text;
+    const takeaway = chapterTakeaway(displayText, locale);
     article.append(image);
-    for (const paragraph of cleaned.text.split(/\n\s*\n/).filter(Boolean))
+    for (const paragraph of displayText.split(/\n\s*\n/).filter(Boolean))
       article.append(el("p", paragraph, "chapter-copy"));
     if (takeaway) {
       const callout = el("aside", undefined, "chapter-takeaway");
@@ -416,6 +421,33 @@ function draw(report: any) {
   const element = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" }[
     report.chart.element as "목"
   ];
+  const top3 = reportTop3(report.chart.element);
+  if (top3) {
+    for (const [title, items] of [
+      ["나와 맞는 직업 TOP3", top3.jobs],
+      ["나와 잘 맞는 사람 유형 TOP3", top3.people],
+    ] as const) {
+      const index = document.querySelectorAll("#chapters > article").length;
+      const page = el("article", undefined, "book-page");
+      page.id = "book-top3-" + index;
+      page.append(el("h2", title));
+      items.forEach((item, rank) => {
+        page.append(
+          el("h3", `${rank + 1}. ${item.title}`),
+          el("p", item.text, "chapter-copy"),
+        );
+      });
+      page.append(el("p", top3.note, "figure-note"));
+      $("chapters").append(page);
+      const link = el("a", title) as HTMLAnchorElement;
+      link.href = "#" + page.id;
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        turnPage(index);
+      });
+      $("toc").append(link);
+    }
+  }
   set(
     "summary",
     locale === "ko"
@@ -444,7 +476,7 @@ function draw(report: any) {
   closingLink.href = "#book-ending";
   closingLink.addEventListener("click", (event) => {
     event.preventDefault();
-    turnPage(report.chapters.length + (portrait ? 1 : 0) + (figures ? 1 : 0));
+    turnPage(document.querySelectorAll("#chapters > article").length);
   });
   $("toc").append(closingLink);
   $("book-prev").textContent = locale === "ko" ? "← 이전 장" : "← 上一章";

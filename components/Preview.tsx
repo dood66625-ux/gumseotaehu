@@ -26,6 +26,15 @@ export default function Preview({ id }: { id: string }) {
                 />
                 <p className="eyebrow">금서태후가 그대에게</p>
                 <p className="quote">{r.preview.intro}</p>
+                <details className="report-disclosure">
+                  <summary>계산 기준과 해석의 범위</summary>
+                  {r.chart.notes.map((note: string) => (
+                    <p key={note}>{note}</p>
+                  ))}
+                  <p>
+                    {r.chart.meta.engine} · {r.chart.meta.ziHourPolicy}
+                  </p>
+                </details>
               </div>
             </>
           ),
@@ -135,17 +144,6 @@ export default function Preview({ id }: { id: string }) {
             </>
           ),
         },
-        ...[
-          ...r.chart.notes,
-          `${r.chart.meta.engine} · ${r.chart.meta.ziHourPolicy}`,
-        ].map((note: string, index: number) => ({
-          title: `계산 안내 ${index + 1}`,
-          content: (
-            <div className="card">
-              <p>{note}</p>
-            </div>
-          ),
-        })),
       ]}
     />
   );
