@@ -257,7 +257,7 @@ export default function Checkout({
         }}
       >
         <section className="checkout-agreements">
-          <div className="card checkout-consents" hidden={!review && !verified}>
+          <div className="card checkout-consents" hidden={review || !verified}>
             {!review && (
               <>
                 <label className="check consent-all">
