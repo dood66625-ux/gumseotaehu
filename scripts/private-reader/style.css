@@ -691,3 +691,28 @@ input::-webkit-date-and-time-value {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+#report-focus h2 {
+  font-size: 18px;
+  margin: 12px 0;
+}
+.report-focus-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.report-focus-buttons button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 4px;
+  font-size: 12px;
+}
+.report-focus-buttons button[aria-pressed="true"] {
+  outline: 2px solid #c09a59;
+  outline-offset: 2px;
+}
+@media print {
+  #report-focus {
+    display: none;
+  }
+}

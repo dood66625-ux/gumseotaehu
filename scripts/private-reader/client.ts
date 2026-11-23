@@ -1,3 +1,4 @@
+import { reportFocusTopics } from "../../lib/report-focus";
 import { reportTop3, easyLuckText } from "../../lib/report-extras";
 import { bookText, chapterTakeaway } from "./book";
 import { reportFigures } from "../../lib/report-figures";
@@ -286,6 +287,30 @@ function draw(report: any) {
   });
   $("chapters").replaceChildren();
   $("toc").replaceChildren();
+  let focus = document.getElementById("report-focus");
+  if (!focus) {
+    focus = el("section");
+    focus.id = "report-focus";
+    $("toc").before(focus);
+  }
+  focus.replaceChildren(el("h2", "지금, 무엇이 궁금하느냐?"));
+  const choices = el("div", undefined, "report-focus-buttons");
+  reportFocusTopics.forEach((topic) => {
+    const button = el("button", topic.label) as HTMLButtonElement;
+    button.type = "button";
+    button.setAttribute("aria-pressed", "false");
+    button.addEventListener("click", () => {
+      choices
+        .querySelectorAll("button")
+        .forEach((other) =>
+          other.setAttribute("aria-pressed", String(other === button)),
+        );
+      turnPage(topic.chapters[0]);
+    });
+    choices.append(button);
+  });
+  focus.append(choices);
+
   const sharedNotes = [
     ...new Set<string>([
       ...(report.notes ?? []),

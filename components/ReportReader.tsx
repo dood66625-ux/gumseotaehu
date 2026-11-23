@@ -1,4 +1,5 @@
 "use client";
+import ReportFocus from "./ReportFocus";
 import ReportTop3 from "./ReportTop3";
 import { reportBook } from "../lib/report-book";
 import Link from "next/link";
@@ -152,6 +153,7 @@ export default function ReportReader({
           출생
         </p>
       </div>
+      <ReportFocus key={id} />
       <nav className="report-nav" aria-label="운명서 목차">
         {d.report.chapters.map((c: any, i: number) => (
           <a key={c.title} href={"#chapter-" + i}>

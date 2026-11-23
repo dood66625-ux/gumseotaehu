@@ -132,6 +132,22 @@ try {
         .textContent()) !== "이 장의 한마디"
     )
       throw Error("TAKEAWAY_LOCALE");
+    for (const [label, index] of [
+      ["일·직업", 4],
+      ["돈·재물", 2],
+      ["인연·관계", 3],
+      ["나 자신", 0],
+    ]) {
+      await page
+        .locator("#report-focus")
+        .getByRole("button", { name: label, exact: true })
+        .click();
+      if (
+        (await page.locator("#chapters article:visible").getAttribute("id")) !==
+        "chapter-" + index
+      )
+        throw Error("FOCUS_CHAPTER_WRONG");
+    }
     await page.locator("#book-next").click();
     if ((await page.locator("#book-position").textContent()) !== "2 / 14")
       throw Error("BOOK_NEXT_FAILED");

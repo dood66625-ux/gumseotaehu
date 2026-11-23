@@ -3520,3 +3520,118 @@ body:has(.payment-status-screen) .page {
 .checkout-flow .otp-code {
   font-size: 22px;
 }
+:root {
+  --empress-expressions-first: url("/empress-expressions-1.png");
+  --empress-expressions-second: url("/empress-expressions-2.png");
+}
+.screen-flow {
+  perspective: 1200px;
+  overflow-x: clip;
+}
+.screen-flow-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+.screen-flow-page-heading h1 {
+  font-size: 22px;
+  line-height: 1.35;
+  margin: 0;
+}
+.empress-expression {
+  width: 72px;
+  height: 72px;
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
+  border: 1px solid #b9955d;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px #0004;
+}
+@keyframes parchment-forward {
+  from {
+    opacity: 0.45;
+    transform: perspective(1100px) rotateY(-8deg) translateX(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes parchment-backward {
+  from {
+    opacity: 0.45;
+    transform: perspective(1100px) rotateY(8deg) translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.screen-flow-page:not([hidden]) {
+  transform-origin: left center;
+  animation: parchment-forward 420ms ease-out both;
+}
+.screen-flow[data-direction="backward"] .screen-flow-page:not([hidden]) {
+  transform-origin: right center;
+  animation-name: parchment-backward;
+}
+.report-focus {
+  margin: 20px 0;
+}
+.report-focus h2 {
+  font-size: 20px;
+}
+.report-focus-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.report-focus-buttons button {
+  min-width: 0;
+  padding: 8px 4px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.report-focus-buttons button[aria-pressed="true"] {
+  outline: 2px solid #ad844b;
+  outline-offset: 2px;
+}
+.report-focus nav {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 13px;
+}
+@media (max-height: 650px) {
+  .screen-flow-page-heading {
+    grid-template-columns: minmax(0, 1fr) 56px;
+    margin: 8px 0;
+  }
+  .empress-expression {
+    width: 56px;
+    height: 56px;
+  }
+  .screen-flow-page-heading h1 {
+    font-size: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce), print {
+  .screen-flow-page:not([hidden]) {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+@media (max-height: 650px) {
+  .screen-flow .chapter-list {
+    row-gap: 2px;
+  }
+  .screen-flow .chapter-list li {
+    padding: 1px 0;
+  }
+  .screen-flow-page-heading {
+    margin: 6px 0;
+  }
+}

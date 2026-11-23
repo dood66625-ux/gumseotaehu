@@ -29,8 +29,23 @@ try {
         .locator(screen === "preview" ? ".screen-flow" : ".checkout-flow")
         .waitFor();
       let index = 0;
+      const expressions = new Set();
       while (true) {
         await page.evaluate(() => scrollTo(0, 0));
+        if (screen === "preview") {
+          const face = page.locator(
+            ".screen-flow-page:not([hidden]) .empress-expression",
+          );
+          if ((await face.count()) !== 1) throw Error("PORTRAIT_MISSING");
+          expressions.add(
+            await face.evaluate((n) => {
+              const css = getComputedStyle(n);
+              return css.backgroundImage + css.backgroundPosition;
+            }),
+          );
+          const bounds = await face.boundingBox();
+          if (!bounds || bounds.width < 50) throw Error("PORTRAIT_TOO_SMALL");
+        }
         const controls = page.locator(".screen-flow-controls");
         const rect = await controls.evaluate((n) => ({
           bottom: n.getBoundingClientRect().bottom,
@@ -47,6 +62,19 @@ try {
               .isVisible())
           )
             throw Error("PURCHASE_MUST_BE_LAST");
+          if (screen === "preview" && expressions.size !== index + 1)
+            throw Error("REPEATED_EXPRESSION");
+          if (screen === "preview") {
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            if (
+              (await page
+                .locator(".screen-flow-page:not([hidden])")
+                .evaluate((n) => getComputedStyle(n).animationName)) !== "none"
+            )
+              throw Error("REDUCED_MOTION");
+            await page.emulateMedia({ reducedMotion: "no-preference" });
+          }
+
           break;
         }
         await next.click();

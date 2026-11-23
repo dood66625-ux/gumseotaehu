@@ -98,6 +98,20 @@ try {
   await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await page.getByRole("link", { name: "운명서 전체 읽기" }).click();
   await page.getByRole("heading", { name: "가온 님의 종합 운명서" }).waitFor();
+  for (const [label, index] of [
+    ["일·직업", 4],
+    ["돈·재물", 2],
+    ["인연·관계", 3],
+    ["나 자신", 0],
+  ]) {
+    await page.getByRole("button", { name: label, exact: true }).click();
+    if (
+      (await page.evaluate(() => document.activeElement.id)) !==
+      "chapter-" + index
+    )
+      throw Error("FOCUS_DESTINATION");
+  }
+
   await page
     .locator(".chapter-illustration img")
     .evaluateAll(async (images) => {

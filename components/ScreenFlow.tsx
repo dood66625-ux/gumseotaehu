@@ -9,6 +9,7 @@ export default function ScreenFlow({
   label?: string;
 }) {
   const [page, setPage] = useState(0);
+  const [direction, setDirection] = useState("forward");
   const root = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     root.current?.focus({ preventScroll: true });
@@ -20,6 +21,7 @@ export default function ScreenFlow({
       ref={root}
       tabIndex={-1}
       aria-label={label}
+      data-direction={direction}
     >
       <header className="screen-flow-heading">
         <span>{label}</span>
@@ -34,7 +36,21 @@ export default function ScreenFlow({
           hidden={page !== index}
           aria-label={item.title}
         >
-          <h1>{item.title}</h1>
+          <div className="screen-flow-page-heading">
+            <h1>{item.title}</h1>
+            <div
+              className="empress-expression"
+              role="img"
+              aria-label={`금서태후의 ${["반기는", "귀 기울이는", "응원하는", "미소 짓는", "평온한", "궁금해하는", "기쁘게 웃는", "책을 살피는"][index % 8]} 초상`}
+              style={{
+                backgroundImage:
+                  index % 8 < 4
+                    ? "var(--empress-expressions-first)"
+                    : "var(--empress-expressions-second)",
+                backgroundPosition: `${index % 2 ? "100%" : "0%"} ${index % 4 >= 2 ? "100%" : "0%"}`,
+              }}
+            />
+          </div>
           {item.content}
         </section>
       ))}
@@ -43,7 +59,10 @@ export default function ScreenFlow({
           type="button"
           className="button secondary"
           disabled={page === 0}
-          onClick={() => setPage(page - 1)}
+          onClick={() => {
+            setDirection("backward");
+            setPage(page - 1);
+          }}
         >
           이전
         </button>
@@ -51,7 +70,10 @@ export default function ScreenFlow({
           type="button"
           className="button"
           disabled={page === pages.length - 1}
-          onClick={() => setPage(page + 1)}
+          onClick={() => {
+            setDirection("forward");
+            setPage(page + 1);
+          }}
         >
           다음 →
         </button>

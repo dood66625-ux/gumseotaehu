@@ -226,6 +226,8 @@ for (const file of [
   "empress-royal-v2.webp",
   "empress-mobile-v2.webp",
   "empress-avatar-v2.webp",
+  "empress-expressions-1.png",
+  "empress-expressions-2.png",
   "imperial-serif-v2.woff2",
   "intro.js",
 ])
