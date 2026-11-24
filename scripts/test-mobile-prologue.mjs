@@ -60,7 +60,7 @@ try {
         { timeout: 7000 },
       );
       const elapsed = performance.now() - previous;
-      if (i > 2 && (elapsed < 4000 || elapsed > 5700))
+      if (i > 2 && (elapsed < 3700 || elapsed > 4800))
         throw Error("SCENE_READING_TIME_" + elapsed);
       previous = performance.now();
       await page.waitForTimeout(2200);
@@ -222,7 +222,7 @@ try {
       engine: engine.name(),
       scenes: 5,
       captionDelayMs: 900,
-      sceneDurationMs: 4400,
+      sceneDurationMs: 4100,
       autoMain: true,
       skip: true,
       oncePerTabSession: true,
