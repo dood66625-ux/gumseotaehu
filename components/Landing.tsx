@@ -73,6 +73,16 @@ export default function Landing({
           </div>
         </div>
       </section>
+      <button
+        id="prologue-replay"
+        className="story-replay"
+        type="button"
+        hidden
+        aria-haspopup="dialog"
+        aria-controls="mobile-prologue"
+      >
+        스토리 다시 보기 <span aria-hidden="true">↻</span>
+      </button>
       <details id="landing-more" className="landing-more">
         <summary>
           금서 더 살펴보기 <span aria-hidden="true">＋</span>

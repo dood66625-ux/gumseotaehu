@@ -4390,18 +4390,32 @@ body:has(.mobile-prologue[open]) {
   }
 }
 .story-replay {
+  position: absolute;
+  top: calc(100svh - 245px);
+  right: 64px;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 32px;
+  min-height: 0;
   margin: 0;
-  padding: 5px 0;
+  padding: 10px 0;
   border: 0;
   background: transparent;
   box-shadow: none;
   color: #c4ad82;
-  font: 11px/1.6 var(--sans);
+  font: 13px/normal var(--sans);
   cursor: pointer;
+}
+.intro:has(#intro-copy[hidden]) {
+  visibility: hidden;
+}
+@media (max-width: 700px) {
+  .story-replay {
+    top: calc(100svh - 193px);
+    right: 26px;
+    font-size: 12px;
+  }
 }
 .story-replay[hidden] {
   display: none;
