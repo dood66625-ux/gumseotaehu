@@ -23,6 +23,12 @@ page.on("request", (r) => {
 });
 try {
   await go();
+  if (await page.locator("#mobile-prologue[open]").count()) {
+    await page
+      .getByRole("button", { name: "이야기 건너뛰고 메인으로" })
+      .click();
+    await page.locator("#mobile-prologue").waitFor({ state: "hidden" });
+  }
   if (!(await page.locator(".book-price").textContent()).includes("22,000"))
     throw Error("Preview price is stale");
   await page.getByRole("link", { name: "내 사주 펼쳐보기" }).click();

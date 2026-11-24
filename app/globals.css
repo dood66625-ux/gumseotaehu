@@ -4200,7 +4200,7 @@ body:has(.checkout-flow) .page {
 }
 @media (min-width: 901px) {
   .hero-portrait picture {
-    transform: translateX(-30%);
+    transform: translateX(-15%);
     -webkit-mask-image:
       linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent),
       linear-gradient(0deg, transparent, #000 16%, #000 84%, transparent);
@@ -4217,6 +4217,144 @@ body:has(.checkout-flow) .page {
 
 .reading-print-full {
   display: none;
+}
+.mobile-prologue {
+  outline: none;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  overflow: hidden;
+  background: #000;
+  color: #efdfbe;
+  z-index: 10000;
+  opacity: 1;
+  transition: opacity 350ms ease;
+}
+.mobile-prologue:not([open]) {
+  display: none;
+}
+.mobile-prologue::backdrop {
+  background: #000;
+}
+.mobile-prologue.is-leaving {
+  opacity: 0;
+}
+body:has(.mobile-prologue[open]) {
+  overflow: hidden;
+}
+.prologue-scene {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+.prologue-scene[hidden] {
+  display: none;
+}
+.prologue-scene img {
+  display: block;
+  width: 100%;
+  height: 82%;
+  object-fit: cover;
+  object-position: center;
+  -webkit-mask-image: linear-gradient(
+    0deg,
+    transparent,
+    #000 24%,
+    #000 85%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    0deg,
+    transparent,
+    #000 24%,
+    #000 85%,
+    transparent
+  );
+}
+.prologue-scene.is-active img {
+  animation: prologue-rise 1200ms cubic-bezier(0.2, 0.6, 0.3, 1) both;
+}
+.prologue-caption {
+  position: absolute;
+  left: 25px;
+  right: 25px;
+  bottom: max(90px, 14dvh);
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+  text-wrap: balance;
+  font-size: clamp(17px, 4.6vw, 22px);
+  line-height: 1.9;
+  color: #f1dfbb;
+  text-shadow: 0 2px 15px #000;
+  letter-spacing: 0.025em;
+}
+.prologue-scene.is-active .prologue-caption {
+  animation: prologue-caption 650ms ease 1400ms both;
+}
+.prologue-skip {
+  position: absolute;
+  right: max(22px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 2px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  color: #d5c9b0;
+  font: 12px/1.5 sans-serif;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+.prologue-skip:focus-visible {
+  outline: 1px solid #b79c6b;
+  outline-offset: 5px;
+}
+.mobile-prologue.is-paused * {
+  animation-play-state: paused !important;
+}
+@keyframes prologue-rise {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes prologue-caption {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-prologue {
+    transition: none;
+  }
+  .prologue-scene.is-active img {
+    animation: none;
+  }
+  .prologue-scene.is-active .prologue-caption {
+    animation-duration: 1ms;
+  }
+}
+@media (min-width: 701px), print {
+  .mobile-prologue {
+    display: none !important;
+  }
 }
 .reading-detail-open {
   margin: 16px 0;

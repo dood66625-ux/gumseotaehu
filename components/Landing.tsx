@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 import { chapterArt } from "../lib/report-art";
 import { PRODUCT_PRICE_TEXT } from "../lib/product";
 import Intro from "@/components/Intro";
+import MobilePrologue from "./MobilePrologue";
 export default function Landing({
   extra,
   reviewHref,
 }: { extra?: ReactNode; reviewHref?: string } = {}) {
   return (
     <div className="landing-stage">
+      <MobilePrologue />
       <section className="hero" aria-label="금서태후의 금서를 펼치다">
         <div className="hero-portrait">
           <picture>

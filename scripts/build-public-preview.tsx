@@ -71,6 +71,7 @@ const data = {
 };
 writeFileSync(resolve(out, "sample-report.pdf"), await reportPdf(data.report));
 const route = (s: string) => {
+  if (s.startsWith("/story/")) return base + s;
   const paths: Record<string, string> = {
     "/": base + "/?v=royal-12",
     "/start": base + "/?v=royal-12&screen=start",
@@ -178,7 +179,7 @@ let home = renderToStaticMarkup(
 )
   .replaceAll("로컬 검증판 · 실제 결제·AI 호출·이메일 발송 없음", banner)
   .replace(
-    /(href|src|srcset)="(\/[^\"]*)"/gi,
+    /(href|src|srcset|data-story-src)="(\/[^\"]*)"/gi,
     (m, attr, p) => `${attr}="${route(p)}"`,
   );
 const serialized = JSON.stringify(data).replaceAll("<", "\\u003c");
@@ -215,6 +216,7 @@ for (const file of [
 ])
   copyFileSync("public/" + file, resolve(out, file));
 cpSync("public/report-art", resolve(out, "report-art"), { recursive: true });
+cpSync("public/story", resolve(out, "story"), { recursive: true });
 writeFileSync(
   resolve(out, "royal-v2.css"),
   readFileSync("app/globals.css", "utf8").replace(

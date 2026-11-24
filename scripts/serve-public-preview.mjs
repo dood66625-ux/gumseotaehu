@@ -37,6 +37,7 @@ const types = {
 };
 for (let i = 1; i <= 9; i++)
   types[`report-art/chapter-${String(i).padStart(2, "0")}.jpg`] = "image/jpeg";
+for (let i = 1; i <= 5; i++) types[`story/scene-${i}.webp`] = "image/webp";
 for (const key of ["wood", "fire", "earth", "metal", "water", "garden"])
   types[`report-art/${key}.png`] = "image/png";
 http

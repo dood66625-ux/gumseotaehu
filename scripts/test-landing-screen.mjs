@@ -28,6 +28,11 @@ try {
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("http://127.0.0.1:3200/");
+    if (await page.locator("#mobile-prologue[open]").count())
+      await page
+        .getByRole("button", { name: "이야기 건너뛰고 메인으로" })
+        .click();
+    await page.locator("#mobile-prologue").waitFor({ state: "hidden" });
     await page.getByRole("link", { name: "내 사주 펼쳐보기" }).waitFor();
     const fits = await page.evaluate(() => {
       const cta = document.querySelector(".hero-cta").getBoundingClientRect();
@@ -83,7 +88,7 @@ try {
           };
         });
       if (
-        Math.abs(framing.x + framing.width * 0.3) > 1 ||
+        Math.abs(framing.x + framing.width * 0.15) > 1 ||
         framing.fade === "none"
       )
         throw Error("PORTRAIT_LEFT_SHIFT_OR_FADE_MISSING");

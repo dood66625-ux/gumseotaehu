@@ -104,6 +104,12 @@ test("landing remains usable without API; responsive, reduced motion and accessi
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("**/api/**", (r) => r.abort());
   await page.goto("/");
+  if (await page.locator("#mobile-prologue[open]").count()) {
+    await page
+      .getByRole("button", { name: "이야기 건너뛰고 메인으로" })
+      .click();
+    await expect(page.locator("#mobile-prologue")).not.toBeVisible();
+  }
   await expect(page.locator(".book-price")).toContainText("22,000");
   await expect(page.locator("body")).not.toContainText("33,000원");
   await expect(

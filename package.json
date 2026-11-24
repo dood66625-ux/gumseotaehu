@@ -56,7 +56,8 @@
     "retention:plan": "tsx scripts/retention-plan.ts",
     "test:proxy": "tsx scripts/test-proxy-access.ts",
     "monitor:public": "node --use-env-proxy scripts/public-availability.mjs",
-    "test:landing-screen": "node scripts/test-landing-screen.mjs"
+    "test:landing-screen": "node scripts/test-landing-screen.mjs",
+    "test:mobile-prologue": "node scripts/test-mobile-prologue.mjs"
   },
   "keywords": [],
   "author": "",

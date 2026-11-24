@@ -29,5 +29,5 @@ const html =
 writeFileSync("public/landing.html", html);
 copyFileSync("app/globals.css", "public/site.css");
 console.log(
-  "Static landing generated: zero React browser runtime; native navigation; optional 5-second story script.",
+  "Static landing generated: native navigation and five-scene mobile prologue; no React browser runtime.",
 );
