@@ -149,13 +149,13 @@ try {
         throw Error("FOCUS_CHAPTER_WRONG");
     }
     await page.locator("#book-next").click();
-    if ((await page.locator("#book-position").textContent()) !== "2 / 18")
+    if ((await page.locator("#book-position").textContent()) !== "2 / 19")
       throw Error("BOOK_NEXT_FAILED");
     await page.locator("#book-prev").click();
     await page.locator("#toc a").nth(3).click();
     await page.reload();
     await page.getByText(report(1).intro, { exact: true }).waitFor();
-    if ((await page.locator("#book-position").textContent()) !== "4 / 18")
+    if ((await page.locator("#book-position").textContent()) !== "4 / 19")
       throw Error("BOOK_PAGE_NOT_REMEMBERED");
     if (
       (await page.locator("#locale").isVisible()) ||
@@ -219,11 +219,27 @@ try {
       if ((await page.locator("#chapters article:visible h3").count()) !== 3)
         throw Error("TOP3_COUNT");
     }
-    await page.locator("#toc a").last().click();
+    await page
+      .locator("#toc")
+      .getByRole("link", { name: "올해 꼭 기억할 세 가지", exact: true })
+      .click();
+    if ((await page.locator("#book-year-reminders h3").count()) !== 3)
+      throw Error("YEAR_REMINDERS_COUNT");
+    if (!(await page.locator("#book-year-reminders").isVisible()))
+      throw Error("YEAR_REMINDERS_NOT_REACHABLE");
+    await page
+      .locator("#toc")
+      .getByRole("link", {
+        name: "태후가 그대에게 남기는 마지막 편지",
+        exact: true,
+      })
+      .click();
+    if (!(await page.locator("#summary").textContent()).includes("금서태후"))
+      throw Error("CLOSING_LETTER_MISSING");
     if (!(await page.locator("#book-next").isDisabled()))
       throw Error("BOOK_END_BOUNDARY");
     await page.emulateMedia({ media: "print" });
-    if ((await page.locator("#chapters article:visible").count()) !== 17)
+    if ((await page.locator("#chapters article:visible").count()) !== 18)
       throw Error("PRINT_LOST_CHAPTERS");
     const printStyle = await page.locator("#book-figures").evaluate((node) => {
       const style = getComputedStyle(node);

@@ -1,4 +1,5 @@
 import { taehouNarration } from "./taehou-narration";
+import { reportClosing } from "./report-closing";
 import { reportTop3 } from "./report-extras";
 import { reportBook } from "./report-book";
 import PDFDocument from "pdfkit";
@@ -307,6 +308,32 @@ export async function reportPdf(
         .fontSize(8.5)
         .fillColor(gold)
         .text(figures.note, { lineGap: 4 });
+      doc.addPage();
+    }
+    const ending = reportClosing(data.report, data.name);
+    if (ending) {
+      doc.fontSize(9).fillColor(gold).text(ending.yearLabel);
+      doc.moveDown().fontSize(21).fillColor(ink).text(ending.summaryTitle);
+      doc.moveDown().fontSize(11).text(ending.yearLead, { lineGap: 6 });
+      ending.points.forEach((point, i) => {
+        doc
+          .moveDown()
+          .fontSize(13)
+          .fillColor(gold)
+          .text(`${i + 1}. ${point.title}`);
+        doc
+          .moveDown(0.5)
+          .fontSize(11)
+          .fillColor(ink)
+          .text(point.text, { lineGap: 6 });
+      });
+      doc.addPage();
+      doc.fontSize(21).fillColor(ink).text(ending.letterTitle);
+      doc.moveDown().fontSize(12).fillColor(gold).text(ending.salutation);
+      ending.paragraphs.forEach((text) =>
+        doc.moveDown().fontSize(11).fillColor(ink).text(text, { lineGap: 6 }),
+      );
+      doc.moveDown().fontSize(10).fillColor(gold).text(ending.signature);
       doc.addPage();
     }
     doc.fontSize(9).fillColor(gold).text("METHOD & NOTES");

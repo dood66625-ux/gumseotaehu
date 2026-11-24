@@ -2,6 +2,7 @@
 import { taehouNarration } from "../lib/taehou-narration";
 import ReportFocus from "./ReportFocus";
 import ReportTop3 from "./ReportTop3";
+import ReportClosing from "./ReportClosing";
 import { reportBook } from "../lib/report-book";
 import Link from "next/link";
 import { chapterArt } from "../lib/report-art";
@@ -265,6 +266,7 @@ export default function ReportReader({
           <p className="hint">{figures.note}</p>
         </section>
       )}
+      <ReportClosing report={d.report} name={d.name} />
       <details className="card report-method">
         <summary>계산 기준과 해석의 범위</summary>
         {book.notes.map((n: string) => (

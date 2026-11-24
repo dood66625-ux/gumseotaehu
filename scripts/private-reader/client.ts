@@ -1,6 +1,7 @@
 import { taehouNarration } from "../../lib/taehou-narration";
 import { reportFocusTopics } from "../../lib/report-focus";
 import { reportTop3, easyLuckText } from "../../lib/report-extras";
+import { reportClosing } from "../../lib/report-closing";
 import { bookText, chapterTakeaway } from "./book";
 import { reportFigures } from "../../lib/report-figures";
 import { reportPortrait } from "../../lib/report-portrait";
@@ -445,9 +446,6 @@ function draw(report: any) {
     });
     $("toc").append(link);
   }
-  const element = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" }[
-    report.chart.element as "목"
-  ];
   const top3 = reportTop3(report.chart.element);
   if (top3) {
     for (const { title, items, note } of top3.sections) {
@@ -472,12 +470,42 @@ function draw(report: any) {
       $("toc").append(link);
     }
   }
-  set(
-    "summary",
-    locale === "ko"
-      ? `그대의 일간은 ${report.chart.day}, ${element}의 결을 읽는 기준점이니라. 이 금서가 그대의 선택을 대신하지는 않느니라. 오늘 마음에 남은 제안 하나를 골라, 작은 행동으로 옮겨 보거라.`
-      : `你的日主是${report.chart.day}，以${element}的意象作為理解自己的起點。命書不替你作決定；不妨選一項讀來有感的提醒，化作今日一個小小的行動。`,
-  );
+  const ending = reportClosing(report);
+  if (ending) {
+    const index = document.querySelectorAll("#chapters > article").length;
+    const page = el("article", undefined, "book-page");
+    page.id = "book-year-reminders";
+    page.append(
+      el("p", ending.yearLabel, "eyebrow"),
+      el("h2", ending.summaryTitle),
+      el("p", ending.yearLead, "chapter-copy"),
+    );
+    ending.points.forEach((point, i) =>
+      page.append(
+        el("h3", `${i + 1}. ${point.title}`),
+        el("p", point.text, "chapter-copy"),
+      ),
+    );
+    $("chapters").append(page);
+    const link = el("a", ending.summaryTitle) as HTMLAnchorElement;
+    link.href = "#" + page.id;
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      turnPage(index);
+    });
+    $("toc").append(link);
+    set("summary-title", ending.letterTitle);
+    set(
+      "summary",
+      [ending.salutation, ...ending.paragraphs, ending.signature].join("\n\n"),
+    );
+    $("summary").classList.add("chapter-copy");
+  } else {
+    set(
+      "summary",
+      "이 금서에서 마음에 남은 제안 하나를 골라 작은 행동으로 옮겨 보거라.",
+    );
+  }
   set(
     "notes",
     locale === "ko"
@@ -494,8 +522,7 @@ function draw(report: any) {
           ...movedNotes.filter((note) => !sharedNotes.includes(note)),
         ].join("\n\n"),
   );
-  const closing =
-    locale === "ko" ? "마지막 장 · 그대에게 남기는 말" : "終章・留給你的話";
+  const closing = ending?.letterTitle ?? "마지막 장 · 그대에게 남기는 말";
   const closingLink = el("a", closing) as HTMLAnchorElement;
   closingLink.href = "#book-ending";
   closingLink.addEventListener("click", (event) => {
