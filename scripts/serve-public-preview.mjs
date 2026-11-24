@@ -25,6 +25,7 @@ const types = {
   "imperial-serif-v2.woff": "font/woff",
   "imperial-serif-v2.woff2": "font/woff2",
   "empress-royal-v2.webp": "image/webp",
+  "empress-royal-distant.webp": "image/webp",
   "empress-mobile-v2.webp": "image/webp",
   "empress-avatar-v2.webp": "image/webp",
   "intro.js": "text/javascript",

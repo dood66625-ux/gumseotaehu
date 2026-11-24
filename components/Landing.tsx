@@ -12,6 +12,10 @@ export default function Landing({
         <div className="hero-portrait">
           <picture>
             <source
+              media="(min-width:901px)"
+              srcSet="/empress-royal-distant.webp"
+            />
+            <source
               media="(max-width:600px)"
               srcSet="/empress-mobile-v2.webp"
             />

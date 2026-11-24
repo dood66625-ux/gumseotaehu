@@ -55,9 +55,16 @@ try {
       const value = getComputedStyle(n).transform;
       return value === "none" ? 1 : new DOMMatrix(value).a;
     });
-    if (width >= 901 && Math.abs(scale - 0.7) > 0.01)
-      throw Error("DESKTOP_PORTRAIT_SCALE");
-    if (width < 901 && scale !== 1) throw Error("MOBILE_PORTRAIT_CHANGED");
+    if (scale !== 1) throw Error("PORTRAIT_FRAME_SHRUNK");
+    const portrait = await page.locator(".hero-portrait img").evaluate((img) => ({
+      source: img.currentSrc,
+      loaded: img.complete && img.naturalWidth > 0,
+    }));
+    if (!portrait.loaded) throw Error("PORTRAIT_NOT_LOADED");
+    if (width >= 901 && !portrait.source.endsWith("/empress-royal-distant.webp"))
+      throw Error("DISTANT_DESKTOP_PORTRAIT_MISSING");
+    if (width < 901 && portrait.source.endsWith("/empress-royal-distant.webp"))
+      throw Error("MOBILE_PORTRAIT_CHANGED");
 
     if (await page.locator("#portrait-motion").count())
       throw Error("PAUSE_CONTROL_REMAINS");

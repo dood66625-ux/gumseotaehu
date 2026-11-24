@@ -89,6 +89,7 @@ const route = (s: string) => {
     "/report/": base + "/?v=royal-12&screen=report&id=",
     "/empress.webp": base + "/empress.webp",
     "/empress-royal-v2.webp": base + "/empress-royal-v2.webp",
+    "/empress-royal-distant.webp": base + "/empress-royal-distant.webp",
     "/empress-mobile-v2.webp": base + "/empress-mobile-v2.webp",
     "/empress-avatar-v2.webp": base + "/empress-avatar-v2.webp",
   };
@@ -202,6 +203,7 @@ for (const file of [
   "empress.webp",
   "icon.svg",
   "empress-royal-v2.webp",
+  "empress-royal-distant.webp",
   "empress-mobile-v2.webp",
   "empress-avatar-v2.webp",
   "empress-expressions-1.png",
