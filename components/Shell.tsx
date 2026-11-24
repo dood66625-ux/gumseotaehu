@@ -64,25 +64,31 @@ export default function Shell({
           <a href="/legal/terms">이용약관</a>
           <a href="/legal/privacy">개인정보 처리방침</a>
           <a href="/legal/refund">환불 및 취소 규정</a>
-          <a href="/legal/business">사업자 정보</a>
           <a href="/legal/content">콘텐츠 안내</a>
           <a href="/help">구매·환불 요청</a>
           <a href="/admin">관리자</a>
         </div>
-        <p className="fine">
-          {livePayments ? "사업자" : "운영 예정 사업자"}: {business.name} ·
-          대표자 {business.representative}
-          <br />
-          사업자등록번호 {business.registrationNumber}
-          <br />
-          통신판매업 신고번호 {business.commerceRegistration}
-          <br />
-          호스팅서비스 제공자: {business.hostingProvider}
-          <br />
-          사업장 주소: {business.address}
-          <br />
-          연락 이메일: <a href={`mailto:${business.email}`}>{business.email}</a>
-        </p>
+        <details className="footer-business">
+          <summary>사업자 정보</summary>
+          <p className="fine">
+            {livePayments ? "사업자" : "운영 예정 사업자"}: {business.name} ·
+            대표자 {business.representative}
+            <br />
+            사업자등록번호 {business.registrationNumber}
+            <br />
+            통신판매업 신고번호 {business.commerceRegistration}
+            <br />
+            호스팅서비스 제공자: {business.hostingProvider}
+            <br />
+            사업장 주소: {business.address}
+            <br />
+            문의 전화: <a href="tel:01044782275">{business.phone}</a>
+            <br />
+            연락 이메일:{" "}
+            <a href={`mailto:${business.email}`}>{business.email}</a>
+          </p>
+          <a href="/legal/business">사업자 정보 자세히 보기</a>
+        </details>
         <p className="fine">
           {!livePayments && (
             <>

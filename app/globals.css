@@ -947,6 +947,19 @@ footer {
   color: #e2d4bd;
   letter-spacing: 0.08em;
 }
+.footer-business {
+  margin: 18px 0;
+  font-size: 12px;
+}
+.footer-business > summary {
+  cursor: pointer;
+  color: #c5b08c;
+  padding: 8px 0;
+}
+.footer-business > a {
+  color: #c5b08c;
+  font-size: 11px;
+}
 .footer-brand > span {
   font-size: 12px;
   color: #bd9d68;
