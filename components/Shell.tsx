@@ -22,13 +22,15 @@ export default function Shell({
         </div>
       )}
       <header className="header">
-        <a href="/" className="brand">
-          <span className="seal" aria-hidden="true">
-            禁
-          </span>
-          <span>
-            금서태후<small>禁 書 太 后</small>
-          </span>
+        <a href="/" className="brand" aria-label="금서태후 홈">
+          <img
+            className="brand-logo"
+            src="/brand/geumseo-logo-v1.webp"
+            width="864"
+            height="288"
+            alt="금서태후 · 禁書太后"
+            decoding="async"
+          />
         </a>
         <nav aria-label="주요 메뉴">
           <a href="/recover" className="recover-link">
@@ -42,7 +44,15 @@ export default function Shell({
         <div className="footer-top">
           <div>
             <div className="footer-brand">
-              금서태후 <span>禁書太后</span>
+              <img
+                className="brand-logo"
+                src="/brand/geumseo-logo-v1.webp"
+                width="864"
+                height="288"
+                alt="금서태후 · 禁書太后"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
             <p>오래된 지혜, 오직 그대를 위한 이야기.</p>
           </div>

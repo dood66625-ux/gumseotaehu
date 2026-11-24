@@ -69,6 +69,10 @@ const server = createServer(async (req, res) => {
     return;
   }
   const files = {
+    "/private-reading/geumseo-logo-v1.webp": [
+      "public/private-reader/geumseo-logo-v1.webp",
+      "image/webp",
+    ],
     "/private-reading": ["public/private-reader/index.html", "text/html"],
     "/private-reading/reader.js": [
       "public/private-reader/reader.js",
@@ -103,6 +107,12 @@ try {
     });
     await page.goto("http://127.0.0.1:3460/private-reading#reading=" + ids[1]);
     await page.getByText(report(1).intro, { exact: true }).waitFor();
+    if (
+      !(await page
+        .locator("header .brand-logo")
+        .evaluate((n) => n.complete && n.naturalWidth > 0))
+    )
+      throw Error("PRIVATE_BRAND_LOGO_NOT_LOADED");
     if (
       !(await page.locator("#chapter-0").evaluate((article) => {
         const summary = article.querySelector(".chapter-takeaway"),

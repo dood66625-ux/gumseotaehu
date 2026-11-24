@@ -34,6 +34,19 @@ try {
         .click();
     await page.locator("#mobile-prologue").waitFor({ state: "hidden" });
     await page.getByRole("link", { name: "내 사주 펼쳐보기" }).waitFor();
+    const logo = await page.locator(".header .brand-logo").evaluate((n) => {
+      const bounds = n.getBoundingClientRect();
+      const menu = document
+        .querySelector(".header nav")
+        .getBoundingClientRect();
+      return {
+        loaded: n.complete && n.naturalWidth > 0,
+        overlaps: bounds.right > menu.left,
+        height: bounds.height,
+      };
+    });
+    if (!logo.loaded || logo.overlaps || logo.height > 77)
+      throw Error("BRAND_LOGO_LOAD_OR_ALIGNMENT");
     const fits = await page.evaluate(() => {
       const cta = document.querySelector(".hero-cta").getBoundingClientRect();
       return (

@@ -2,6 +2,7 @@ import http from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 const types = {
+  "brand/geumseo-logo-v1.webp": "image/webp",
   "empress-expressions-1.webp": "image/webp",
   "empress-expressions-2.webp": "image/webp",
   "empress-expressions-1.png": "image/png",

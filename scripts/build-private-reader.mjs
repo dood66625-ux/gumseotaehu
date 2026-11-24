@@ -1,6 +1,10 @@
 import { build } from "esbuild";
 import { mkdirSync, copyFileSync } from "node:fs";
 mkdirSync("public/private-reader", { recursive: true });
+copyFileSync(
+  "public/brand/geumseo-logo-v1.webp",
+  "public/private-reader/geumseo-logo-v1.webp",
+);
 await build({
   entryPoints: ["scripts/private-reader/client.ts"],
   bundle: true,

@@ -72,6 +72,7 @@ const data = {
 writeFileSync(resolve(out, "sample-report.pdf"), await reportPdf(data.report));
 const route = (s: string) => {
   if (s.startsWith("/story/")) return base + s;
+  if (s.startsWith("/brand/")) return base + s;
   const paths: Record<string, string> = {
     "/": base + "/?v=royal-12",
     "/start": base + "/?v=royal-12&screen=start",
@@ -217,6 +218,7 @@ for (const file of [
   copyFileSync("public/" + file, resolve(out, file));
 cpSync("public/report-art", resolve(out, "report-art"), { recursive: true });
 cpSync("public/story", resolve(out, "story"), { recursive: true });
+cpSync("public/brand", resolve(out, "brand"), { recursive: true });
 writeFileSync(
   resolve(out, "royal-v2.css"),
   readFileSync("app/globals.css", "utf8").replace(
