@@ -27,11 +27,11 @@ try {
   await page.waitForFunction(
     () => document.getElementById("mobile-prologue")?.dataset.scene === "1",
   );
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(500);
   if (
     (await page
       .locator('.prologue-scene[data-scene="1"] figcaption')
-      .evaluate((n) => getComputedStyle(n).animationDelay)) !== "1.1s"
+      .evaluate((n) => getComputedStyle(n).animationDelay)) !== "0.9s"
   )
     throw Error("CAPTION_DELAY_NOT_UPDATED");
   if (
@@ -60,7 +60,7 @@ try {
         { timeout: 7000 },
       );
       const elapsed = performance.now() - previous;
-      if (i > 2 && (elapsed < 4300 || elapsed > 5700))
+      if (i > 2 && (elapsed < 4000 || elapsed > 5700))
         throw Error("SCENE_READING_TIME_" + elapsed);
       previous = performance.now();
       await page.waitForTimeout(2200);
@@ -92,9 +92,9 @@ try {
   if (
     (await page
       .locator("#mobile-prologue")
-      .evaluate((n) => getComputedStyle(n).animationDuration)) !== "1s"
+      .evaluate((n) => getComputedStyle(n).animationDuration)) !== "0.65s"
   )
-    throw Error("GOLDEN_TRANSITION_DURATION");
+    throw Error("DISSOLVE_TRANSITION_DURATION");
   await page
     .locator("#mobile-prologue")
     .waitFor({ state: "hidden", timeout: 2000 });
@@ -221,8 +221,8 @@ try {
     JSON.stringify({
       engine: engine.name(),
       scenes: 5,
-      captionDelayMs: 1100,
-      sceneDurationMs: 4600,
+      captionDelayMs: 900,
+      sceneDurationMs: 4400,
       autoMain: true,
       skip: true,
       oncePerTabSession: true,

@@ -4280,47 +4280,16 @@ body:has(.checkout-flow) .page {
 .mobile-prologue.is-leaving {
   opacity: 0;
 }
-.mobile-prologue.is-completing {
-  animation: prologue-golden-exit 1s ease both;
-}
-.mobile-prologue.is-completing::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at 50% 48%,
-    #d8ab55b3,
-    #af7e3466 42%,
-    #6c451b22 76%,
-    transparent
-  );
-  animation: prologue-golden-bloom 1s ease both;
-}
+.mobile-prologue.is-completing,
 .mobile-prologue.is-completing::backdrop {
-  animation: prologue-golden-exit 1s ease both;
+  animation: prologue-dissolve 650ms ease both;
 }
-@keyframes prologue-golden-exit {
-  0%,
-  35% {
+@keyframes prologue-dissolve {
+  from {
     opacity: 1;
   }
-  100% {
+  to {
     opacity: 0;
-  }
-}
-@keyframes prologue-golden-bloom {
-  0% {
-    opacity: 0;
-    transform: scale(0.94);
-  }
-  35% {
-    opacity: 0.8;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.08);
   }
 }
 body:has(.mobile-prologue[open]) {
@@ -4374,7 +4343,7 @@ body:has(.mobile-prologue[open]) {
   letter-spacing: 0.025em;
 }
 .prologue-scene.is-active .prologue-caption {
-  animation: prologue-caption 650ms ease 1100ms both;
+  animation: prologue-caption 650ms ease 900ms both;
 }
 .prologue-skip {
   position: absolute;

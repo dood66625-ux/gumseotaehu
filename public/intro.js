@@ -21,7 +21,7 @@
   const scenes = [...dialog.querySelectorAll(".prologue-scene")];
   const skip = document.getElementById("prologue-skip");
   const loads = new Map();
-  const duration = 4600;
+  const duration = 4400;
   let finished = true,
     automatic = false,
     returnFocus,
@@ -44,7 +44,7 @@
     loads.set(index, promise);
     return promise;
   }
-  function finish(immediate = false, celebrate = false) {
+  function finish(immediate = false, dissolve = false) {
     if (finished) return;
     finished = true;
     version++;
@@ -54,14 +54,14 @@
     } catch {}
     document.removeEventListener("visibilitychange", visibility);
     mobile.removeEventListener("change", resize);
-    const golden = celebrate && !immediate && !reduced.matches;
-    dialog.classList.add(golden ? "is-completing" : "is-leaving");
+    const dissolving = dissolve && !immediate && !reduced.matches;
+    dialog.classList.add(dissolving ? "is-completing" : "is-leaving");
     const close = () => {
       dialog.close();
       returnFocus?.focus({ preventScroll: true });
     };
     if (immediate || reduced.matches) close();
-    else closeTimer = setTimeout(close, golden ? 1000 : 350);
+    else closeTimer = setTimeout(close, dissolving ? 650 : 350);
   }
   function arm() {
     if (finished || loading || current < 0 || document.hidden) return;
