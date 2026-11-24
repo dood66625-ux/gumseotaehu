@@ -44,7 +44,7 @@
     loads.set(index, promise);
     return promise;
   }
-  function finish(immediate = false) {
+  function finish(immediate = false, celebrate = false) {
     if (finished) return;
     finished = true;
     version++;
@@ -54,13 +54,14 @@
     } catch {}
     document.removeEventListener("visibilitychange", visibility);
     mobile.removeEventListener("change", resize);
-    dialog.classList.add("is-leaving");
+    const golden = celebrate && !immediate && !reduced.matches;
+    dialog.classList.add(golden ? "is-completing" : "is-leaving");
     const close = () => {
       dialog.close();
       returnFocus?.focus({ preventScroll: true });
     };
     if (immediate || reduced.matches) close();
-    else closeTimer = setTimeout(close, 350);
+    else closeTimer = setTimeout(close, golden ? 1000 : 350);
   }
   function arm() {
     if (finished || loading || current < 0 || document.hidden) return;
@@ -70,7 +71,7 @@
   async function show(index) {
     if (finished) return;
     if (index >= scenes.length) {
-      finish();
+      finish(false, true);
       return;
     }
     clearTimeout(timer);
@@ -126,7 +127,7 @@
     remaining = duration;
     version++;
     returnFocus = manual ? replay : document.querySelector(".hero-cta");
-    dialog.classList.remove("is-leaving", "is-paused");
+    dialog.classList.remove("is-leaving", "is-paused", "is-completing");
     delete dialog.dataset.scene;
     dialog.setAttribute("aria-busy", "true");
     scenes.forEach((scene) => {

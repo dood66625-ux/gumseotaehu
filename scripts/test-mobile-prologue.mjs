@@ -87,8 +87,17 @@ try {
     });
   }
   await page
+    .locator("#mobile-prologue.is-completing")
+    .waitFor({ timeout: 7000 });
+  if (
+    (await page
+      .locator("#mobile-prologue")
+      .evaluate((n) => getComputedStyle(n).animationDuration)) !== "1s"
+  )
+    throw Error("GOLDEN_TRANSITION_DURATION");
+  await page
     .locator("#mobile-prologue")
-    .waitFor({ state: "hidden", timeout: 7000 });
+    .waitFor({ state: "hidden", timeout: 2000 });
   await page
     .getByRole("link", { name: "내 사주 펼쳐보기", exact: true })
     .waitFor();
