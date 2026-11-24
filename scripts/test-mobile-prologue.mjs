@@ -213,7 +213,7 @@ try {
       engine: engine.name(),
       scenes: 5,
       captionDelayMs: 1100,
-      sceneDurationMs: 4800,
+      sceneDurationMs: 4600,
       autoMain: true,
       skip: true,
       oncePerTabSession: true,

@@ -21,7 +21,7 @@
   const scenes = [...dialog.querySelectorAll(".prologue-scene")];
   const skip = document.getElementById("prologue-skip");
   const loads = new Map();
-  const duration = 4800;
+  const duration = 4600;
   let finished = true,
     automatic = false,
     returnFocus,
