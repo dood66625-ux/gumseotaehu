@@ -16,7 +16,7 @@ docker compose -f /usr/local/lib/gumseo/compose.merchant-review.yml config --qui
 docker compose -f /usr/local/lib/gumseo/compose.merchant-review.yml pull proxy
 ufw allow 80/tcp
 ufw allow 443/tcp
-docker compose -f /usr/local/lib/gumseo/compose.merchant-review.yml up -d --no-build --force-recreate
+docker compose -f /usr/local/lib/gumseo/compose.merchant-review.yml up -d --no-build
 docker compose -f /usr/local/lib/gumseo/compose.merchant-review.yml ps -a
 systemctl start gumseo-private-monitor.service
 echo 'TEST REVIEW started. DNS, valid public HTTPS and end-to-end checkout must still be verified. No live payment enabled.'

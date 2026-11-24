@@ -77,6 +77,26 @@ class AutomationTests(unittest.TestCase):
             a.update_review_if_installed()
             run.assert_not_called()
 
+    def test_review_update_keeps_public_proxy_running(self):
+        calls = []
+        def run(args, *rest):
+            calls.append(args)
+            if 'ps' in args: return b'container\n'
+            if 'inspect' in args:
+                return b'healthy\n' if 'Health.Status' in ' '.join(args) else b'true\n'
+            return b''
+        with tempfile.TemporaryDirectory() as directory:
+            installed = Path(directory) / 'review.yml'
+            installed.write_text('installed')
+            with patch.object(a, 'REVIEW_COMPOSE', installed), patch.object(a, 'run', side_effect=run):
+                a.update_review_if_installed()
+        mutations = [args for args in calls if 'run' in args or 'up' in args]
+        self.assertEqual(len(mutations), 2)
+        self.assertEqual(mutations[0][-1], 'assets')
+        self.assertEqual(mutations[1][-1], 'review')
+        self.assertTrue(all('--no-deps' in args for args in mutations))
+        self.assertFalse(any('--force-recreate' in args or 'proxy' in args for args in mutations))
+
     def test_review_failure_does_not_record_successful_main_rollout(self):
         def run(args, *rest):
             if 'ps' in args: return b'container\n'

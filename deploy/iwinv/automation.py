@@ -25,7 +25,11 @@ def update_review_if_installed():
     if not REVIEW_COMPOSE.exists():
         return
     args = ['/usr/bin/docker', 'compose', '-f', str(REVIEW_COMPOSE)]
-    run(args + ['up', '-d', '--no-build', '--force-recreate'], 180)
+    # Keep Caddy/TLS and the existing site online while publishing new assets.
+    run(args + ['run', '--rm', '--no-deps', '-T', 'assets'], 180)
+    # Compose replaces this service only when its image/config actually changed.
+    # Never recreate the public proxy just to publish a UI update.
+    run(args + ['up', '-d', '--no-build', '--no-deps', 'review'], 180)
     for _ in range(30):
         container = run(args + ['ps', '-q', 'review']).decode().strip()
         if container and run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', container]).decode().strip() == 'healthy':
