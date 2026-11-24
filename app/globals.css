@@ -121,7 +121,7 @@ select:focus {
 }
 .brand-logo {
   display: block;
-  width: 216px;
+  width: 172.8px;
   height: auto;
   max-width: 100%;
   object-fit: contain;
@@ -130,14 +130,14 @@ select:focus {
   flex-shrink: 0;
 }
 .footer-brand .brand-logo {
-  width: 240px;
+  width: 192px;
 }
 @media (max-width: 700px) {
   .header .brand-logo {
-    width: clamp(140px, 43vw, 174px);
+    width: clamp(112px, 34.4vw, 139.2px);
   }
   .footer-brand .brand-logo {
-    width: 210px;
+    width: 168px;
   }
 }
 .brand small {
@@ -4318,7 +4318,7 @@ body:has(.mobile-prologue[open]) {
   letter-spacing: 0.025em;
 }
 .prologue-scene.is-active .prologue-caption {
-  animation: prologue-caption 650ms ease 1400ms both;
+  animation: prologue-caption 650ms ease 1100ms both;
 }
 .prologue-skip {
   position: absolute;

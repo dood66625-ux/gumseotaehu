@@ -30,6 +30,12 @@ try {
   await page.waitForTimeout(800);
   if (
     (await page
+      .locator('.prologue-scene[data-scene="1"] figcaption')
+      .evaluate((n) => getComputedStyle(n).animationDelay)) !== "1.1s"
+  )
+    throw Error("CAPTION_DELAY_NOT_UPDATED");
+  if (
+    (await page
       .locator("#prologue-skip")
       .evaluate((n) => getComputedStyle(n).outlineStyle)) !== "none"
   )
@@ -160,7 +166,7 @@ try {
     JSON.stringify({
       engine: engine.name(),
       scenes: 5,
-      captionDelayMs: 1400,
+      captionDelayMs: 1100,
       sceneDurationMs: 4800,
       autoMain: true,
       skip: true,

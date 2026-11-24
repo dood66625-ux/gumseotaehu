@@ -47,13 +47,13 @@ a {
 }
 .brand-logo {
   display: block;
-  width: 216px;
+  width: 172.8px;
   max-width: 100%;
   height: auto;
 }
 @media (max-width: 600px) {
   .brand-logo {
-    width: 180px;
+    width: 144px;
   }
 }
 .language {
