@@ -450,10 +450,7 @@ function draw(report: any) {
   ];
   const top3 = reportTop3(report.chart.element);
   if (top3) {
-    for (const [title, items] of [
-      ["나와 맞는 직업 TOP3", top3.jobs],
-      ["나와 잘 맞는 사람 유형 TOP3", top3.people],
-    ] as const) {
+    for (const { title, items, note } of top3.sections) {
       const index = document.querySelectorAll("#chapters > article").length;
       const page = el("article", undefined, "book-page");
       page.id = "book-top3-" + index;
@@ -464,7 +461,7 @@ function draw(report: any) {
           el("p", item.text, "chapter-copy"),
         );
       });
-      page.append(el("p", top3.note, "figure-note"));
+      page.append(el("p", note, "figure-note"));
       $("chapters").append(page);
       const link = el("a", title) as HTMLAnchorElement;
       link.href = "#" + page.id;

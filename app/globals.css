@@ -4198,6 +4198,11 @@ body:has(.checkout-flow) .page {
   font-size: 13px;
   justify-content: space-between;
 }
+@media (min-width: 901px) {
+  .hero-portrait img {
+    object-position: center 30%;
+  }
+}
 @media (max-width: 700px) {
   .landing-cta-stack {
     width: 100%;

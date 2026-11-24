@@ -56,13 +56,21 @@ try {
       return value === "none" ? 1 : new DOMMatrix(value).a;
     });
     if (scale !== 1) throw Error("PORTRAIT_FRAME_SHRUNK");
-    const portrait = await page.locator(".hero-portrait img").evaluate((img) => ({
-      source: img.currentSrc,
-      loaded: img.complete && img.naturalWidth > 0,
-    }));
+    const portrait = await page
+      .locator(".hero-portrait img")
+      .evaluate((img) => ({
+        source: img.currentSrc,
+        loaded: img.complete && img.naturalWidth > 0,
+        position: getComputedStyle(img).objectPosition,
+      }));
     if (!portrait.loaded) throw Error("PORTRAIT_NOT_LOADED");
-    if (width >= 901 && !portrait.source.endsWith("/empress-royal-distant.webp"))
+    if (
+      width >= 901 &&
+      !portrait.source.endsWith("/empress-royal-distant.webp")
+    )
       throw Error("DISTANT_DESKTOP_PORTRAIT_MISSING");
+    if (width >= 901 && portrait.position !== "50% 30%")
+      throw Error("DESKTOP_PORTRAIT_NOT_RAISED");
     if (width < 901 && portrait.source.endsWith("/empress-royal-distant.webp"))
       throw Error("MOBILE_PORTRAIT_CHANGED");
 

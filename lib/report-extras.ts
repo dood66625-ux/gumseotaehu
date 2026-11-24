@@ -1,3 +1,4 @@
+import { reportSelfGuide } from "./report-self-guide";
 /** Editorial suggestions from the day-element theme; no scores or unseen chart claims. */
 const jobs: Record<string, [string, string][]> = {
   목: [
@@ -136,10 +137,22 @@ const people: Record<string, [string, string][]> = {
 };
 export function reportTop3(element: unknown) {
   if (typeof element !== "string" || !Object.hasOwn(jobs, element)) return null;
-  return {
+  const data = {
     jobs: jobs[element].map(([title, text]) => ({ title, text })),
     people: people[element].map(([title, text]) => ({ title, text })),
     note: "일간 오행의 상징을 바탕으로 고른 탐색 제안입니다. 순서는 편집상 추천 순서이며 직무 적성 검사나 상대 사주를 대조한 궁합 순위는 아닙니다.",
+  };
+  return {
+    ...data,
+    sections: [
+      { title: "나와 맞는 직업 TOP3", items: data.jobs, note: data.note },
+      {
+        title: "나와 잘 맞는 사람 유형 TOP3",
+        items: data.people,
+        note: data.note,
+      },
+      ...reportSelfGuide(element),
+    ],
   };
 }
 export function easyLuckText(

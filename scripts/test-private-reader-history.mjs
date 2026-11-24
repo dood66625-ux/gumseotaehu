@@ -149,13 +149,13 @@ try {
         throw Error("FOCUS_CHAPTER_WRONG");
     }
     await page.locator("#book-next").click();
-    if ((await page.locator("#book-position").textContent()) !== "2 / 14")
+    if ((await page.locator("#book-position").textContent()) !== "2 / 18")
       throw Error("BOOK_NEXT_FAILED");
     await page.locator("#book-prev").click();
     await page.locator("#toc a").nth(3).click();
     await page.reload();
     await page.getByText(report(1).intro, { exact: true }).waitFor();
-    if ((await page.locator("#book-position").textContent()) !== "4 / 14")
+    if ((await page.locator("#book-position").textContent()) !== "4 / 18")
       throw Error("BOOK_PAGE_NOT_REMEMBERED");
     if (
       (await page.locator("#locale").isVisible()) ||
@@ -207,6 +207,10 @@ try {
     for (const title of [
       "나와 맞는 직업 TOP3",
       "나와 잘 맞는 사람 유형 TOP3",
+      "그대의 장점 3가지",
+      "그대의 단점 3가지",
+      "가까이할 것 3가지",
+      "멀리할 것 3가지",
     ]) {
       await page
         .locator("#toc")
@@ -219,7 +223,7 @@ try {
     if (!(await page.locator("#book-next").isDisabled()))
       throw Error("BOOK_END_BOUNDARY");
     await page.emulateMedia({ media: "print" });
-    if ((await page.locator("#chapters article:visible").count()) !== 13)
+    if ((await page.locator("#chapters article:visible").count()) !== 17)
       throw Error("PRINT_LOST_CHAPTERS");
     const printStyle = await page.locator("#book-figures").evaluate((node) => {
       const style = getComputedStyle(node);

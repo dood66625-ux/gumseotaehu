@@ -1,6 +1,32 @@
 import { expect, it } from "vitest";
 import { reportTop3, easyLuckText } from "../lib/report-extras";
 import { reportBook } from "../lib/report-book";
+import { reportSelfGuide } from "../lib/report-self-guide";
+it("adds four distinct three-item guides for each saved day element", () => {
+  const all = ["목", "화", "토", "금", "수"].map((element) => {
+    const guide = reportSelfGuide(element);
+    expect(guide.map((s) => s.title)).toEqual([
+      "그대의 장점 3가지",
+      "그대의 단점 3가지",
+      "가까이할 것 3가지",
+      "멀리할 것 3가지",
+    ]);
+    for (const section of guide) {
+      expect(section.items).toHaveLength(3);
+      expect(new Set(section.items.map((item) => item.title)).size).toBe(3);
+      expect(section.items.every((item) => item.text.length > 20)).toBe(true);
+      expect(section.note).toContain("성격을 단정하는 검사는 아니니");
+    }
+    expect(reportTop3(element)!.sections.slice(2)).toEqual(guide);
+    return JSON.stringify(guide);
+  });
+  expect(new Set(all).size).toBe(5);
+  for (const value of [null, undefined, "__proto__", "木", {}])
+    expect(reportSelfGuide(value)).toEqual([]);
+  const changed = reportSelfGuide("목");
+  changed[0].items[0].title = "modified";
+  expect(reportSelfGuide("목")[0].items[0].title).not.toBe("modified");
+});
 it("offers three explained jobs and relationship types for every supported element", () => {
   for (const element of ["목", "화", "토", "금", "수"]) {
     const result = reportTop3(element)!;

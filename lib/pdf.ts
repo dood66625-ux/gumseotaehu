@@ -266,10 +266,7 @@ export async function reportPdf(
     const top3 = reportTop3(data.report.chart.element);
     if (top3) {
       let topPage = 0;
-      for (const [title, items] of [
-        ["나와 맞는 직업 TOP3", top3.jobs],
-        ["나와 잘 맞는 사람 유형 TOP3", top3.people],
-      ] as const) {
+      for (const { title, items, note } of top3.sections) {
         if (topPage++ > 0) doc.addPage();
         doc.fontSize(20).fillColor(ink).text(title);
         items.forEach((item, index) => {
@@ -284,7 +281,7 @@ export async function reportPdf(
             .fillColor(ink)
             .text(item.text, { lineGap: 6 });
         });
-        doc.moveDown().fontSize(8).text(top3.note);
+        doc.moveDown().fontSize(8).text(note);
       }
       doc.addPage();
     }
