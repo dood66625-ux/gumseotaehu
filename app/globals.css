@@ -4436,6 +4436,16 @@ body:has(.mobile-prologue[open]) {
 .story-replay:hover {
   color: #efdbb4;
 }
+@media (min-width: 701px) {
+  .landing-more > summary {
+    top: var(--more-link-top, calc(100svh - 245px));
+    left: var(--more-link-left, 64px);
+  }
+  .story-replay {
+    top: var(--story-link-top, calc(100svh - 200px));
+    right: var(--story-link-right, 64px);
+  }
+}
 /* An audience with the empress: one question at a time, retaining native form controls. */
 body:has(.birth-wizard) .header {
   display: none;

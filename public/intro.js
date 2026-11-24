@@ -156,4 +156,37 @@
     seen = sessionStorage.getItem(storageKey) === "done";
   } catch {}
   if (mobile.matches && !seen) start();
+  const stage = document.querySelector(".landing-stage");
+  const ctas = document.querySelector(".landing-cta-stack");
+  const legal = document.querySelector(".hero-bottom .landing-links");
+  function positionMainLinks() {
+    if (!stage || !ctas || !legal || mobile.matches) return;
+    const base = stage.getBoundingClientRect(),
+      buttons = ctas.getBoundingClientRect(),
+      links = legal.getBoundingClientRect();
+    stage.style.setProperty(
+      "--more-link-top",
+      `${buttons.bottom - base.top + 14}px`,
+    );
+    stage.style.setProperty(
+      "--more-link-left",
+      `${buttons.left - base.left}px`,
+    );
+    stage.style.setProperty(
+      "--story-link-top",
+      `${links.top - base.top - (replay?.offsetHeight || 35) - 12}px`,
+    );
+    stage.style.setProperty(
+      "--story-link-right",
+      `${base.right - links.right}px`,
+    );
+  }
+  requestAnimationFrame(positionMainLinks);
+  window.addEventListener("resize", positionMainLinks);
+  document.fonts?.ready.then(positionMainLinks);
+  if (typeof ResizeObserver === "function" && stage && ctas && legal) {
+    const observer = new ResizeObserver(positionMainLinks);
+    observer.observe(ctas);
+    observer.observe(legal);
+  }
 })();
