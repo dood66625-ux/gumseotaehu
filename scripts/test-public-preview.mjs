@@ -37,7 +37,7 @@ try {
     (await page.getByLabel("출생 국가·시간대 확인").count())
   )
     throw Error("Removed selectors still visible");
-  for (const name of ["어떻게 불러드릴까요?", "생년월일", "출생시간"]) {
+  for (const name of ["이름 또는 별명", "생년월일", "출생시간"]) {
     const n = page.getByLabel(name, { exact: true });
     if (
       !(await n.getAttribute("readonly")) &&
@@ -45,6 +45,8 @@ try {
     )
       throw Error("Personal input not locked: " + name);
   }
+  await page.getByRole("button", { name: "다음 →" }).click();
+  await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByRole("checkbox", { name: /풀이 대상자는 본인/ }).check();

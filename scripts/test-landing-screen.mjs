@@ -136,7 +136,7 @@ try {
     await page.setViewportSize({ width, height });
     await page.goto("http://127.0.0.1:3200/?screen=start");
     await page.locator(".birth-wizard").waitFor();
-    for (let step = 0; step < 3; step++) {
+    for (let step = 0; step < 5; step++) {
       await page.waitForTimeout(250);
       await page.evaluate(() => scrollTo(0, 0));
       if (
@@ -164,14 +164,28 @@ try {
           });
         });
       if (!contained) throw Error("INPUT_OUTSIDE_FRAME_" + width + "_" + step);
+      const policyBottom = await page
+        .locator(".start-experience > .birth-policy-links")
+        .evaluate((n) => n.getBoundingClientRect().bottom);
+      if (policyBottom > height + 1)
+        throw Error(
+          "BIRTH_POLICY_BELOW_SCREEN_" +
+            width +
+            "_" +
+            step +
+            "_" +
+            Math.ceil(policyBottom),
+        );
       await page.screenshot({
-        path: "var/landing-motion/input-" + step + ".png",
+        path: "var/landing-motion/input-" + width + "-" + step + ".png",
       });
-      if (step < 2) await page.getByRole("button", { name: "다음 →" }).click();
+      if (step < 4) await page.getByRole("button", { name: "다음 →" }).click();
     }
     await page.getByRole("button", { name: "이전", exact: true }).click();
     await page.getByRole("button", { name: "이전", exact: true }).click();
-    if ((await page.getByLabel("어떻게 불러드릴까요?").inputValue()) !== "가온")
+    await page.getByRole("button", { name: "이전", exact: true }).click();
+    await page.getByRole("button", { name: "이전", exact: true }).click();
+    if ((await page.getByLabel("이름 또는 별명").inputValue()) !== "가온")
       throw Error("LOST_BIRTH_INPUT");
   }
   const nativePage = await browser.newPage({

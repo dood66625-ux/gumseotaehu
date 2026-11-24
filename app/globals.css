@@ -4409,6 +4409,223 @@ body:has(.mobile-prologue[open]) {
 .story-replay:hover {
   color: #efdbb4;
 }
+/* An audience with the empress: one question at a time, retaining native form controls. */
+body:has(.birth-wizard) .header {
+  display: none;
+}
+body:has(.birth-wizard) .test-banner {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
+  background: #100e0c66;
+}
+body:has(.birth-wizard):has(.page > .notice) .test-banner {
+  display: none;
+}
+body:has(.birth-wizard) .page {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+.start-experience {
+  position: relative;
+  min-height: 100svh;
+  background: #100e0c;
+}
+.birth-wizard {
+  position: relative;
+  min-height: 0;
+}
+.birth-portrait {
+  position: relative;
+  width: 100%;
+  height: 42svh;
+  overflow: hidden;
+  background: #100e0c;
+}
+.birth-portrait .empress-expression {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(100vw, 560px);
+  height: min(100vw, 560px);
+  transform: translate(-50%, -42%);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.birth-portrait::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(0deg, #100e0c, #100e0c00 70%);
+}
+.birth-wizard[data-step="2"] .birth-portrait {
+  height: 35svh;
+}
+.birth-wizard[data-step="3"] .birth-portrait {
+  height: 40svh;
+}
+.birth-wizard[data-step="4"] .birth-portrait {
+  height: 25svh;
+}
+.birth-step {
+  position: absolute;
+  top: 34px;
+  left: max(24px, calc((100vw - 480px) / 2));
+  z-index: 3;
+  font: 11px/1.6 var(--sans);
+  color: #e6d3af;
+}
+.birth-conversation {
+  width: min(480px, calc(100% - 48px));
+  margin: 0 auto;
+}
+.birth-question {
+  font: 24px/1.45 var(--serif);
+  color: #ead6b1;
+  margin: 2px 0 20px;
+  outline: none;
+  text-wrap: balance;
+}
+.birth-whisper {
+  display: block;
+  font: 13px/1.6 var(--serif);
+  color: #c6ae80;
+  margin-bottom: 6px;
+}
+.birth-wizard .card {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.birth-wizard .field {
+  margin: 0 0 12px;
+}
+.birth-wizard .field > label {
+  font-size: 12px;
+  color: #c8b58e;
+}
+.birth-wizard input:not([type="checkbox"]),
+.birth-wizard select {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  box-sizing: border-box;
+}
+.birth-wizard #name,
+.birth-wizard #date {
+  font-size: 18px;
+}
+.birth-wizard #date {
+  letter-spacing: 0.07em;
+}
+.birth-wizard .birth-calendar {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.birth-calendar > label {
+  margin: 0;
+}
+.birth-more {
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 8px 0;
+  color: #c4b38f;
+}
+.birth-more summary {
+  cursor: pointer;
+}
+.birth-wizard .check {
+  font-size: 12px;
+  margin: 10px 0;
+  line-height: 1.65;
+}
+.birth-wizard .hint {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 6px 0 10px;
+}
+.birth-step-actions {
+  margin: 14px 0 0;
+}
+.start-experience > .birth-policy-links {
+  position: static;
+  justify-content: center;
+  margin: 14px 0 0;
+  padding-bottom: 14px;
+}
+.birth-portrait {
+  animation: birth-step-reveal 650ms ease both;
+}
+.birth-question {
+  animation: birth-step-reveal 400ms ease 120ms both;
+}
+@media (max-height: 700px) {
+  .birth-portrait {
+    height: 34svh;
+  }
+  .birth-wizard[data-step="2"] .birth-portrait {
+    height: 18svh;
+  }
+  .birth-wizard[data-step="3"] .birth-portrait {
+    height: 34svh;
+  }
+  .birth-wizard[data-step="4"] .birth-portrait {
+    height: 18svh;
+  }
+  .birth-question {
+    font-size: 20px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+  .birth-wizard .field {
+    margin-bottom: 8px;
+  }
+  .birth-wizard .check {
+    margin: 8px 0;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .birth-step-actions {
+    margin-top: 10px;
+  }
+  .start-experience > .birth-policy-links {
+    margin-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+@media (max-height: 600px) {
+  .birth-portrait {
+    height: 30svh;
+  }
+  .birth-wizard[data-step="1"] .birth-portrait {
+    height: 17svh;
+  }
+  .birth-wizard[data-step="2"] .birth-portrait {
+    height: 17svh;
+  }
+  .birth-wizard[data-step="2"][data-unknown-time="true"] .birth-portrait {
+    height: 13svh;
+  }
+  .birth-wizard[data-step="3"] .birth-portrait {
+    height: 20svh;
+  }
+  .birth-wizard[data-step="4"] .birth-portrait {
+    height: 12svh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .birth-portrait,
+  .birth-question {
+    animation: none;
+  }
+}
 @media print {
   .story-replay {
     display: none;

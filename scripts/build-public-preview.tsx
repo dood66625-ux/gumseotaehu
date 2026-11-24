@@ -71,6 +71,7 @@ const data = {
 };
 writeFileSync(resolve(out, "sample-report.pdf"), await reportPdf(data.report));
 const route = (s: string) => {
+  if (s.startsWith("/empress-expressions-")) return base + s;
   if (s.startsWith("/story/")) return base + s;
   if (s.startsWith("/brand/")) return base + s;
   const paths: Record<string, string> = {
