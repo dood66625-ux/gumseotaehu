@@ -15,21 +15,17 @@
   const dialog = document.getElementById("mobile-prologue");
   const mobile = matchMedia("(max-width: 700px)");
   const storageKey = "gumseo-prologue-v1";
-  if (
-    !dialog ||
-    !mobile.matches ||
-    new URLSearchParams(location.search).has("screen")
-  )
-    return;
-  try {
-    if (sessionStorage.getItem(storageKey) === "done") return;
-  } catch {}
+  if (!dialog || new URLSearchParams(location.search).has("screen")) return;
   if (typeof dialog.showModal !== "function") return;
+  const replay = document.getElementById("prologue-replay");
   const scenes = [...dialog.querySelectorAll(".prologue-scene")];
   const skip = document.getElementById("prologue-skip");
   const loads = new Map();
   const duration = 4800;
-  let finished = false,
+  let finished = true,
+    automatic = false,
+    returnFocus,
+    closeTimer = 0,
     loading = false,
     current = -1,
     timer = 0,
@@ -61,10 +57,10 @@
     dialog.classList.add("is-leaving");
     const close = () => {
       dialog.close();
-      document.querySelector(".hero-cta")?.focus({ preventScroll: true });
+      returnFocus?.focus({ preventScroll: true });
     };
     if (immediate || reduced.matches) close();
-    else setTimeout(close, 350);
+    else closeTimer = setTimeout(close, 350);
   }
   function arm() {
     if (finished || loading || current < 0 || document.hidden) return;
@@ -117,17 +113,47 @@
     } else arm();
   }
   function resize() {
-    if (!mobile.matches) finish(true);
+    if (automatic && !mobile.matches) finish(true);
+  }
+  function start(manual = false) {
+    if (dialog.open) return;
+    clearTimeout(closeTimer);
+    clearTimeout(timer);
+    finished = false;
+    automatic = !manual;
+    loading = false;
+    current = -1;
+    remaining = duration;
+    version++;
+    returnFocus = manual ? replay : document.querySelector(".hero-cta");
+    dialog.classList.remove("is-leaving", "is-paused");
+    delete dialog.dataset.scene;
+    dialog.setAttribute("aria-busy", "true");
+    scenes.forEach((scene) => {
+      scene.hidden = true;
+      scene.classList.remove("is-active");
+    });
+    document.addEventListener("visibilitychange", visibility);
+    mobile.addEventListener("change", resize);
+    dialog.showModal();
+    dialog.focus({ preventScroll: true });
+    void dialog.offsetWidth;
+    show(0);
   }
   skip.addEventListener("click", () => finish());
   dialog.addEventListener("cancel", (event) => {
     event.preventDefault();
     finish();
   });
-  document.addEventListener("visibilitychange", visibility);
-  mobile.addEventListener("change", resize);
-  window.addEventListener("pagehide", () => finish(true), { once: true });
-  dialog.showModal();
-  dialog.focus({ preventScroll: true });
-  show(0);
+  window.addEventListener("pagehide", () => finish(true));
+  if (replay) {
+    replay.hidden = false;
+    if (copy) copy.hidden = true;
+    replay.addEventListener("click", () => start(true));
+  }
+  let seen = false;
+  try {
+    seen = sessionStorage.getItem(storageKey) === "done";
+  } catch {}
+  if (mobile.matches && !seen) start();
 })();

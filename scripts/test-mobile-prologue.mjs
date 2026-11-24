@@ -95,6 +95,33 @@ try {
   await page.reload();
   if (await page.locator("#mobile-prologue[open]").count())
     throw Error("SESSION_INTRO_REPLAYED");
+  const replay = page.getByRole("button", {
+    name: "스토리 다시 보기",
+    exact: true,
+  });
+  for (let round = 0; round < 2; round++) {
+    await replay.click();
+    await page.waitForFunction(
+      () => document.getElementById("mobile-prologue")?.dataset.scene === "1",
+    );
+    if (
+      Number(
+        await page
+          .locator('.prologue-scene[data-scene="1"] figcaption')
+          .evaluate((n) => getComputedStyle(n).opacity),
+      ) > 0.1
+    )
+      throw Error("REPLAY_CAPTION_DID_NOT_RESET");
+    await page
+      .getByRole("button", { name: "이야기 건너뛰고 메인으로" })
+      .click();
+    await page.locator("#mobile-prologue").waitFor({ state: "hidden" });
+    if (
+      (await page.evaluate(() => document.activeElement.id)) !==
+      "prologue-replay"
+    )
+      throw Error("REPLAY_FOCUS_NOT_RESTORED");
+  }
   await page.close();
   for (const [width, height] of [
     [320, 568],
@@ -112,6 +139,15 @@ try {
       throw Error("SKIP_HAS_BORDER");
     await skip.click();
     await small.locator("#mobile-prologue").waitFor({ state: "hidden" });
+    const replayBox = await small
+      .getByRole("button", { name: "스토리 다시 보기", exact: true })
+      .boundingBox();
+    if (
+      !replayBox ||
+      replayBox.y < 0 ||
+      replayBox.y + replayBox.height > height
+    )
+      throw Error("REPLAY_OUTSIDE_VIEWPORT");
     await small
       .getByRole("link", { name: "내 사주 펼쳐보기", exact: true })
       .click();
@@ -131,6 +167,16 @@ try {
     assets.length
   )
     throw Error("DESKTOP_STORY_ASSETS_LOADED");
+  await desktop
+    .getByRole("button", { name: "스토리 다시 보기", exact: true })
+    .click();
+  await desktop.waitForFunction(
+    () => document.getElementById("mobile-prologue")?.dataset.scene === "1",
+  );
+  if (!(await desktop.locator("#mobile-prologue").isVisible()))
+    throw Error("DESKTOP_MANUAL_STORY_NOT_VISIBLE");
+  await desktop.keyboard.press("Escape");
+  await desktop.locator("#mobile-prologue").waitFor({ state: "hidden" });
   await desktop.close();
   const failed = await browser.newPage({
     viewport: { width: 390, height: 844 },
@@ -171,6 +217,7 @@ try {
       autoMain: true,
       skip: true,
       oncePerTabSession: true,
+      manualReplay: true,
       desktopAssets: 0,
       failedImageFallback: true,
       reducedMotion: true,

@@ -4372,9 +4372,46 @@ body:has(.mobile-prologue[open]) {
     animation-duration: 1ms;
   }
 }
-@media (min-width: 701px), print {
+@media (min-width: 701px) {
+  .mobile-prologue {
+    width: min(520px, 100vw);
+    height: min(900px, 100dvh);
+    margin: auto;
+    border-radius: 12px;
+  }
+  .prologue-caption {
+    bottom: 105px;
+    font-size: 20px;
+  }
+}
+@media print {
   .mobile-prologue {
     display: none !important;
+  }
+}
+.story-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  margin: 0;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #c4ad82;
+  font: 11px/1.6 var(--sans);
+  cursor: pointer;
+}
+.story-replay[hidden] {
+  display: none;
+}
+.story-replay:hover {
+  color: #efdbb4;
+}
+@media print {
+  .story-replay {
+    display: none;
   }
 }
 .reading-detail-open {
