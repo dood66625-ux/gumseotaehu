@@ -96,9 +96,9 @@ const engine = process.env.READER_BROWSER === "webkit" ? webkit : chromium;
 const browser = await engine.launch();
 mkdirSync("var/private-reader", { recursive: true, mode: 0o700 });
 try {
-  for (const width of [390, 1440]) {
+  for (const width of [320, 390, 1440]) {
     const page = await browser.newPage({
-      viewport: { width, height: 900 },
+      viewport: { width, height: width === 320 ? 568 : 900 },
       locale: "zh-TW",
     });
     await page.goto("http://127.0.0.1:3460/private-reading#reading=" + ids[1]);
@@ -218,6 +218,36 @@ try {
         .click();
       if ((await page.locator("#chapters article:visible h3").count()) !== 3)
         throw Error("TOP3_COUNT");
+      if (width === 320) {
+        const box = await page
+          .locator("#chapters article:visible")
+          .boundingBox();
+        if (box.height > 510)
+          throw Error(
+            "COMPACT_PAGE_TOO_TALL_" + title + "_" + Math.ceil(box.height),
+          );
+      }
+      await page
+        .locator("#chapters article:visible")
+        .getByRole("button", { name: "자세히 보기", exact: true })
+        .click();
+      if (
+        (
+          await page
+            .locator("#reading-detail-dialog .reading-detail-body")
+            .textContent()
+        ).length < 800
+      )
+        throw Error("FULL_DETAIL_TEXT_MISSING");
+      if (
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        )
+      )
+        throw Error("DETAIL_DIALOG_OVERFLOW");
+      await page.getByRole("button", { name: "상세 풀이 닫기" }).click();
+      if (await page.locator("#reading-detail-dialog").isVisible())
+        throw Error("DETAIL_DIALOG_CLOSE_FAILED");
     }
     await page
       .locator("#toc")
@@ -236,6 +266,21 @@ try {
       .click();
     if (!(await page.locator("#summary").textContent()).includes("금서태후"))
       throw Error("CLOSING_LETTER_MISSING");
+    await page
+      .locator("#book-ending")
+      .getByRole("button", { name: "자세히 보기", exact: true })
+      .click();
+    if (
+      (
+        await page
+          .locator("#reading-detail-dialog .reading-detail-body")
+          .textContent()
+      ).length < 1100
+    )
+      throw Error("FULL_LETTER_MISSING");
+    await page.keyboard.press("Escape");
+    if (await page.locator("#reading-detail-dialog").isVisible())
+      throw Error("DETAIL_ESCAPE_FAILED");
     if (!(await page.locator("#book-next").isDisabled()))
       throw Error("BOOK_END_BOUNDARY");
     await page.emulateMedia({ media: "print" });
@@ -350,7 +395,8 @@ try {
   console.log(
     JSON.stringify({
       passed: true,
-      widths: [390, 1440],
+      widths: [320, 390, 1440],
+      fullDetailsDialog: true,
       historySelection: true,
       chapterPaging: true,
       chapterTakeaways: true,

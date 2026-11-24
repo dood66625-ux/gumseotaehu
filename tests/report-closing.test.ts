@@ -14,7 +14,7 @@ const saved = (element: unknown) => ({
   })),
   chart: { element, notes: [], cycles: [] },
 });
-it("summarizes the saved year and connects three actions to a short personal letter without mutation", () => {
+it("summarizes the saved year and connects practical advice to a full-page letter without mutation", () => {
   const letters: string[] = [];
   for (const element of ["목", "화", "토", "금", "수"]) {
     const report = saved(element);
@@ -28,8 +28,12 @@ it("summarizes the saved year and connects three actions to a short personal let
       "지킬 습관",
     ]);
     expect(ending.salutation).toContain("하늘");
-    expect(ending.paragraphs.join("")).toContain(ending.points[0].text);
-    expect(ending.paragraphs.join("").length).toBeLessThan(500);
+    expect(ending.paragraphs.join("")).toContain(
+      ending.points[0].text.split(". ")[0],
+    );
+    expect(ending.paragraphs.join("").length).toBeGreaterThan(1100);
+    expect(ending.paragraphs.join("").length).toBeLessThan(1400);
+    expect(ending.points.every((point) => point.text.length > 200)).toBe(true);
     expect(JSON.stringify(ending)).not.toContain("uncertainty");
     expect(JSON.stringify(report)).toBe(before);
     letters.push(ending.paragraphs.join(""));
@@ -53,7 +57,8 @@ it("renders both ending sections and safely escapes a customer name", () => {
   );
   expect(html).toContain("올해 꼭 기억할 세 가지");
   expect(html).toContain("태후가 그대에게 남기는 마지막 편지");
-  expect(html.match(/<h3>/g)).toHaveLength(3);
+  expect(html).toContain('aria-haspopup="dialog"');
+  expect(html.match(/<h3>/g)!.length).toBeGreaterThanOrEqual(3);
   expect(html).not.toContain("<script>");
   expect(html).toContain("&lt;script&gt;");
 });

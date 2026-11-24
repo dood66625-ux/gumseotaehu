@@ -1,4 +1,5 @@
 import { taehouNarration } from "./taehou-narration";
+import { chapterExercise } from "./report-detail-copy";
 import { easyLuckText } from "./report-extras";
 /** Display-only cleanup: the immutable report and calculation evidence stay intact. */
 export function bookText(text: string, notes: string[]) {
@@ -176,6 +177,8 @@ export function reportBook(report: {
         : cleaned.text;
     return {
       text: displayText,
+      practice:
+        index !== 6 && displayText.length < 700 ? chapterExercise(index) : "",
       takeaway: chapterTakeaway(displayText, "ko"),
       moved: cleaned.moved,
     };

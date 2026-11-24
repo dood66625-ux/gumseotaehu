@@ -16,6 +16,8 @@ it("adds four distinct three-item guides for each saved day element", () => {
       expect(new Set(section.items.map((item) => item.title)).size).toBe(3);
       expect(section.items.every((item) => item.text.length > 20)).toBe(true);
       expect(section.note).toContain("성격을 단정하는 검사는 아니니");
+      expect(section.lead.length).toBeGreaterThan(60);
+      expect(section.items.every((item) => item.text.length > 200)).toBe(true);
     }
     expect(reportTop3(element)!.sections.slice(2)).toEqual(guide);
     return JSON.stringify(guide);
@@ -30,6 +32,11 @@ it("adds four distinct three-item guides for each saved day element", () => {
 it("offers three explained jobs and relationship types for every supported element", () => {
   for (const element of ["목", "화", "토", "금", "수"]) {
     const result = reportTop3(element)!;
+    for (const section of result.sections)
+      expect(
+        section.lead.length +
+          section.items.reduce((n, item) => n + item.text.length, 0),
+      ).toBeGreaterThan(800);
     for (const list of [result.jobs, result.people]) {
       expect(list).toHaveLength(3);
       expect(new Set(list.map((x) => x.title)).size).toBe(3);

@@ -1,4 +1,5 @@
 import { reportSelfGuide } from "./report-self-guide";
+import { workDetail, relationshipDetail } from "./report-work-relationships";
 /** Editorial suggestions from the day-element theme; no scores or unseen chart claims. */
 const jobs: Record<string, [string, string][]> = {
   목: [
@@ -138,16 +139,28 @@ const people: Record<string, [string, string][]> = {
 export function reportTop3(element: unknown) {
   if (typeof element !== "string" || !Object.hasOwn(jobs, element)) return null;
   const data = {
-    jobs: jobs[element].map(([title, text]) => ({ title, text })),
-    people: people[element].map(([title, text]) => ({ title, text })),
+    jobs: jobs[element].map(([title, text], i) => ({
+      title,
+      text: text + " " + workDetail(element, i),
+    })),
+    people: people[element].map(([title, text], i) => ({
+      title,
+      text: text + " " + relationshipDetail(element, i),
+    })),
     note: "일간 오행의 상징을 바탕으로 고른 탐색 제안입니다. 순서는 편집상 추천 순서이며 직무 적성 검사나 상대 사주를 대조한 궁합 순위는 아닙니다.",
   };
   return {
     ...data,
     sections: [
-      { title: "나와 맞는 직업 TOP3", items: data.jobs, note: data.note },
+      {
+        title: "나와 맞는 직업 TOP3",
+        lead: "직업 이름만으로 그대의 길이 정해지는 것은 아니니라. 아래에서는 실제로 어떤 일을 하는지와 작게 경험할 방법을 함께 살펴보거라. 잘할 것 같은 일보다 해 보고도 관심이 남는 일을 찾는 데 써 보거라.",
+        items: data.jobs,
+        note: data.note,
+      },
       {
         title: "나와 잘 맞는 사람 유형 TOP3",
+        lead: "나와 맞는 사람은 정해진 생일이나 한 가지 성격으로만 고를 수 없느니라. 함께 있을 때의 대화와 행동에서 확인할 모습을 세 갈래로 짚었으니, 현재의 관계와 그대 자신의 태도도 함께 돌아보거라.",
         items: data.people,
         note: data.note,
       },

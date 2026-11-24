@@ -2,6 +2,8 @@ import { taehouNarration } from "../../lib/taehou-narration";
 import { reportFocusTopics } from "../../lib/report-focus";
 import { reportTop3, easyLuckText } from "../../lib/report-extras";
 import { reportClosing } from "../../lib/report-closing";
+import { chapterExercise } from "../../lib/report-detail-copy";
+import { readingExcerpt } from "../../lib/reading-excerpt";
 import { bookText, chapterTakeaway } from "./book";
 import { reportFigures } from "../../lib/report-figures";
 import { reportPortrait } from "../../lib/report-portrait";
@@ -257,6 +259,89 @@ function turnPage(index: number, scroll = true) {
     $("book").scrollIntoView({ block: "start", behavior: "auto" });
   }
 }
+function addReadingDetails() {
+  document.getElementById("reading-detail-dialog")?.remove();
+  const modal = document.createElement("dialog");
+  modal.id = "reading-detail-dialog";
+  modal.className = "reading-detail-dialog";
+  modal.setAttribute("aria-labelledby", "reading-detail-title");
+  const bar = el("div", undefined, "reading-dialog-bar");
+  const title = el("h2");
+  title.id = "reading-detail-title";
+  const close = el("button", "닫기 ×") as HTMLButtonElement;
+  close.type = "button";
+  close.setAttribute("aria-label", "상세 풀이 닫기");
+  close.addEventListener("click", () => modal.close());
+  const content = el("div", undefined, "reading-detail-body");
+  bar.append(title, close);
+  modal.append(bar, content);
+  modal.addEventListener("click", (event) => {
+    if (event.target !== modal) return;
+    const r = modal.getBoundingClientRect();
+    if (
+      event.clientX < r.left ||
+      event.clientX > r.right ||
+      event.clientY < r.top ||
+      event.clientY > r.bottom
+    )
+      modal.close();
+  });
+  document.body.append(modal);
+  for (const page of document.querySelectorAll<HTMLElement>(
+    "#chapters > article, #book-ending",
+  )) {
+    page
+      .querySelectorAll(".reading-print-full, .reading-detail-open")
+      .forEach((n) => n.remove());
+    const original = page.cloneNode(true) as HTMLElement;
+    original.querySelectorAll("[id]").forEach((n) => n.removeAttribute("id"));
+    original.removeAttribute("id");
+    original
+      .querySelectorAll("details, button, .fine")
+      .forEach((n) => n.remove());
+    const heading =
+      original.querySelector("h2")?.textContent ?? "금서의 상세 풀이";
+    original.querySelector("h2")?.remove();
+    const full = document.createDocumentFragment();
+    full.append(...original.childNodes);
+    for (const p of page.querySelectorAll<HTMLParagraphElement>("p")) {
+      if (
+        p.closest("details, .chapter-takeaway") ||
+        !p.textContent ||
+        p.textContent.length < 100
+      )
+        continue;
+      const text = p.textContent;
+      const print = p.cloneNode(true) as HTMLElement;
+      print.removeAttribute("id");
+      print.className = p.className + " reading-print-full";
+      p.after(print);
+      p.classList.add("reading-brief");
+      p.textContent =
+        p.id === "summary"
+          ? readingExcerpt(text, 120) +
+            "\n\n그대의 다음 장을 기다리며, 금서태후"
+          : readingExcerpt(text, 1);
+    }
+    const button = el(
+      "button",
+      "자세히 보기",
+      "reading-detail-open",
+    ) as HTMLButtonElement;
+    button.type = "button";
+    button.setAttribute("aria-haspopup", "dialog");
+    button.addEventListener("click", () => {
+      title.textContent = heading;
+      content.replaceChildren(full.cloneNode(true));
+      modal.showModal();
+      content.scrollTop = 0;
+      modal.scrollTop = 0;
+    });
+    const takeaway = page.querySelector(".chapter-takeaway");
+    if (takeaway) takeaway.before(button);
+    else page.append(button);
+  }
+}
 $("book-prev").addEventListener("click", () => turnPage(bookPage - 1));
 $("book-next").addEventListener("click", () => turnPage(bookPage + 1));
 $("book").addEventListener("keydown", (event) => {
@@ -346,6 +431,12 @@ function draw(report: any) {
     article.append(image);
     for (const paragraph of displayText.split(/\n\s*\n/).filter(Boolean))
       article.append(el("p", paragraph, "chapter-copy"));
+    if (locale === "ko" && i !== 6 && displayText.length < 700) {
+      article.append(
+        el("h3", "그대의 일상에 가져가 보거라"),
+        el("p", chapterExercise(i), "chapter-copy"),
+      );
+    }
     if (takeaway) {
       const callout = el("aside", undefined, "chapter-takeaway");
       callout.append(
@@ -448,11 +539,12 @@ function draw(report: any) {
   }
   const top3 = reportTop3(report.chart.element);
   if (top3) {
-    for (const { title, items, note } of top3.sections) {
+    for (const { title, lead, items, note } of top3.sections) {
       const index = document.querySelectorAll("#chapters > article").length;
       const page = el("article", undefined, "book-page");
       page.id = "book-top3-" + index;
       page.append(el("h2", title));
+      page.append(el("p", lead, "chapter-copy"));
       items.forEach((item, rank) => {
         page.append(
           el("h3", `${rank + 1}. ${item.title}`),
@@ -547,6 +639,7 @@ function draw(report: any) {
   try {
     remembered = Number(sessionStorage.getItem(pageKey())) || 0;
   } catch {}
+  addReadingDetails();
   turnPage(Number.isInteger(remembered) ? remembered : 0, false);
   status(c.ready);
   $("birth-form").hidden = true;

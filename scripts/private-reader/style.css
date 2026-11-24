@@ -663,6 +663,127 @@ html[lang="zh-TW"] body {
   }
 }
 /* Native iOS date/time widgets must shrink inside their grid cells. */
+.reading-print-full {
+  display: none;
+}
+.reading-detail-open {
+  margin: 14px 0;
+}
+.reading-detail-dialog {
+  box-sizing: border-box;
+  width: min(760px, calc(100vw - 28px));
+  max-height: 86vh;
+  max-height: 86dvh;
+  overflow: auto;
+  background: #f5e9ce;
+  color: #443622;
+  border: 1px solid #ad8e58;
+  border-radius: 12px;
+  padding: clamp(18px, 4vw, 32px);
+}
+.reading-detail-dialog::backdrop {
+  background: #100b08c9;
+  backdrop-filter: blur(4px);
+}
+.reading-dialog-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f5e9ce;
+  display: flex;
+  gap: 18px;
+  align-items: start;
+  justify-content: space-between;
+}
+.reading-dialog-bar h2 {
+  margin: 0 0 16px;
+  font-size: 23px;
+}
+.reading-dialog-bar button {
+  flex-shrink: 0;
+  margin: 0;
+}
+.reading-detail-body {
+  font-size: 16px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.reading-detail-body p {
+  white-space: pre-line;
+}
+.reading-detail-body img {
+  display: none;
+}
+body:has(.reading-detail-dialog[open]) {
+  overflow: hidden;
+}
+@media screen {
+  .book-page {
+    min-height: 0;
+  }
+  .book-page .chapter-copy {
+    line-height: 1.75;
+  }
+  .book-page h3 {
+    margin: 16px 0 6px;
+  }
+  .book-page p {
+    margin: 10px 0;
+  }
+  .book-page img {
+    max-height: min(160px, 22dvh);
+  }
+}
+@media print {
+  .reading-brief,
+  .reading-detail-open,
+  .reading-detail-dialog {
+    display: none !important;
+  }
+  .reading-print-full {
+    display: block !important;
+  }
+}
+@media screen and (max-height: 720px) {
+  .book-page > .figure-note {
+    display: none;
+  }
+  .book-page {
+    padding: 18px;
+  }
+  .book-page h2 {
+    font-size: 22px;
+    margin: 0 0 10px;
+    line-height: 1.35;
+  }
+  .book-page h3 {
+    font-size: 17px;
+    margin: 10px 0 4px;
+    line-height: 1.35;
+  }
+  .book-page p {
+    margin: 7px 0;
+  }
+  .reading-detail-open {
+    padding: 10px 14px;
+    margin: 10px 0 0;
+  }
+  .book-page .chapter-copy {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .book-page img {
+    max-height: 100px;
+  }
+  .chapter-takeaway {
+    margin: 12px 0;
+    padding: 10px;
+  }
+  .chapter-takeaway p {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+}
 .fields {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

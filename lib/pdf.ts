@@ -150,14 +150,42 @@ export async function reportPdf(
         .fillColor(ink)
         .text(c.title, { lineGap: 5 });
       const artY = doc.y + 18;
+      const chapter = book.chapters[i];
+      const bodyHeight = doc
+        .fontSize(10.5)
+        .heightOfString(chapter.text, { width: W - 116, lineGap: 5 });
+      const practiceHeight = chapter.practice
+        ? doc.heightOfString(chapter.practice, { width: W - 116, lineGap: 5 }) +
+          36
+        : 0;
+      const takeawayHeight = chapter.takeaway
+        ? doc
+            .fontSize(11)
+            .heightOfString(chapter.takeaway, { width: W - 116, lineGap: 5 }) +
+          44
+        : 0;
+      // Keep readable type; use available illustration space before creating a sparse overflow page.
+      const artHeight = Math.max(
+        80,
+        Math.min(
+          170,
+          H -
+            doc.page.margins.bottom -
+            artY -
+            bodyHeight -
+            practiceHeight -
+            takeawayHeight -
+            60,
+        ),
+      );
       doc.image(path.resolve("public" + chapterArt[i].src), 58, artY, {
         width: W - 116,
-        height: 170,
-        fit: [W - 116, 170],
+        height: artHeight,
+        fit: [W - 116, artHeight],
         align: "center",
         valign: "center",
       });
-      doc.y = artY + 180;
+      doc.y = artY + artHeight + 10;
       doc
         .fontSize(8)
         .fillColor(gold)
@@ -169,7 +197,19 @@ export async function reportPdf(
         .moveDown(1.3)
         .fontSize(10.5)
         .fillColor(ink)
-        .text(book.chapters[i].text, { lineGap: 7, align: "left" });
+        .text(book.chapters[i].text, { lineGap: 5, align: "left" });
+      if (book.chapters[i].practice) {
+        doc
+          .moveDown()
+          .fontSize(11)
+          .fillColor(gold)
+          .text("그대의 일상에 가져가 보거라");
+        doc
+          .moveDown(0.5)
+          .fontSize(10.5)
+          .fillColor(ink)
+          .text(book.chapters[i].practice, { lineGap: 5 });
+      }
       if (book.chapters[i].takeaway) {
         // Keep the closing label with its text if the chapter flows onto another page.
         const closingHeight =
@@ -267,9 +307,10 @@ export async function reportPdf(
     const top3 = reportTop3(data.report.chart.element);
     if (top3) {
       let topPage = 0;
-      for (const { title, items, note } of top3.sections) {
+      for (const { title, lead, items, note } of top3.sections) {
         if (topPage++ > 0) doc.addPage();
         doc.fontSize(20).fillColor(ink).text(title);
+        doc.moveDown().fontSize(10.5).text(lead, { lineGap: 5 });
         items.forEach((item, index) => {
           doc
             .moveDown()
@@ -331,7 +372,11 @@ export async function reportPdf(
       doc.fontSize(21).fillColor(ink).text(ending.letterTitle);
       doc.moveDown().fontSize(12).fillColor(gold).text(ending.salutation);
       ending.paragraphs.forEach((text) =>
-        doc.moveDown().fontSize(11).fillColor(ink).text(text, { lineGap: 6 }),
+        doc
+          .moveDown(0.6)
+          .fontSize(10.5)
+          .fillColor(ink)
+          .text(text, { lineGap: 4.5 }),
       );
       doc.moveDown().fontSize(10).fillColor(gold).text(ending.signature);
       doc.addPage();

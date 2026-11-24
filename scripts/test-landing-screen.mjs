@@ -71,6 +71,23 @@ try {
       throw Error("DISTANT_DESKTOP_PORTRAIT_MISSING");
     if (width >= 901 && portrait.position !== "50% 30%")
       throw Error("DESKTOP_PORTRAIT_NOT_RAISED");
+    if (width >= 901) {
+      const framing = await page
+        .locator(".hero-portrait picture")
+        .evaluate((n) => {
+          const css = getComputedStyle(n);
+          return {
+            x: new DOMMatrix(css.transform).e,
+            width: n.getBoundingClientRect().width,
+            fade: css.maskImage,
+          };
+        });
+      if (
+        Math.abs(framing.x + framing.width * 0.3) > 1 ||
+        framing.fade === "none"
+      )
+        throw Error("PORTRAIT_LEFT_SHIFT_OR_FADE_MISSING");
+    }
     if (width < 901 && portrait.source.endsWith("/empress-royal-distant.webp"))
       throw Error("MOBILE_PORTRAIT_CHANGED");
 

@@ -3,6 +3,8 @@ import { taehouNarration } from "../lib/taehou-narration";
 import ReportFocus from "./ReportFocus";
 import ReportTop3 from "./ReportTop3";
 import ReportClosing from "./ReportClosing";
+import ReadingDetails from "./ReadingDetails";
+import { readingExcerpt } from "../lib/reading-excerpt";
 import { reportBook } from "../lib/report-book";
 import Link from "next/link";
 import { chapterArt } from "../lib/report-art";
@@ -178,7 +180,18 @@ export default function ReportReader({
             />
             <figcaption>{chapterArt[i].title}</figcaption>
           </figure>
-          <p>{book.chapters[i].text}</p>
+          <ReadingDetails
+            title={c.title}
+            brief={<p>{readingExcerpt(book.chapters[i].text, 150)}</p>}
+          >
+            <p>{book.chapters[i].text}</p>
+            {book.chapters[i].practice && (
+              <section>
+                <h3>그대의 일상에 가져가 보거라</h3>
+                <p>{book.chapters[i].practice}</p>
+              </section>
+            )}
+          </ReadingDetails>
           {book.chapters[i].takeaway && (
             <aside className="card gold" aria-label="이 장의 한마디">
               <p className="eyebrow">이 장의 한마디</p>

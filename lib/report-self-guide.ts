@@ -1,3 +1,4 @@
+import { selfGuideDetail, guideLeads } from "./report-detail-copy";
 /** Reading prompts drawn from the saved day element, not personality measurements. */
 type Pair = [string, string];
 type Guide = {
@@ -288,14 +289,19 @@ export function reportSelfGuide(element: unknown) {
   const guide = guides[element];
   return (
     [
-      ["그대의 장점 3가지", guide.strengths],
-      ["그대의 단점 3가지", guide.weaknesses],
-      ["가까이할 것 3가지", guide.approach],
-      ["멀리할 것 3가지", guide.avoid],
+      ["그대의 장점 3가지", guide.strengths, "strengths"],
+      ["그대의 단점 3가지", guide.weaknesses, "weaknesses"],
+      ["가까이할 것 3가지", guide.approach, "approach"],
+      ["멀리할 것 3가지", guide.avoid, "avoid"],
     ] as const
-  ).map(([title, pairs]) => ({
+  ).map(([title, pairs, category]) => ({
     title,
-    items: pairs.map(([title, text]) => ({ title, text })),
+    lead: guideLeads[category],
+    items: pairs.map(([title, shortText], index) => ({
+      title,
+      shortText,
+      text: shortText + " " + selfGuideDetail(element, category, index),
+    })),
     note: "일간 오행의 상징으로 골라 본 생활 조언이니라. 성격을 단정하는 검사는 아니니, 그대에게 맞는 것부터 실천해 보거라.",
   }));
 }
