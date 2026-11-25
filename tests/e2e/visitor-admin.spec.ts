@@ -113,3 +113,49 @@ test("password-only operator can choose a new password and log in again", async 
   });
   expect(restored.status()).toBe(200);
 });
+
+test("expired visitor authentication offers password reentry and restores the log without refreshing", async ({
+  page,
+}) => {
+  let signedIn = false;
+  await page.route("**/api/admin/visitors?*", (route) =>
+    signedIn
+      ? route.fulfill({
+          json: {
+            total: 0,
+            visits: [],
+            summary: {
+              todayVisitors: 0,
+              todaySessions: 0,
+              todayCheckout: 0,
+              topSource: null,
+              todayPurchases: 0,
+            },
+          },
+        })
+      : route.fulfill({
+          status: 401,
+          json: { error: "중요 작업 전 관리자 로그인을 다시 해주세요." },
+        }),
+  );
+  await page.route("**/api/admin/login", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({
+      password: "synthetic-reauth-password",
+    });
+    signedIn = true;
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/admin/visitors");
+  await expect(
+    page.getByLabel("관리자 비밀번호", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("관리자 비밀번호", { exact: true })
+    .fill("synthetic-reauth-password");
+  await page.getByRole("button", { name: "다시 로그인하고 로그 보기" }).click();
+  await expect(
+    page.getByText("이 기간에 수집된 방문 기록이 없습니다."),
+  ).toBeVisible();
+  await expect(page.locator(".visitor-admin-login")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/admin\/visitors$/);
+});

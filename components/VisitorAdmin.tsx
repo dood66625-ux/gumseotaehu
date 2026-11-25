@@ -10,6 +10,7 @@ export default function VisitorAdmin() {
     [sort, setSort] = useState("recent"),
     [data, setData] = useState<any>(null),
     [error, setError] = useState(""),
+    [authNeeded, setAuthNeeded] = useState(false),
     [busy, setBusy] = useState(false),
     [detail, setDetail] = useState<any>(null);
   const dialog = useRef<HTMLDialogElement>(null),
@@ -27,11 +28,15 @@ export default function VisitorAdmin() {
     setError("");
     try {
       const next = await api("admin/visitors?sort=" + sort + "&page=" + page);
-      if (version === generation.current) setData(next);
+      if (version === generation.current) {
+        setData(next);
+        setAuthNeeded(false);
+      }
     } catch (e) {
       if (version === generation.current) {
         setDetail(null);
         dialog.current?.close();
+        setAuthNeeded(e instanceof ApiError && [401, 403].includes(e.status));
         setError((e as Error).message);
       }
     }
@@ -54,7 +59,10 @@ export default function VisitorAdmin() {
       setDetail(next);
       dialog.current?.showModal();
     } catch (e) {
-      if (e instanceof ApiError && [401, 403].includes(e.status)) setData(null);
+      if (e instanceof ApiError && [401, 403].includes(e.status)) {
+        setData(null);
+        setAuthNeeded(true);
+      }
       setError((e as Error).message);
     } finally {
       if (version === reportGeneration.current) setBusy(false);
@@ -106,7 +114,44 @@ export default function VisitorAdmin() {
         </nav>
       </header>
       <ErrorBox error={error} />
-      {!data && !error && <Loading />}
+      {authNeeded && (
+        <form
+          className="visitor-admin-login"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (busy) return;
+            const password = new FormData(e.currentTarget).get("password");
+            setBusy(true);
+            setError("");
+            try {
+              await api("admin/login", { password });
+              await load();
+            } catch (e) {
+              setAuthNeeded(true);
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <h2>관리자 로그인 확인</h2>
+          <p>
+            아래에 관리자 비밀번호를 다시 입력하면 방문자 로그로 돌아갑니다.
+          </p>
+          <label htmlFor="visitor-reauth-password">관리자 비밀번호</label>
+          <input
+            id="visitor-reauth-password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            maxLength={200}
+            required
+          />
+          <button disabled={busy}>다시 로그인하고 로그 보기</button>
+        </form>
+      )}
+
+      {!data && !error && !authNeeded && <Loading />}
       {data && (
         <>
           <section
