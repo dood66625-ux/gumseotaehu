@@ -8,6 +8,13 @@ test("visitor duplicate groups are collapsed and paginate fifteen at a time", as
     await route.fulfill({
       json: {
         total: 16,
+        summary: {
+          todayVisitors: 21,
+          todaySessions: 28,
+          todayCheckout: 3,
+          topSource: "search.naver.com",
+          todayPurchases: 1,
+        },
         visits: second
           ? []
           : Array.from({ length: 15 }, (_, i) => ({
@@ -41,7 +48,18 @@ test("visitor duplicate groups are collapsed and paginate fifteen at a time", as
     });
   });
   await page.goto("/admin/visitors");
-  await expect(page.getByText("페이지당 15건")).toBeVisible();
+  await expect(
+    page.locator(".visitor-admin-toolbar").getByText("페이지당 15건"),
+  ).toBeVisible();
+  await expect(page.locator(".visitor-admin-metrics article")).toHaveCount(4);
+  await expect(
+    page.locator(".visitor-admin-metrics").getByText("search.naver.com"),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
   const summary = page.getByText("중복 접속 2건 펼치기");
   await expect(summary).toBeVisible();
   await expect(summary.locator("..")).not.toHaveAttribute("open", "");
@@ -86,4 +104,12 @@ test("password-only operator can choose a new password and log in again", async 
   await expect(
     page.getByText("관리자 비밀번호 변경", { exact: true }),
   ).toBeVisible();
+  const restored = await page.request.post("/api/admin/password", {
+    headers: { origin: "http://localhost:3000" },
+    data: {
+      currentPassword: "synthetic-chosen-password-123",
+      password: process.env.ADMIN_PASSWORD,
+    },
+  });
+  expect(restored.status()).toBe(200);
 });

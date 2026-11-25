@@ -96,17 +96,20 @@ export function visitorOverview(
   database: DatabaseSync,
   page = 0,
   now = Date.now(),
+  sort: "recent" | "repeat" = "recent",
 ) {
   database
     .prepare("DELETE FROM visits WHERE first_seen<?")
     .run(now - retention);
   const groupSql =
-    "SELECT coalesce(n.network_key,v.id) AS group_key,MAX(v.last_seen) AS recent FROM visits v LEFT JOIN visit_networks n ON n.visit_id=v.id GROUP BY group_key";
+    "SELECT coalesce(n.network_key,v.id) AS group_key,MAX(v.last_seen) AS recent,COUNT(*) AS visit_count FROM visits v LEFT JOIN visit_networks n ON n.visit_id=v.id GROUP BY group_key";
   const groups = database
     .prepare(
       "SELECT * FROM (" +
         groupSql +
-        ") ORDER BY recent DESC,group_key LIMIT 15 OFFSET ?",
+        ") ORDER BY " +
+        (sort === "repeat" ? "visit_count DESC," : "") +
+        "recent DESC,group_key LIMIT 15 OFFSET ?",
     )
     .all(page * 15);
   return {
@@ -153,5 +156,49 @@ export function visitorOverview(
           .all(g.group_key),
       };
     }),
+  };
+}
+
+export function visitorSummary(database: DatabaseSync, now = Date.now()) {
+  const day = 86400000,
+    start = Math.floor((now + 9 * 3600000) / day) * day - 9 * 3600000;
+  const rows = database
+    .prepare(
+      "SELECT v.*,coalesce(n.network_key,v.id) AS group_key FROM visits v LEFT JOIN visit_networks n ON n.visit_id=v.id WHERE v.last_seen>=? AND v.last_seen<=?",
+    )
+    .all(start, now);
+  const today = new Set(rows.map((v) => v.group_key));
+  const sources = new Map<string, number>();
+  for (const v of rows)
+    sources.set(String(v.source), (sources.get(String(v.source)) ?? 0) + 1);
+  const topSource =
+    [...sources].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+    )[0]?.[0] ?? null;
+  const checkout = database
+    .prepare(
+      "SELECT count(DISTINCT coalesce(n.network_key,v.id)) AS n FROM visit_events e JOIN visits v ON v.id=e.visit_id LEFT JOIN visit_networks n ON n.visit_id=v.id WHERE e.stage='checkout' AND e.at>=? AND e.at<=?",
+    )
+    .get(start, now)!.n;
+  const live = database
+    .prepare(
+      "SELECT 1 FROM sqlite_master WHERE type='table' AND name='toss_live_orders'",
+    )
+    .get();
+  const purchases = live
+    ? Number(
+        database
+          .prepare(
+            "SELECT count(DISTINCT o.id) AS n FROM orders o JOIN toss_live_orders t ON t.order_id=o.id JOIN reading_history h ON h.order_id=o.id JOIN visit_readings l ON l.reading_id=h.reading_id WHERE o.paid_at>=? AND o.paid_at<=? AND o.payment_status='paid'",
+          )
+          .get(start, now)!.n,
+      )
+    : 0;
+  return {
+    todayVisitors: today.size,
+    todaySessions: rows.length,
+    todayCheckout: Number(checkout),
+    topSource,
+    todayPurchases: purchases,
   };
 }

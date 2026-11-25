@@ -18,6 +18,7 @@ import { audit, Fault, limit, open } from "@/lib/security";
 import {
   linkVisitReading,
   visitorOverview,
+  visitorSummary,
   visitorCookie,
 } from "@/lib/visitor-log";
 import * as svc from "@/lib/service";
@@ -92,9 +93,13 @@ async function handler(
           .min(0)
           .max(1000)
           .parse(req.nextUrl.searchParams.get("page") ?? 0);
-        const result = visitorOverview(db(), page);
+        const sort = z
+          .enum(["recent", "repeat"])
+          .parse(req.nextUrl.searchParams.get("sort") ?? "recent");
+        const result = visitorOverview(db(), page, Date.now(), sort);
         return json({
           ...result,
+          summary: visitorSummary(db()),
           visits: result.visits.map((v) => ({
             ...v,
             orders: v.orders

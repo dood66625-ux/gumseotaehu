@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   recordVisit,
   visitorOverview,
+  visitorSummary,
   linkVisitReading,
   referrerHost,
 } from "../lib/visitor-log";
@@ -77,6 +78,11 @@ it("only links conversion to an actual stored order and follows its server state
   expect(visitorOverview(database, 0, 3000).visits[0].orders[0].paid_at).toBe(
     2500,
   );
+  expect(visitorSummary(database, 3000).todayPurchases).toBe(0);
+  database.exec(
+    "CREATE TABLE toss_live_orders(order_id TEXT PRIMARY KEY); INSERT INTO toss_live_orders VALUES('order')",
+  );
+  expect(visitorSummary(database, 3000).todayPurchases).toBe(1);
   database.prepare("DELETE FROM visit_readings").run();
   expect(visitorOverview(database, 0, 3000).visits[0].orders).toHaveLength(0);
 });
@@ -120,4 +126,43 @@ it("groups repeated network visits and paginates 15 groups without losing sessio
   expect(second.visits[0].sessions).toHaveLength(2);
   expect(second.visits[0].last_stage).toBe("checkout");
   expect(second.visits[0].first_seen).toBe(1000);
+  expect(
+    visitorOverview(database, 0, 4000, "repeat").visits[0].sessionCount,
+  ).toBe(2);
+});
+
+it("summarizes active visits by Korean calendar day independently from pagination", () => {
+  const now = Date.UTC(2026, 10, 25, 0),
+    start = Date.UTC(2026, 10, 24, 15);
+  const old = recordVisit(
+    database,
+    null,
+    "landing",
+    "https://old.example",
+    start - 1000,
+  );
+  const a = recordVisit(
+    database,
+    null,
+    "checkout",
+    "https://search.example",
+    start + 1000,
+  );
+  const b = recordVisit(
+    database,
+    null,
+    "landing",
+    "https://search.example",
+    start + 2000,
+  );
+  for (const v of [a, b])
+    database
+      .prepare("INSERT INTO visit_networks VALUES(?,?)")
+      .run(v.id, "one-network");
+  const stats = visitorSummary(database, now);
+  expect(stats.todayVisitors).toBe(1);
+  expect(stats.todaySessions).toBe(2);
+  expect(stats.todayCheckout).toBe(1);
+  expect(stats.topSource).toBe("search.example");
+  expect(stats.todayPurchases).toBe(0);
 });
