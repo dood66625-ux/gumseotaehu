@@ -4551,6 +4551,10 @@ body:has(.birth-wizard) .page {
   background: transparent;
   box-shadow: none;
 }
+.birth-wizard .card:before {
+  top: -9px;
+  left: -9px;
+}
 .birth-wizard .field {
   margin: 0 0 12px;
 }

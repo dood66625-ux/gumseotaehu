@@ -174,9 +174,9 @@ export default function Admin() {
         <p className="eyebrow">RESTRICTED OPERATIONS</p>
         <h1>운영자 인증</h1>
         <p className="notice">
-          로컬 운영자 전용입니다. 생성된 비밀번호는 .env.local에서, 현재 1회용
-          코드는 터미널의 npm run admin:code로 확인하세요. 운영용 계정·MFA 등록
-          및 복구 체계는 출시 전 별도 구축이 필요합니다.
+          운영자 비밀번호와 일회용 인증코드를 입력하세요. 서버 소유자는 SSH
+          터미널에서 sudo bash deploy/iwinv/show-admin-login.sh 명령으로 기존
+          로그인 정보를 확인할 수 있습니다.
         </p>
         <form className="card" onSubmit={login}>
           <div className="field">
