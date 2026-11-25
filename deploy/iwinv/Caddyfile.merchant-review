@@ -13,9 +13,15 @@ gumseo.kr {
 		Strict-Transport-Security "max-age=86400"
 		Cache-Control "no-store"
 	}
-	@private path /api/* /admin* /.git/* /.env*
-	respond @private 404
-	file_server
+	@usage path /api/usage
+	handle @usage {
+		reverse_proxy 127.0.0.1:3100
+	}
+	handle {
+		@private path /api/* /admin* /.git/* /.env*
+		respond @private 404
+		file_server
+	}
 }
 
 pay.gumseo.kr {

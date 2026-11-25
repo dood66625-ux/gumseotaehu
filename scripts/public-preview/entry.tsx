@@ -33,6 +33,7 @@ const response = (v: any, status = 200) =>
 (window as any).__GEUMSEO_PREVIEW_EMAIL = read().purchaseEmail;
 window.fetch = async (input: any, init: any = {}) => {
   const path = typeof input === "string" ? input : new URL(input.url).pathname;
+  if (path === "/api/usage") return nativeFetch(input, init);
   if (!path.startsWith("/api/")) return nativeFetch(input, init);
   const p = path.slice(5),
     s = read();

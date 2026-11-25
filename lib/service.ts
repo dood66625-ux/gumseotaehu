@@ -1126,6 +1126,7 @@ function wipeContent(oid: string) {
 export function purgeExpired() {
   const now = Date.now();
   tx(() => {
+    run("DELETE FROM visits WHERE first_seen<?", now - 30 * 86400000);
     for (const o of all(
       "SELECT id FROM orders WHERE expires<? AND content_deleted=0",
       now,

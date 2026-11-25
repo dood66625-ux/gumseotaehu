@@ -11,8 +11,13 @@ import { externalEffectsStatus } from "@/lib/effects-status";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
-import { all, run } from "@/lib/db";
-import { audit, Fault, limit } from "@/lib/security";
+import { all, run, db, one } from "@/lib/db";
+import { audit, Fault, limit, open } from "@/lib/security";
+import {
+  linkVisitReading,
+  visitorOverview,
+  visitorCookie,
+} from "@/lib/visitor-log";
 import * as svc from "@/lib/service";
 import {
   loginAdmin,
@@ -75,6 +80,50 @@ async function handler(
         });
       }
       const s = session(req);
+      if (p === "admin/visitors") {
+        requireRecentAdmin(s, ["operations"]);
+        const page = z.coerce
+          .number()
+          .int()
+          .min(0)
+          .max(1000)
+          .parse(req.nextUrl.searchParams.get("page") ?? 0);
+        const result = visitorOverview(db(), page);
+        return json({
+          ...result,
+          visits: result.visits.map((v) => ({
+            ...v,
+            orders: v.orders.map((o) => ({
+              ...o,
+              live: isLiveTossOrder(String(o.id)),
+            })),
+          })),
+        });
+      }
+      if (/^admin\/visitor-report\/[^/]+$/.test(p)) {
+        requireRecentAdmin(s, ["operations"]);
+        const id = z.string().uuid().parse(p.split("/")[2]);
+        const row = one(
+          "SELECT o.id,o.version,o.payment_status,o.paid_at,o.content_deleted,o.expires,r.payload,r.created,i.input_enc FROM orders o JOIN reports r ON r.order_id=o.id AND r.version=o.version JOIN readings i ON i.id=o.reading_id WHERE o.id=?",
+          id,
+        );
+        if (!row || !row.paid_at)
+          throw new Fault("구매 운명서를 찾을 수 없습니다.", 404);
+        if (row.content_deleted || !row.expires || row.expires < Date.now())
+          throw new Fault("보관 기간이 끝났거나 삭제된 운명서입니다.", 410);
+        const report = open(row.payload);
+        if (!report) throw new Fault("삭제된 운명서입니다.", 410);
+        audit(s.id, "admin_report_view", id);
+        return json({
+          orderId: id,
+          name: open(row.input_enc)?.name ?? "",
+          version: row.version,
+          created: row.created,
+          payment: row.payment_status,
+          live: isLiveTossOrder(id),
+          report,
+        });
+      }
       if (p === "payments/config") return json(checkoutMode());
       if (p.startsWith("readings/")) {
         const r = svc.readingFor(s, p.split("/")[1]);
@@ -164,7 +213,13 @@ async function handler(
     }
     if (p === "readings") {
       limit("local-preview-host", 100, 86400000);
-      return json({ id: svc.makeReading(s, b) }, 201);
+      const id = svc.makeReading(s, b);
+      try {
+        linkVisitReading(db(), req.cookies.get(visitorCookie)?.value, id);
+      } catch {
+        /* Optional analytics must never fail a customer's completed calculation. */
+      }
+      return json({ id }, 201);
     }
     if (p === "auth/request")
       return json({

@@ -212,6 +212,9 @@ export default function Admin() {
     <div className="page wide">
       <p className="eyebrow">GEUMSEO OPERATIONS · LOCAL MOCK</p>
       <h1>운영 현황</h1>
+      <p>
+        <a href="/admin/visitors">방문·구매 전환 기록 보기 →</a>
+      </p>
       <p className="notice">
         표시된 금액은 로컬 모의 원장 기준입니다. 실제 매출이 아니며 광고
         플랫폼에는 전송하지 않습니다. AI 비용은 저장된 사용량에 따른 추정치이며

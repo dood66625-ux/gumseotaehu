@@ -9,6 +9,7 @@ export default function Shell({
 }) {
   return (
     <>
+      <script src="/usage.js" defer />
       <a href="#main" className="skip">
         본문으로 건너뛰기
       </a>

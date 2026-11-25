@@ -30,6 +30,7 @@ const types = {
   "empress-mobile-v2.webp": "image/webp",
   "empress-avatar-v2.webp": "image/webp",
   "intro.js": "text/javascript",
+  "usage.js": "text/javascript",
   "intro-v2.js": "text/javascript",
   "app.js": "text/javascript",
   "icon.svg": "image/svg+xml",

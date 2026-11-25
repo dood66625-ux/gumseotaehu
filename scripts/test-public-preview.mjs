@@ -19,7 +19,11 @@ const errors = [],
   apiRequests = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("request", (r) => {
-  if (new URL(r.url()).pathname.startsWith("/api/")) apiRequests.push(r.url());
+  if (
+    new URL(r.url()).pathname.startsWith("/api/") &&
+    new URL(r.url()).pathname !== "/api/usage"
+  )
+    apiRequests.push(r.url());
 });
 try {
   await go();

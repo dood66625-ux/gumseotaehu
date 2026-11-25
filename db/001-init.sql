@@ -1,7 +1,13 @@
 PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS visits(id TEXT PRIMARY KEY,first_seen INTEGER NOT NULL,last_seen INTEGER NOT NULL,source TEXT NOT NULL,entry_stage TEXT NOT NULL,last_stage TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS visits_last ON visits(last_seen);
+CREATE INDEX IF NOT EXISTS visits_first ON visits(first_seen);
+CREATE TABLE IF NOT EXISTS visit_events(id INTEGER PRIMARY KEY AUTOINCREMENT,visit_id TEXT NOT NULL REFERENCES visits(id) ON DELETE CASCADE,stage TEXT NOT NULL,at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS visit_events_visit ON visit_events(visit_id,id);
 CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY,email_hash TEXT,role TEXT NOT NULL DEFAULT 'customer',expires INTEGER NOT NULL,created INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS challenges(id TEXT PRIMARY KEY,email_hash TEXT NOT NULL,email_enc TEXT NOT NULL,code_hash TEXT NOT NULL,session_id TEXT NOT NULL,expires INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,consumed INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS readings(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,age_category TEXT NOT NULL,input_enc TEXT NOT NULL,chart_enc TEXT NOT NULL,preview_enc TEXT NOT NULL,created INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS visit_readings(visit_id TEXT NOT NULL REFERENCES visits(id) ON DELETE CASCADE,reading_id TEXT NOT NULL REFERENCES readings(id) ON DELETE CASCADE,PRIMARY KEY(visit_id,reading_id));
 CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY,reading_id TEXT NOT NULL REFERENCES readings(id),email_hash TEXT NOT NULL,email_enc TEXT NOT NULL,amount INTEGER NOT NULL CHECK(amount IN (22000,33000)),payment_status TEXT NOT NULL CHECK(payment_status IN ('pending','paid','refund_pending','refunded')),fulfillment TEXT NOT NULL CHECK(fulfillment IN ('waiting','queued','generating','ready','retrying','failed')),payment_key TEXT UNIQUE,created INTEGER NOT NULL,paid_at INTEGER,expires INTEGER,version INTEGER NOT NULL DEFAULT 1,corrections INTEGER NOT NULL DEFAULT 0,content_deleted INTEGER NOT NULL DEFAULT 0,consent_enc TEXT NOT NULL);
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_order ON orders(reading_id,email_hash) WHERE payment_status!='refunded';
 CREATE TABLE IF NOT EXISTS pg_ledger(payment_key TEXT PRIMARY KEY,order_id TEXT NOT NULL UNIQUE,amount INTEGER NOT NULL,status TEXT NOT NULL,cancel_id TEXT);

@@ -80,6 +80,7 @@ const route = (s: string) => {
     "/recover": base + "/?v=royal-12&screen=recover",
     "/help": base + "/?v=royal-12&screen=help",
     "/admin": base + "/?v=royal-12&screen=admin",
+    "/usage.js": base + "/usage.js",
     "/checkout/fail": base + "/?v=royal-12&screen=fail",
     "/legal/terms": base + "/?v=royal-12&screen=terms",
     "/legal/privacy": base + "/?v=royal-12&screen=privacy",
@@ -215,6 +216,7 @@ for (const file of [
   "empress-expressions-2.webp",
   "imperial-serif-v2.woff2",
   "intro.js",
+  "usage.js",
 ])
   copyFileSync("public/" + file, resolve(out, file));
 cpSync("public/report-art", resolve(out, "report-art"), { recursive: true });
