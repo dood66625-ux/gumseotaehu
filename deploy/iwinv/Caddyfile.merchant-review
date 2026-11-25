@@ -13,7 +13,7 @@ gumseo.kr {
 		Strict-Transport-Security "max-age=86400"
 		Cache-Control "no-store"
 	}
-	@usage path /api/usage
+	@usage path /api/usage /api/session /api/logout /api/admin /api/admin/* /admin /admin/visitors /_next/*
 	handle @usage {
 		reverse_proxy 127.0.0.1:3100
 	}

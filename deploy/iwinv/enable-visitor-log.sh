@@ -27,7 +27,10 @@ docker compose -f "$compose" up -d --no-build --no-deps --force-recreate proxy
 status=$(curl --silent --show-error --retry 4 --retry-all-errors --retry-delay 1 --max-time 8 \
   --resolve gumseo.kr:443:127.0.0.1 --output /dev/null --write-out '%{http_code}' https://gumseo.kr/api/usage)
 [[ $status == 405 ]]
+status=$(curl --silent --show-error --max-time 8 --resolve gumseo.kr:443:127.0.0.1 --output /dev/null --write-out '%{http_code}' https://gumseo.kr/admin)
+[[ $status == 200 ]]
 trap - ERR
 rm "$backup"
 echo 'VISITOR_LOG_ROUTE_ENABLED; payment, mail, AI and administrator access settings preserved.'
-echo 'Only /api/usage was exposed. Administrator pages remain available through the existing private channel.'
+echo 'Administrator login: https://gumseo.kr/admin ; visitors: https://gumseo.kr/admin/visitors'
+echo 'Existing password and one-time MFA remain required. Other customer API routes remain blocked.'

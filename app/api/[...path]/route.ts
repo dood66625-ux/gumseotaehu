@@ -45,11 +45,13 @@ function session(req: NextRequest) {
   if (!s) throw new Fault("세션이 만료되었습니다. 다시 시작해 주세요.", 401);
   return s;
 }
-function setCookie(res: NextResponse, token: string) {
+function setCookie(res: NextResponse, token: string, req: NextRequest) {
   res.cookies.set("gs_session", token, {
     httpOnly: true,
     sameSite: "strict",
-    secure: config().origin.startsWith("https:"),
+    secure:
+      config().origin.startsWith("https:") ||
+      req.headers.get("origin") === "https://gumseo.kr",
     path: "/",
     maxAge: 7200,
   });
@@ -192,7 +194,13 @@ async function handler(
     }
     if (req.method !== "POST")
       throw new Fault("허용되지 않은 메서드입니다.", 405);
-    if (req.headers.get("origin") !== config().origin)
+    if (
+      req.headers.get("origin") !== config().origin &&
+      !(
+        req.headers.get("origin") === "https://gumseo.kr" &&
+        (p === "session" || p === "logout" || p.startsWith("admin/"))
+      )
+    )
       throw new Fault("요청 출처를 확인할 수 없습니다.", 403);
     if (!req.headers.get("content-type")?.startsWith("application/json"))
       throw new Fault("JSON 요청이 필요합니다.", 415);
@@ -202,7 +210,7 @@ async function handler(
       if (old && svc.sessionFor(old)) return json({ ok: true });
       limit("session-global", 5000);
       const { token } = svc.newSession();
-      return setCookie(json({ ok: true }), token);
+      return setCookie(json({ ok: true }), token, req);
     }
     const s = session(req);
     if (p === "logout") {
@@ -237,7 +245,7 @@ async function handler(
           .parse(b.code),
         true,
       );
-      return setCookie(json({ ok: true }), token!);
+      return setCookie(json({ ok: true }), token!, req);
     }
     if (p === "orders")
       return json(
@@ -342,7 +350,7 @@ async function handler(
     if (p === "tickets") return json({ id: svc.ticket(s, b) }, 201);
     if (p === "admin/login") {
       const token = loginAdmin(s, b.password, b.code);
-      return setCookie(json({ ok: true }), token);
+      return setCookie(json({ ok: true }), token, req);
     }
 
     if (p.startsWith("admin/")) {

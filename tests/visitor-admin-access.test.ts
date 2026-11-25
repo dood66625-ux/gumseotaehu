@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import { db, closeDb } from "../lib/db";
 import { hash, seal } from "../lib/security";
 import { newAdminToken } from "../lib/admin-token";
-import { GET } from "../app/api/[...path]/route";
+import { GET, POST as appPost } from "../app/api/[...path]/route";
 import { POST } from "../app/api/usage/route";
 let directory: string;
 const order = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -149,4 +149,24 @@ it("only accepts first-party finite events and never client conversion claims", 
   const v = db().prepare("SELECT * FROM visits").get()!;
   expect(v.source).toBe("search.example");
   expect(JSON.stringify(v)).not.toContain("secret");
+});
+
+it("supports secure domain admin sessions without opening customer mutations to the domain", async () => {
+  async function post(path: string, origin: string) {
+    return appPost(
+      new NextRequest("http://localhost:3100/api/" + path, {
+        method: "POST",
+        headers: { origin, "content-type": "application/json" },
+        body: "{}",
+      }),
+      { params: Promise.resolve({ path: path.split("/") }) },
+    );
+  }
+  const accepted = await post("session", "https://gumseo.kr");
+  expect(accepted.status).toBe(200);
+  expect(accepted.headers.get("set-cookie")).toContain("Secure");
+  expect(accepted.headers.get("set-cookie")).toContain("HttpOnly");
+  expect((await post("session", "https://evil.example")).status).toBe(403);
+  expect((await post("readings", "https://gumseo.kr")).status).toBe(403);
+  expect((await post("admin/login", "https://gumseo.kr")).status).toBe(401);
 });
