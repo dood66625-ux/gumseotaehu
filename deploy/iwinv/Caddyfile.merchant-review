@@ -15,7 +15,9 @@ gumseo.kr {
 	}
 	@usage path /api/usage /api/session /api/logout /api/admin /api/admin/* /admin /admin/visitors /_next/*
 	handle @usage {
-		reverse_proxy 127.0.0.1:3100
+		reverse_proxy 127.0.0.1:3100 {
+			header_up X-Gumseo-Client-IP {remote_host}
+		}
 	}
 	handle {
 		@private path /api/* /admin* /.git/* /.env*

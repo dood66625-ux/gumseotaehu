@@ -679,17 +679,15 @@ describe("security and operational hardening", () => {
     expect(svc.readingFor(elevated, rid).input).toEqual(birth);
     expect(() => requireRecentAdmin(elevated)).not.toThrow();
   });
-  it("rejects global TOTP reuse without elevating the second session", () => {
+  it("supports password-only login across independent sessions", () => {
     const a = svc.newSession(),
-      b = svc.newSession(),
-      code = totp(process.env.ADMIN_TOTP_SECRET!);
-    loginAdmin(a.session, process.env.ADMIN_PASSWORD, code);
-    expect(() =>
-      loginAdmin(b.session, process.env.ADMIN_PASSWORD, code),
-    ).toThrow("사용된");
-    expect(svc.sessionFor(b.token)?.role).toBe("customer");
+      b = svc.newSession();
+    const first = loginAdmin(a.session, process.env.ADMIN_PASSWORD);
+    const second = loginAdmin(b.session, process.env.ADMIN_PASSWORD);
+    expect(svc.sessionFor(first)?.role).toBe("operations");
+    expect(svc.sessionFor(second)?.role).toBe("operations");
   });
-  it("failed password does not consume a valid second factor", () => {
+  it("rejects wrong password without preventing a subsequent correct password", () => {
     const s = svc.newSession(),
       code = totp(process.env.ADMIN_TOTP_SECRET!);
     expect(() => loginAdmin(s.session, "wrong-password", code)).toThrow(

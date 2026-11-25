@@ -1,26 +1,17 @@
-import { createHash } from "node:crypto";
+import { checkAdminPassword } from "./admin-password";
 import { z } from "zod";
 import { newAdminToken } from "./admin-token";
 import { one, run, tx } from "./db";
-import { audit, equal, Fault, hash, limit, totp } from "./security";
+import { audit, Fault, hash, limit } from "./security";
 import type { Session } from "./service";
 
-/** Single self-hosted operator; host-owner recovery stays offline, never a public MFA bypass. */
-export function loginAdmin(s: Session, password: unknown, rawCode: unknown) {
+/** Password-only operator login; offline owner recovery stays on the server. */
+export function loginAdmin(s: Session, password: unknown, _rawCode?: unknown) {
   limit("admin-login-global", 15, 900000);
   limit("admin-login:" + s.id, 5, 900000);
-  const pass = z.string().max(200).parse(password),
-    code = z
-      .string()
-      .regex(/^\d{6}$/)
-      .parse(rawCode);
-  const secret = process.env.ADMIN_TOTP_SECRET!;
-  const now = Date.now(),
-    step = Math.floor(now / 30000);
-  const matched = [step, step - 1, step + 1].find((n) =>
-    equal(code, totp(secret, n * 30000)),
-  );
-  if (!equal(pass, process.env.ADMIN_PASSWORD!) || matched === undefined) {
+  const pass = z.string().max(200).parse(password);
+  const now = Date.now();
+  if (!checkAdminPassword(pass)) {
     audit(s.id, "admin_login_failed", "local-operator");
     throw new Fault("관리자 인증에 실패했습니다.", 401);
   }
@@ -31,17 +22,6 @@ export function loginAdmin(s: Session, password: unknown, rawCode: unknown) {
       now,
     );
     if (!current) throw new Fault("세션이 만료되었습니다.", 401);
-    const operator = createHash("sha256").update(secret).digest("hex");
-    const consumed = one(
-      "INSERT INTO admin_totp_replay VALUES(?,?) ON CONFLICT(operator_key) DO UPDATE SET last_step=excluded.last_step WHERE last_step<excluded.last_step RETURNING last_step",
-      operator,
-      matched,
-    );
-    if (!consumed)
-      throw new Fault(
-        "사용된 관리자 인증코드입니다. 다음 코드를 입력해 주세요.",
-        401,
-      );
     const token = newAdminToken(),
       sid = hash(token);
     run(
@@ -57,7 +37,7 @@ export function loginAdmin(s: Session, password: unknown, rawCode: unknown) {
     run("UPDATE session_auth SET session_id=? WHERE session_id=?", sid, s.id);
     run("DELETE FROM sessions WHERE id=?", s.id);
     run("INSERT INTO admin_auth VALUES(?,?)", sid, now);
-    audit(sid, "admin_mfa_login_rotated", "local-operator");
+    audit(sid, "admin_password_login_rotated", "local-operator");
     return token;
   });
 }

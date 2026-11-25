@@ -1,4 +1,5 @@
 "use client";
+import AdminPasswordForm from "./AdminPasswordForm";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, ErrorBox, Loading } from "./client";
 import MailHealthPanel from "./MailHealthPanel";
@@ -74,7 +75,6 @@ export default function Admin() {
     try {
       await api("admin/login", {
         password: f.get("password"),
-        code: f.get("code"),
       });
       await load();
     } catch (e) {
@@ -174,9 +174,8 @@ export default function Admin() {
         <p className="eyebrow">RESTRICTED OPERATIONS</p>
         <h1>운영자 인증</h1>
         <p className="notice">
-          운영자 비밀번호와 일회용 인증코드를 입력하세요. 서버 소유자는 SSH
-          터미널에서 sudo bash deploy/iwinv/show-admin-login.sh 명령으로 기존
-          로그인 정보를 확인할 수 있습니다.
+          설정한 운영자 비밀번호로 로그인하세요. 최초 설정·분실 시에는 서버
+          SSH에서 sudo bash deploy/iwinv/set-admin-password.sh를 실행하세요.
         </p>
         <form className="card" onSubmit={login}>
           <div className="field">
@@ -186,18 +185,6 @@ export default function Admin() {
               name="password"
               type="password"
               autoComplete="current-password"
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="admin-code">1회용 인증코드</label>
-            <input
-              id="admin-code"
-              name="code"
-              inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              autoComplete="one-time-code"
               required
             />
           </div>
@@ -215,6 +202,7 @@ export default function Admin() {
       <p>
         <a href="/admin/visitors">방문·구매 전환 기록 보기 →</a>
       </p>
+      <AdminPasswordForm />
       <p className="notice">
         표시된 금액은 로컬 모의 원장 기준입니다. 실제 매출이 아니며 광고
         플랫폼에는 전송하지 않습니다. AI 비용은 저장된 사용량에 따른 추정치이며

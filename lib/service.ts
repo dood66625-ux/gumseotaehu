@@ -1127,6 +1127,7 @@ export function purgeExpired() {
   const now = Date.now();
   tx(() => {
     run("DELETE FROM visits WHERE first_seen<?", now - 30 * 86400000);
+    run("DELETE FROM visit_exclusions WHERE expires<?", now);
     for (const o of all(
       "SELECT id FROM orders WHERE expires<? AND content_deleted=0",
       now,

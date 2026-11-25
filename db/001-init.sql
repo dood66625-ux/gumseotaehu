@@ -56,3 +56,8 @@ CREATE TABLE IF NOT EXISTS privacy_checkpoint_source(id INTEGER PRIMARY KEY CHEC
 CREATE TABLE IF NOT EXISTS privacy_checkpoint_health(id INTEGER PRIMARY KEY CHECK(id=1),generated_at INTEGER NOT NULL,last_failure INTEGER);
 INSERT OR IGNORE INTO schema_migrations VALUES(9,unixepoch()*1000);
 CREATE TABLE IF NOT EXISTS order_generation_lanes(order_id TEXT PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,provider TEXT NOT NULL CHECK(provider='openai'),assigned_version INTEGER NOT NULL CHECK(assigned_version>0),created INTEGER NOT NULL);
+
+CREATE TABLE IF NOT EXISTS admin_credentials(id INTEGER PRIMARY KEY CHECK(id=1),digest TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS visit_networks(visit_id TEXT PRIMARY KEY REFERENCES visits(id) ON DELETE CASCADE,network_key TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS visit_networks_key ON visit_networks(network_key);
+CREATE TABLE IF NOT EXISTS visit_exclusions(network_key TEXT PRIMARY KEY,expires INTEGER NOT NULL);

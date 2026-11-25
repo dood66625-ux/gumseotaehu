@@ -1,3 +1,5 @@
+import { checkAdminPassword, setAdminPassword } from "../lib/admin-password";
+import { excludeAdminVisit } from "../lib/visit-network";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -129,7 +131,11 @@ it("only accepts first-party finite events and never client conversion claims", 
     POST(
       new NextRequest("http://localhost:3100/api/usage", {
         method: "POST",
-        headers: { origin, "content-type": "application/json" },
+        headers: {
+          origin,
+          "content-type": "application/json",
+          "x-gumseo-client-ip": "203.0.113.10",
+        },
         body: JSON.stringify(body),
       }),
     );
@@ -156,7 +162,11 @@ it("supports secure domain admin sessions without opening customer mutations to 
     return appPost(
       new NextRequest("http://localhost:3100/api/" + path, {
         method: "POST",
-        headers: { origin, "content-type": "application/json" },
+        headers: {
+          origin,
+          "content-type": "application/json",
+          "x-gumseo-client-ip": "203.0.113.10",
+        },
         body: "{}",
       }),
       { params: Promise.resolve({ path: path.split("/") }) },
@@ -169,4 +179,76 @@ it("supports secure domain admin sessions without opening customer mutations to 
   expect((await post("session", "https://evil.example")).status).toBe(403);
   expect((await post("readings", "https://gumseo.kr")).status).toBe(403);
   expect((await post("admin/login", "https://gumseo.kr")).status).toBe(401);
+});
+
+it("excludes local simulations, automation and confirmed administrator networks", async () => {
+  const request = (ip?: string, ua = "Mozilla/5.0") =>
+    new NextRequest("http://localhost:3100/api/usage", {
+      method: "POST",
+      headers: {
+        origin: "https://gumseo.kr",
+        "content-type": "application/json",
+        "user-agent": ua,
+        ...(ip ? { "x-gumseo-client-ip": ip } : {}),
+      },
+      body: JSON.stringify({ stage: "landing" }),
+    });
+  expect((await (await POST(request())).json()).excluded).toBe(true);
+  expect(
+    (await (await POST(request("203.0.113.1", "HeadlessChrome"))).json())
+      .excluded,
+  ).toBe(true);
+  await POST(request("203.0.113.1"));
+  await POST(request("203.0.113.2"));
+  expect(db().prepare("SELECT count(*) AS n FROM visits").get()!.n).toBe(2);
+  excludeAdminVisit(request("203.0.113.1"));
+  expect(db().prepare("SELECT count(*) AS n FROM visits").get()!.n).toBe(1);
+  expect((await (await POST(request("203.0.113.1"))).json()).excluded).toBe(
+    true,
+  );
+  expect(
+    JSON.stringify(db().prepare("SELECT * FROM visit_networks").all()),
+  ).not.toContain("203.0.113");
+});
+it("stores a chosen password as scrypt and revokes only administrator sessions", () => {
+  const customer = token("customer"),
+    admin = token("operations");
+  const selected = "new-synthetic-password-123";
+  setAdminPassword(selected);
+  expect(checkAdminPassword(selected)).toBe(true);
+  expect(checkAdminPassword(process.env.ADMIN_PASSWORD!)).toBe(false);
+  expect(checkAdminPassword("incorrect")).toBe(false);
+  expect(
+    String(db().prepare("SELECT digest FROM admin_credentials").get()!.digest),
+  ).not.toContain(selected);
+  expect(
+    db().prepare("SELECT 1 FROM sessions WHERE id=?").get(hash(customer)),
+  ).toBeTruthy();
+  expect(
+    db().prepare("SELECT 1 FROM sessions WHERE id=?").get(hash(admin)),
+  ).toBeUndefined();
+});
+it("requires the current password to change it and expires the old administrator session", async () => {
+  const t = token("operations");
+  const send = (currentPassword: string) =>
+    appPost(
+      new NextRequest("http://localhost:3100/api/admin/password", {
+        method: "POST",
+        headers: {
+          origin: "https://gumseo.kr",
+          "content-type": "application/json",
+          cookie: "gs_session=" + t,
+        },
+        body: JSON.stringify({
+          currentPassword,
+          password: "chosen-test-password-321",
+        }),
+      }),
+      { params: Promise.resolve({ path: ["admin", "password"] }) },
+    );
+  expect((await send("wrong")).status).toBe(403);
+  const response = await send(process.env.ADMIN_PASSWORD!);
+  expect(response.status).toBe(200);
+  expect(checkAdminPassword("chosen-test-password-321")).toBe(true);
+  expect((await read("admin/visitors", t)).status).toBe(401);
 });

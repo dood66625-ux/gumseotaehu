@@ -80,13 +80,19 @@ it("only links conversion to an actual stored order and follows its server state
   database.prepare("DELETE FROM visit_readings").run();
   expect(visitorOverview(database, 0, 3000).visits[0].orders).toHaveLength(0);
 });
-it("expires the visitor and linked events at 30 days even when reused recently", () => {
+it("expires old visits at 30 days and starts a new session after inactivity", () => {
   const first = recordVisit(database, null, "landing", "", 1000);
   const end = 1000 + 30 * 86400000;
-  recordVisit(database, first.token, "checkout", "", end - 100);
-  expect(visitorOverview(database, 0, end + 1).total).toBe(0);
+  const next = recordVisit(database, first.token, "checkout", "", end - 100);
+  expect(next.id).not.toBe(first.id);
+  expect(visitorOverview(database, 0, end + 1).total).toBe(1);
   expect(
-    database.prepare("SELECT count(*) AS n FROM visit_events").get()!.n,
+    database.prepare("SELECT 1 FROM visits WHERE id=?").get(first.id),
+  ).toBeUndefined();
+  expect(
+    database
+      .prepare("SELECT count(*) AS n FROM visit_events WHERE visit_id=?")
+      .get(first.id)!.n,
   ).toBe(0);
 });
 it("limits event growth and keeps history pagination bounded", () => {
@@ -94,4 +100,24 @@ it("limits event growth and keeps history pagination bounded", () => {
   for (let i = 0; i < 150; i++)
     recordVisit(database, first.token, i % 2 ? "name" : "birth", "", 1001 + i);
   expect(visitorOverview(database, 0, 2000).visits[0].events).toHaveLength(120);
+});
+
+it("groups repeated network visits and paginates 15 groups without losing session history", () => {
+  const a = recordVisit(database, null, "landing", "", 1000),
+    b = recordVisit(database, null, "checkout", "", 2000);
+  for (const v of [a, b])
+    database
+      .prepare("INSERT INTO visit_networks VALUES(?,?)")
+      .run(v.id, "same-synthetic-network");
+  for (let i = 0; i < 15; i++)
+    recordVisit(database, null, "landing", "", 3000 + i);
+  const first = visitorOverview(database, 0, 4000),
+    second = visitorOverview(database, 1, 4000);
+  expect(first.total).toBe(16);
+  expect(first.visits).toHaveLength(15);
+  expect(second.visits).toHaveLength(1);
+  expect(second.visits[0].sessionCount).toBe(2);
+  expect(second.visits[0].sessions).toHaveLength(2);
+  expect(second.visits[0].last_stage).toBe("checkout");
+  expect(second.visits[0].first_seen).toBe(1000);
 });

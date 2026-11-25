@@ -1,3 +1,5 @@
+import { checkAdminPassword, setAdminPassword } from "@/lib/admin-password";
+import { excludeAdminVisit } from "@/lib/visit-network";
 import { protectProxyRequest } from "@/lib/proxy-access";
 import {
   confirmLiveToss,
@@ -95,10 +97,12 @@ async function handler(
           ...result,
           visits: result.visits.map((v) => ({
             ...v,
-            orders: v.orders.map((o) => ({
-              ...o,
-              live: isLiveTossOrder(String(o.id)),
-            })),
+            orders: v.orders
+              .filter((o) => isLiveTossOrder(String(o.id)))
+              .map((o) => ({
+                ...o,
+                live: isLiveTossOrder(String(o.id)),
+              })),
           })),
         });
       }
@@ -349,10 +353,23 @@ async function handler(
     }
     if (p === "tickets") return json({ id: svc.ticket(s, b) }, 201);
     if (p === "admin/login") {
-      const token = loginAdmin(s, b.password, b.code);
+      const token = loginAdmin(s, b.password);
+      excludeAdminVisit(req);
       return setCookie(json({ ok: true }), token, req);
     }
 
+    if (p === "admin/password") {
+      requireRecentAdmin(s, ["operations"]);
+      limit("admin-password:" + s.id, 5, 900000);
+      if (!checkAdminPassword(z.string().max(200).parse(b.currentPassword)))
+        throw new Fault("현재 비밀번호가 일치하지 않습니다.", 403);
+      const password = z.string().min(12).max(200).parse(b.password);
+      setAdminPassword(password);
+      audit(s.id, "admin_password_changed", "local-operator");
+      const response = json({ ok: true });
+      response.cookies.delete("gs_session");
+      return response;
+    }
     if (p.startsWith("admin/")) {
       svc.adminRequired(s);
       if (p === "admin/revoke-sessions") {

@@ -543,7 +543,7 @@ test("purchase email change verifies both addresses and retains the exact report
   await auth(page, oldEmail);
   expect((await page.request.get("/api/reports/" + oid)).status()).toBe(404);
 });
-test("admin login rotates session, rejects TOTP replay and revokes elevated sessions", async ({
+test("password-only admin login rotates session and revokes elevated sessions", async ({
   page,
   playwright,
 }) => {
@@ -552,12 +552,10 @@ test("admin login rotates session, rejects TOTP replay and revokes elevated sess
   const oldCookie = (await page.context().cookies()).find(
     (c) => c.name === "gs_session",
   )!;
-  const code = await freshAdminCode();
   expect(
     (
       await post(page, "admin/login", {
         password: process.env.ADMIN_PASSWORD,
-        code,
       })
     ).status(),
   ).toBe(200);
@@ -579,10 +577,10 @@ test("admin login rotates session, rejects TOTP replay and revokes elevated sess
       (
         await other.post("/api/admin/login", {
           headers: { origin },
-          data: { password: process.env.ADMIN_PASSWORD, code },
+          data: { password: process.env.ADMIN_PASSWORD },
         })
       ).status(),
-    ).toBe(401);
+    ).toBe(200);
     expect(
       (await page.request.get("/api/admin?query=not-a-valid-order")).status(),
     ).toBe(400);

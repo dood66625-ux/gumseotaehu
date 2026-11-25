@@ -68,8 +68,9 @@ export default function VisitorAdmin() {
       <h1>방문·구매 전환 기록</h1>
       <p className="hint">
         최근 30일의 방문 세션입니다. 유입 사이트는 출발 경로이며 실제 접속
-        지역을 뜻하지 않습니다. 같은 사람이 여러 세션으로 나타날 수 있습니다.
-        체험 결제와 실제 결제를 구분합니다.
+        지역을 뜻하지 않습니다. 같은 접속망의 방문은 묶어서 표시하며 같은
+        사람임을 뜻하지는 않습니다. 모의 방문과 확인된 관리자 접속망은 집계에서
+        제외합니다.
       </p>
       <ErrorBox error={error} />
       <button className="button secondary" onClick={load}>
@@ -79,7 +80,8 @@ export default function VisitorAdmin() {
       {data && (
         <>
           <p>
-            방문 세션 {data.total.toLocaleString()}건 · {page + 1}페이지
+            방문 묶음 {data.total.toLocaleString()}건 · {page + 1}/
+            {Math.max(1, Math.ceil(data.total / 15))}페이지 · 페이지당 15건
           </p>
           {data.visits.map((v: any) => (
             <section className="card" key={v.id}>
@@ -102,6 +104,29 @@ export default function VisitorAdmin() {
                   ))}
                 </ol>
               </details>
+              {v.sessionCount > 1 && (
+                <details>
+                  <summary>중복 접속 {v.sessionCount}건 펼치기</summary>
+                  {v.sessions.map((item: any) => (
+                    <details key={item.id}>
+                      <summary>
+                        {time(item.first_seen)} ~ {time(item.last_seen)} ·{" "}
+                        {label(item.last_stage)}
+                      </summary>
+                      <ol>
+                        {item.events.map((e: any, i: number) => (
+                          <li key={i}>
+                            {time(e.at)} · {label(e.stage)}
+                          </li>
+                        ))}
+                      </ol>
+                    </details>
+                  ))}
+                  {v.sessionCount > v.sessions.length && (
+                    <p>최근 {v.sessions.length}건을 표시합니다.</p>
+                  )}
+                </details>
+              )}
               {!v.orders.length && <p>연결된 구매 없음</p>}
               {v.orders.map((o: any) => (
                 <div key={o.id}>
@@ -139,7 +164,7 @@ export default function VisitorAdmin() {
             </button>
             <button
               className="button secondary"
-              disabled={(page + 1) * 50 >= data.total}
+              disabled={(page + 1) * 15 >= data.total}
               onClick={() => setPage(page + 1)}
             >
               다음

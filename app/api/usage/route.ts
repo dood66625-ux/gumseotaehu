@@ -1,3 +1,5 @@
+import { visitNetwork, excludeAdminVisit } from "@/lib/visit-network";
+import { sessionFor } from "@/lib/service";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
@@ -28,6 +30,26 @@ export async function POST(req: NextRequest) {
       { status: 415, headers },
     );
   try {
+    const database = db();
+    const network = visitNetwork(req);
+    database
+      .prepare("DELETE FROM visit_exclusions WHERE expires<?")
+      .run(Date.now());
+    const admin = req.cookies.get("gs_session")?.value;
+    const current = admin ? sessionFor(admin) : null;
+    if (current && current.role !== "customer") excludeAdminVisit(req);
+    if (
+      !network ||
+      /bot|crawler|spider|headless|playwright|vitest/i.test(
+        req.headers.get("user-agent") ?? "",
+      ) ||
+      (current && current.role !== "customer") ||
+      (network &&
+        database
+          .prepare("SELECT 1 FROM visit_exclusions WHERE network_key=?")
+          .get(network))
+    )
+      return NextResponse.json({ ok: true, excluded: true }, { headers });
     limit("usage-global", 3000, 60000);
     const body = z
       .object({
@@ -45,12 +67,19 @@ export async function POST(req: NextRequest) {
     const key = visitKey(old);
     if (key) limit("usage:" + key, 120, 3600000);
     const visit = recordVisit(db(), old, body.stage, body.referrer);
+    if (network)
+      database
+        .prepare(
+          "INSERT INTO visit_networks VALUES(?,?) ON CONFLICT(visit_id) DO UPDATE SET network_key=excluded.network_key",
+        )
+        .run(visit.id, network);
     const response = NextResponse.json({ ok: true }, { headers });
     response.cookies.set(visitorCookie, visit.token, {
       httpOnly: true,
       secure: req.headers.get("origin")?.startsWith("https:") ?? false,
       sameSite: "lax",
       path: "/",
+      maxAge: 30 * 86400,
     });
     return response;
   } catch {
