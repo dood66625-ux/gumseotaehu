@@ -62,7 +62,7 @@ export function aiSpendLedger(
       )
         throw Error("AI_INVALID_ORDER_RESERVATION");
       orderId = orderId.toLowerCase();
-      const day = dayOf(now);
+      let day = dayOf(now);
       db.exec("BEGIN IMMEDIATE");
       try {
         if (
@@ -73,17 +73,42 @@ export function aiSpendLedger(
             .get(orderId, version)
         )
           throw Error("AI_ORDER_ALREADY_RESERVED");
+        const hasHolds = db
+          .prepare("SELECT 1 FROM sqlite_master WHERE name='sales_ai_holds'")
+          .get();
+        const ownHold = hasHolds
+          ? db
+              .prepare(
+                "SELECT day FROM sales_ai_holds WHERE order_id=? AND version=?",
+              )
+              .get(orderId, version)
+          : null;
+        if (ownHold) day = String(ownHold.day);
         const totals = usage(day);
+        const holds = hasHolds
+          ? db
+              .prepare(
+                "SELECT coalesce(sum(reserved),0) AS lifetime,coalesce(sum(CASE WHEN day=? THEN reserved ELSE 0 END),0) AS daily FROM sales_ai_holds WHERE NOT(order_id=? AND version=?)",
+              )
+              .get(day, orderId, version)
+          : { lifetime: 0, daily: 0 };
         if (
-          totals.lifetime + policy.reservationUsdMicros >
+          totals.lifetime +
+            Number(holds!.lifetime) +
+            policy.reservationUsdMicros >
             policy.lifetimeUsdMicros ||
-          totals.daily + policy.reservationUsdMicros > policy.dailyUsdMicros
+          totals.daily + Number(holds!.daily) + policy.reservationUsdMicros >
+            policy.dailyUsdMicros
         )
           throw Error("AI_SPEND_LIMIT_REACHED");
         const id = randomUUID();
         db.prepare(
           "INSERT INTO ai_spend_calls(id,order_id,version,day,reserved,state,created) VALUES(?,?,?,?,?,'reserved',?)",
         ).run(id, orderId, version, day, policy.reservationUsdMicros, now);
+        if (hasHolds)
+          db.prepare(
+            "DELETE FROM sales_ai_holds WHERE order_id=? AND version=?",
+          ).run(orderId, version);
         db.exec("COMMIT");
         return id;
       } catch (error) {

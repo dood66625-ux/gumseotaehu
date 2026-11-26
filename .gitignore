@@ -19,3 +19,5 @@ __pycache__/
 *.pyc
 
 public/private-reader/
+
+/public/landing-live.html

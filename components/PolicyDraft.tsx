@@ -103,17 +103,63 @@ const policies: Record<
   },
 };
 export const policySlugs = Object.keys(policies);
-export default function PolicyDraft({ slug }: { slug: string }) {
-  const p = policies[slug];
+export default function PolicyDraft({
+  slug,
+  live = false,
+}: {
+  slug: string;
+  live?: boolean;
+}) {
+  const original = policies[slug];
+  const replacements: Record<string, string> = live
+    ? {
+        "서비스와 제공 범위":
+          "금서태후는 전통 명리학 계산에 기반한 AI 해석 콘텐츠를 제공하는 창작 캐릭터 서비스입니다. 미래의 사건이나 성공을 보장하지 않으며 의료·법률·투자 조언을 대신하지 않습니다. 결제 확인 후 계산된 사주 정보를 바탕으로 운명서를 작성하며, 이미 저장된 운명서 재열람에는 추가 생성을 하지 않습니다.",
+        "변경·종료":
+          "주요 이용조건 변경이나 서비스 종료 시 이용자에게 화면 또는 등록된 이메일로 필요한 사항을 안내합니다. 보유한 운명서를 저장할 수 있는 기회와 관련 법령에 따른 권리를 보장합니다.",
+        "현재 환경과 수집 목적":
+          "이용자가 입력한 별명, 생년월일, 달력·윤달, 출생시간, 대운 계산 구분, 한국 출생 확인, 연령 구분과 본인 여부를 사주 계산·해석에 사용합니다. 구매 이메일은 인증·주문 이행·재열람에, 문의 내용은 고객지원에 사용합니다. 마케팅 수신 동의는 선택이며 필수 서비스 이용과 구분합니다.",
+        보호조치:
+          "출생정보·이메일·운명서 본문은 AES-256-GCM으로 암호화합니다. 이메일 검색에는 HMAC을 사용하며 세션과 인증번호는 해시로 저장합니다. HTTPS 환경에서 HttpOnly·Secure 쿠키를 사용합니다. 관리자 비밀번호 인증·권한 검사·감사 기록으로 관리자 접근을 제한합니다. 출생정보는 브라우저 localStorage에 보관하지 않습니다.",
+        "수탁·국외이전":
+          "결제 처리는 토스페이먼츠, 서비스 호스팅은 주식회사 스마일서브(iwinv)를 이용합니다. 결제 후 운명서 작성 시 계산된 사주 정보가 OpenAI(미국)의 API로 전송됩니다. 이름·이메일·원본 생년월일은 OpenAI에 전송하지 않습니다. 인증번호와 운명서 안내·문의 답변 메일 발송에는 Resend(미국)를 이용하며 수신 이메일과 발송에 필요한 인증번호·링크·안내 내용이 암호화된 통신으로 전송됩니다. 제공자 보관·삭제는 각 서비스의 API 및 개인정보 정책을 따릅니다. 전송에 동의하지 않으면 AI 운명서 구매와 이메일 인증을 이용할 수 없으며, 개인정보 담당자에게 처리정지·삭제를 요청할 수 있습니다.",
+        "공개 운영 중이 아닙니다":
+          "운영자는 컬러픽쳐스이며 대표자·사업자등록번호·사업장 주소·통신판매업 신고번호와 문의 연락처를 아래 사업자 정보에 표시합니다. 호스팅서비스 제공자는 주식회사 스마일서브(iwinv)입니다. 고객 문의와 권리 행사 요청은 이메일 또는 웹 문의로 접수합니다.",
+        "현재 프로젝트 상태":
+          "종합 운명서는 일회성 결제 상품입니다. 결제 확인 후 운명서를 작성하고 저장하며, 구매 이메일 인증을 통해 1년간 같은 운명서를 다시 열람하고 PDF로 저장할 수 있습니다. 심사용 TEST 결제 화면은 별도 경로로 운영합니다. 실제 제공 오류와 환불·정정은 환불 정책에 따라 처리합니다.",
+      }
+    : {};
+  const p =
+    original &&
+    (live
+      ? {
+          ...original,
+          title: original.title.replace(/ · (검토용 |정책 )?초안$/, ""),
+          sections: original.sections.map((section) => ({
+            ...section,
+            text: replacements[section.title] ?? section.text,
+            title:
+              section.title === "공개 운영 중이 아닙니다"
+                ? "사업자 및 문의 안내"
+                : section.title === "현재 프로젝트 상태"
+                  ? "서비스 이용 안내"
+                  : section.title,
+          })),
+        }
+      : original);
   if (!p) return null;
   return (
     <div className="page legal">
-      <p className="eyebrow">POLICY DRAFT · 2026.11.22</p>
-      <h1>{p.title}</h1>
-      <p className="notice">
-        실제 사업자 기준의 전문가 검토 전 초안입니다. 법률·세무 자문 또는 법적
-        준수 완료를 의미하지 않습니다.
+      <p className="eyebrow">
+        {live ? "SERVICE POLICY · 2026.11.26" : "POLICY DRAFT · 2026.11.22"}
       </p>
+      <h1>{p.title}</h1>
+      {!live && (
+        <p className="notice">
+          실제 사업자 기준의 전문가 검토 전 초안입니다. 법률·세무 자문 또는 법적
+          준수 완료를 의미하지 않습니다.
+        </p>
+      )}
       {slug === "business" && <BusinessInfo />}
       {p.sections.map((s) => (
         <section key={s.title}>

@@ -11,6 +11,7 @@ COPY public ./public
 COPY assets ./assets
 COPY db ./db
 COPY scripts ./scripts
+COPY docs/launch-progress.json ./docs/launch-progress.json
 COPY next.config.ts tsconfig.json next-env.d.ts ./
 RUN npm run landing && npm run build:merchant && npx next build && node scripts/sanitize-standalone.mjs && npm run build:worker && node scripts/check-secrets.mjs --built --deployment-only
 

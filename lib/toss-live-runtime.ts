@@ -1,3 +1,4 @@
+import { ensureSalesCapacity } from "./sales-capacity";
 import { createHash } from "node:crypto";
 import { config } from "./config";
 import { db, one, run, tx, all } from "./db";
@@ -95,6 +96,12 @@ function ready() {
     throw Error("TOSS_LIVE_CUTOFF_MISMATCH");
   return { ...o, cutoff: row.cutoff };
 }
+/** Local signed-binding validation only; never contacts Toss. */
+export function validateLiveTossEnrollment() {
+  ready();
+  return { ready: true };
+}
+
 function coordinator(
   o: ReturnType<typeof ready>,
   fetcher?: typeof fetch,
@@ -194,6 +201,8 @@ export async function confirmLiveToss(
   const o = ready();
   tx(() => {
     const order = ownOrder(s, orderId);
+    if (order.payment_status === "pending")
+      ensureSalesCapacity(order.id, order.version);
     if (order.created < o.cutoff || order.amount !== amount)
       throw new Fault("운영 결제 대상 주문을 확인해 주세요.", 409);
     if (
@@ -292,6 +301,7 @@ export function liveCheckoutInfo(s: Session, orderId: string) {
     order.content_deleted
   )
     throw new Fault("결제 가능한 주문을 확인해 주세요.", 409);
+  ensureSalesCapacity(order.id, order.version);
   return {
     mode: "live" as const,
     clientKey,

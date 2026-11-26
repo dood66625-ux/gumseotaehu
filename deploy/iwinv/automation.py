@@ -131,10 +131,30 @@ def extract_release(source, directory):
         raise ValueError('INCOMPLETE_RELEASE')
     return validate_release(directory)
 
+SALES_COMPOSE = Path('/usr/local/lib/gumseo/compose.sales.yml')
+SALES_ACTIVE = Path('/var/lib/gumseo-sales-control/active.json')
+
+def sales_args():
+    if SALES_ACTIVE.exists():
+        if not SALES_COMPOSE.is_file() or SALES_COMPOSE.is_symlink():raise ValueError('SALES_COMPOSE_REQUIRED')
+        return ['/usr/bin/docker','compose','-f',str(SALES_COMPOSE)]
+    return None
+
+def update_sales_if_active():
+    args=sales_args()
+    if not args:return
+    run(args+['up','-d','--no-build','--no-deps','web','worker'],180)
+    for _ in range(45):
+        ids=[run(args+['ps','-q',service]).decode().strip() for service in ('web','worker')]
+        if all(ids) and all(run(['/usr/bin/docker','inspect','--format','{{.State.Health.Status}}',item]).decode().strip()=='healthy' for item in ids):return
+        time.sleep(2)
+    raise ValueError('SALES_HEALTH_CHECK_FAILED')
+
 def backup():
     # First installed image may not have the bundled command. The one-off worker
     # uses the newly loaded MOCK image and existing data/key; no customer rollout.
-    data = run(COMPOSE + ['run', '--rm', '--no-deps', '-T', 'worker', 'node', 'dist/runtime-backup.js'])
+    current=sales_args() or COMPOSE
+    data = run(current + ['run', '--rm', '--no-deps', '-T', 'worker', 'node', 'dist/runtime-backup.js'])
     row = json.loads(data.decode().strip().splitlines()[-1])
     if row.get('offlineRestore') != 'passed' or row.get('offsite') is not False:
         raise ValueError('BACKUP_DRILL_FAILED')
@@ -151,12 +171,12 @@ def backup():
     os.chown(export, 0, group)
     with tempfile.TemporaryDirectory(prefix='export-', dir=STATE) as directory:
         destination = Path(directory)
-        run(COMPOSE + ['cp', 'worker:' + archive, str(destination / 'archive.gsb')])
-        run(COMPOSE + ['cp', 'worker:' + checkpoint, str(destination / 'latest.json')])
+        run(current + ['cp', 'worker:' + archive, str(destination / 'archive.gsb')])
+        run(current + ['cp', 'worker:' + checkpoint, str(destination / 'latest.json')])
         manifest = json.loads((destination / 'latest.json').read_text()).get('manifestFile', '')
         if not re.fullmatch(r'deletions-[0-9a-f-]{36}\.json', manifest):
             raise ValueError('INVALID_CHECKPOINT_MANIFEST')
-        run(COMPOSE + ['cp', 'worker:' + str(Path(checkpoint).parent / manifest), str(destination / manifest)])
+        run(current + ['cp', 'worker:' + str(Path(checkpoint).parent / manifest), str(destination / manifest)])
         bundle = destination / 'latest.tar.gz'
         with tarfile.open(bundle, 'w:gz') as tar:
             for name in ('archive.gsb', 'latest.json', manifest):
@@ -189,10 +209,11 @@ def deploy(source):
                 if all(ids):
                     health = [run(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', item]).decode().strip() for item in ids]
                     if health == ['healthy', 'healthy']:
+                        update_sales_if_active()
                         update_review_if_installed()
                         update_private_reader_if_running()
                         (STATE / 'deployed-commit').write_text(commit + '\n')
-                        print('PRIVATE_MOCK_DEPLOYMENT_HEALTHY ' + commit)
+                        print(('SALES_AND_LOCAL_DEPLOYMENT_HEALTHY ' if sales_args() else 'PRIVATE_MOCK_DEPLOYMENT_HEALTHY ') + commit)
                         return
                 time.sleep(3)
             raise ValueError('HEALTH_CHECK_FAILED_MANUAL_REVIEW_REQUIRED')

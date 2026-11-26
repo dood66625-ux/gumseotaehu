@@ -11,6 +11,14 @@ gumseo.kr {
     Strict-Transport-Security "max-age=86400"
     Cache-Control "no-store"
   }
+  @legacyRefund path /refund.html
+  redir @legacyRefund /legal/refund 302
+  @legacyPrivacy path /privacy.html
+  redir @legacyPrivacy /legal/privacy 302
+  @legacyTerms path /terms.html
+  redir @legacyTerms /legal/terms 302
+  @legacyBusiness path /business.html
+  redir @legacyBusiness /legal/business 302
   # Candidate only: install after the HTTPS runtime and live fulfillment are ready.
   @neverPublic path /.git* /.env* /api/auth/local* /api/local* /api/local-mail/* /api/email-change/local-code /api/test* /api/payments/authenticate
   respond @neverPublic 404

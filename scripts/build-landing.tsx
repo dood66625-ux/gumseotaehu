@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { copyFileSync, writeFileSync } from "node:fs";
 import Landing from "../components/Landing";
 import Shell from "../components/Shell";
-const html =
+const renderLanding = (livePayments = false) =>
   "<!doctype html>" +
   renderToStaticMarkup(
     <html lang="ko">
@@ -20,13 +20,14 @@ const html =
         <script src="/intro.js" defer />
       </head>
       <body>
-        <Shell>
+        <Shell livePayments={livePayments}>
           <Landing />
         </Shell>
       </body>
     </html>,
   );
-writeFileSync("public/landing.html", html);
+writeFileSync("public/landing.html", renderLanding());
+writeFileSync("public/landing-live.html", renderLanding(true));
 copyFileSync("app/globals.css", "public/site.css");
 console.log(
   "Static landing generated: native navigation and five-scene mobile prologue; no React browser runtime.",

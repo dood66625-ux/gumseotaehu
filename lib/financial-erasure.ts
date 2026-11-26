@@ -10,6 +10,7 @@ const orderChildren = new Set([
   "toss_notifications",
   "toss_attempts",
   "order_generation_lanes",
+  "sales_ai_holds",
   "toss_live_orders",
   "pg_ledger",
 ]);

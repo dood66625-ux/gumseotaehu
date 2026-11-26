@@ -1217,3 +1217,21 @@ it("live partial-cancel evidence cannot trigger a cancel POST, and retry needs a
     rmSync(directory, { recursive: true, force: true });
   }
 });
+it("sales activation refuses a widget and any PG approval before fulfillment is ready", async () => {
+  const directory = mkdtempSync("var/sales-fulfillment-gate-");
+  try {
+    liveSetup(directory, true);
+    const f = fixture();
+    const send = vi.fn<typeof fetch>();
+    vi.stubEnv("SALES_MODE", "live");
+    vi.stubEnv("AI_WORKER_MODE", "disabled");
+    expect(() => liveCheckoutInfo(f.s, f.oid)).toThrow("제공 준비");
+    await expect(
+      confirmLiveToss(f.s, f.oid, f.payment.paymentKey, 22000, send),
+    ).rejects.toThrow("제공 준비");
+    expect(send).not.toHaveBeenCalled();
+    expect(one("SELECT count(*) AS n FROM toss_attempts")!.n).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

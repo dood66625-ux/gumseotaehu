@@ -8,7 +8,9 @@ printf '\n'
 IFS= read -rsp '같은 비밀번호 다시 입력: ' gumseo_confirm
 printf '\n'
 [[ "$gumseo_password" == "$gumseo_confirm" ]] || { echo '비밀번호가 일치하지 않습니다.'; exit 1; }
-printf '%s' "$gumseo_password" | docker exec -i gumseo-local-web-1 node --input-type=module -e '
+gumseo_container=gumseo-local-web-1
+if [[ -f /var/lib/gumseo-sales-control/active.json ]]; then gumseo_container=gumseo-sales-web-1; fi
+printf '%s' "$gumseo_password" | docker exec -i "$gumseo_container" node --input-type=module -e '
 import {readFileSync} from "node:fs";
 import {randomBytes,scryptSync} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";

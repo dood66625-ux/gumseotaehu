@@ -14,5 +14,13 @@ export default async function Page({
   if (slug === "content") return <ContentGuide />;
   if (slug === "refund") return <RefundPolicy />;
   if (!policySlugs.includes(slug)) notFound();
-  return <PolicyDraft slug={slug} />;
+  return (
+    <PolicyDraft
+      slug={slug}
+      live={
+        process.env.TOSS_PAYMENT_MODE === "live" &&
+        process.env.LIVE_PAYMENTS_APPROVAL === "live-payments-approved"
+      }
+    />
+  );
 }

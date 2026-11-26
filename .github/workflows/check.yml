@@ -23,6 +23,9 @@ jobs:
       - run: python3 -m unittest discover -s tests -p 'test_iwinv_automation.py'
       - run: python3 -m unittest discover -s tests -p 'test_update_notify_install.py'
       - run: python3 -m unittest discover -s tests -p 'test_operator_provision.py'
+      - run: python3 -m unittest discover -s tests -p 'test_sales_batch.py'
+      - run: python3 -m unittest discover -s tests -p 'test_sales_runtime.py'
+      - run: python3 -m unittest discover -s tests -p 'test_iwinv_monitor.py'
       - name: Test changed modules; fall back to unit suite if base unavailable
         shell: bash
         run: |

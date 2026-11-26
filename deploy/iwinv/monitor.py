@@ -46,9 +46,10 @@ def main():
     if os.geteuid() != 0:
         raise RuntimeError('ROOT_REQUIRED')
     health = {}
+    prefix='gumseo-sales-' if Path('/var/lib/gumseo-sales-control/active.json').exists() else 'gumseo-local-'
     for service in ('web', 'worker'):
         try:
-            health[service] = output(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', 'gumseo-local-' + service + '-1'])
+            health[service] = output(['/usr/bin/docker', 'inspect', '--format', '{{.State.Health.Status}}', prefix + service + '-1'])
         except Exception:
             health[service] = 'unknown'
     if Path('/usr/local/lib/gumseo/compose.merchant-review.yml').exists():

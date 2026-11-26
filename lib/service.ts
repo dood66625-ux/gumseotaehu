@@ -305,7 +305,13 @@ export function createOrder(s: Session, rid: string, consent: unknown) {
       Date.now(),
       seal({
         ...c,
-        policy: "draft-2026-11-14-age-v2",
+        policy:
+          process.env.SALES_MODE === "live"
+            ? "sales-2026-11-26-ai-v1"
+            : "draft-2026-11-14-age-v2",
+        ...(process.env.SALES_MODE === "live"
+          ? { aiTransferConsent: c.privacy, mailTransferConsent: c.privacy }
+          : {}),
         time: Date.now(),
         product: "2027-v2",
         priceKrw: PRODUCT_PRICE_KRW,

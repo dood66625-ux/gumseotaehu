@@ -1,4 +1,4 @@
-# Prepared candidate only. No script installs or starts this file automatically.
+# Installed only by the explicit owner command: sales-batch.py --activate.
 # Keep the existing review/admin and private-reader services running during staging.
 name: gumseo-sales
 services:
@@ -27,6 +27,7 @@ services:
     depends_on:
       storage: {condition: service_completed_successfully}
   worker:
+    stop_grace_period: 150s
     image: gumseo-local-worker:local
     env_file: /etc/gumseo/sales/runtime.env
     volumes: [sales-data:/data]
