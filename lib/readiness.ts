@@ -43,6 +43,8 @@ export function launchReadiness() {
       excludedFutureScope: plan.excludedFutureScope,
       productionApprovalInferred: false,
     },
+    contractMode: "quick-open-owner-confirmed",
+    cardReviewCompletionIsSoleLaunchGate: false,
     mode: "local-mock",
     launchReady: false,
     externalEffectsEnabled: false,
@@ -61,7 +63,7 @@ export function launchReadiness() {
       "offline-toss-order-integration-and-notification-recovery",
       "disabled-by-default-signed-test-webhook-receipt",
       "offline-mail-queue-idempotency-bounce-and-restore-quarantine",
-      "single-operator-session-rotation-and-recent-mfa",
+      "single-operator-password-login-and-session-rotation",
       "owner-confirmed-isolated-test-admin-credential-rotation",
       "owner-verified-private-staging-backup-and-health-timers",
       "verified-two-address-email-change-mock",
@@ -126,7 +128,7 @@ export function launchReadiness() {
         id: "admin",
         kind: "implementation",
         detail:
-          "Single-operator credential provisioning, MFA enrollment/recovery and credential-bound session revocation are implemented. Actual operating-device enrollment and host acceptance remain separate. Multi-user administration is not an added launch requirement.",
+          "Owner-chosen password login, scrypt storage, session rotation and inline password reauthentication are implemented. Actual host acceptance remains separate. Multi-user administration is not an added launch requirement.",
       },
       {
         id: "traffic",
