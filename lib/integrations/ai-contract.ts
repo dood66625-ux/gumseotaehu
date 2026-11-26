@@ -61,7 +61,19 @@ export function buildAiRequest(
         type: "json_schema",
         name: "geumseo_report_v1",
         strict: true,
-        schema: z.toJSONSchema(generated),
+        schema: z.toJSONSchema(
+          profile === "rich-ko-v1"
+            ? generated.extend({
+                chapters: z
+                  .array(
+                    generated.shape.chapters.element.extend({
+                      text: z.string().min(700).max(3000),
+                    }),
+                  )
+                  .length(9),
+              })
+            : generated,
+        ),
       },
     },
   };

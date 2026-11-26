@@ -40,6 +40,17 @@ try {
         row.attempts,
     );
     console.log(
+      "응답 암호화 보관: " +
+        (has("ai_generation_evidence") &&
+        database
+          .prepare(
+            "SELECT 1 FROM ai_generation_evidence WHERE order_id=? AND version=?",
+          )
+          .get(row.id, row.version)
+          ? "있음"
+          : "없음"),
+    );
+    console.log(
       "오류 코드: " +
         (/^[A-Z0-9_]{2,100}$/.test(String(row.error))
           ? row.error

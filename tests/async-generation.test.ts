@@ -1118,6 +1118,121 @@ it("offline operator CLI selects one post-cutover order without generating or pr
 });
 
 it("persists only safe generation error codes and HTTP status", () => {
-  expect(svc.generationFailureCode(Object.assign(new Error("AI_QUOTA_EXHAUSTED"), {httpStatus:429}))).toBe("AI_QUOTA_EXHAUSTED_HTTP_429");
-  expect(svc.generationFailureCode(new Error("provider secret: customer@example.invalid"))).toBe("GENERATION_UNAVAILABLE");
+  expect(
+    svc.generationFailureCode(
+      Object.assign(new Error("AI_QUOTA_EXHAUSTED"), { httpStatus: 429 }),
+    ),
+  ).toBe("AI_QUOTA_EXHAUSTED_HTTP_429");
+  expect(
+    svc.generationFailureCode(
+      new Error("provider secret: customer@example.invalid"),
+    ),
+  ).toBe("GENERATION_UNAVAILABLE");
+});
+
+it("recovers a confirmed failed paid call once while retaining its original spend and payment", async () => {
+  const { queuePaidAiRecovery } = await import("../lib/ai-paid-recovery");
+  const order = aiPaid();
+  const policy = {
+    dailyUsdMicros: 1000000,
+    lifetimeUsdMicros: 2000000,
+    reservationUsdMicros: 500000,
+  };
+  const ledger = aiSpendLedger(db(), policy);
+  const first = ledger.reserve(order.order, 1);
+  ledger.recordUsage(first, 42000);
+  ledger.finish(first, "uncertain");
+  run(
+    "UPDATE jobs SET state='retrying',attempts=1 WHERE order_id=?",
+    order.order,
+  );
+  run("UPDATE orders SET fulfillment='retrying' WHERE id=?", order.order);
+  expect(queuePaidAiRecovery(order.order, policy, 0)).toBe(true);
+  expect(queuePaidAiRecovery(order.order, policy, 0)).toBe(false);
+  expect(
+    one(
+      "SELECT version,payment_status,corrections FROM orders WHERE id=?",
+      order.order,
+    ),
+  ).toMatchObject({ version: 2, payment_status: "paid", corrections: 0 });
+  expect(
+    one("SELECT state,actual FROM ai_spend_calls WHERE id=?", first),
+  ).toMatchObject({ state: "uncertain", actual: 42000 });
+  expect(
+    one(
+      "SELECT count(*) n FROM jobs WHERE order_id=? AND state='queued'",
+      order.order,
+    )?.n,
+  ).toBe(1);
+  const second = ledger.reserve(order.order, 2);
+  expect(second).not.toBe(first);
+  expect(ledger.summary().calls).toBe(2);
+});
+
+it("refuses another call when a failed response is already saved or usage is uncertain", async () => {
+  const { queuePaidAiRecovery } = await import("../lib/ai-paid-recovery");
+  const { saveAiGenerationEvidence } =
+    await import("../lib/ai-generation-evidence");
+  const { open } = await import("../lib/security");
+  const order = aiPaid();
+  const policy = {
+    dailyUsdMicros: 1000000,
+    lifetimeUsdMicros: 2000000,
+    reservationUsdMicros: 500000,
+  };
+  const ledger = aiSpendLedger(db(), policy);
+  const first = ledger.reserve(order.order, 1);
+  ledger.finish(first, "uncertain");
+  run(
+    "UPDATE jobs SET state='retrying',attempts=1 WHERE order_id=?",
+    order.order,
+  );
+  run("UPDATE orders SET fulfillment='retrying' WHERE id=?", order.order);
+  expect(() => queuePaidAiRecovery(order.order, policy, 0)).toThrow(
+    "NOT_CONFIRMED_FAILED",
+  );
+  ledger.recordUsage(first, 42000);
+  saveAiGenerationEvidence(order.order, 1, {
+    status: "completed",
+    output_text: "private report text",
+  });
+  const saved = one(
+    "SELECT response_enc FROM ai_generation_evidence WHERE order_id=?",
+    order.order,
+  )!.response_enc;
+  expect(saved).not.toContain("private report text");
+  expect(open(saved).output_text).toBe("private report text");
+  expect(() => queuePaidAiRecovery(order.order, policy, 0)).toThrow(
+    "SAVED_RESPONSE_REVIEW_REQUIRED",
+  );
+  expect(() => saveAiGenerationEvidence(order.order, 2, {})).toThrow(
+    "ORDER_UNAVAILABLE",
+  );
+  expect(
+    one("SELECT version FROM orders WHERE id=?", order.order)?.version,
+  ).toBe(1);
+});
+
+it("recovery respects the existing total budget and rolls back all order changes", async () => {
+  const { queuePaidAiRecovery } = await import("../lib/ai-paid-recovery");
+  const order = aiPaid();
+  const policy = {
+    dailyUsdMicros: 500000,
+    lifetimeUsdMicros: 500000,
+    reservationUsdMicros: 500000,
+  };
+  const ledger = aiSpendLedger(db(), policy);
+  const first = ledger.reserve(order.order, 1);
+  ledger.recordUsage(first, 42000);
+  ledger.finish(first, "uncertain");
+  run(
+    "UPDATE jobs SET state='retrying',attempts=1 WHERE order_id=?",
+    order.order,
+  );
+  run("UPDATE orders SET fulfillment='retrying' WHERE id=?", order.order);
+  expect(() => queuePaidAiRecovery(order.order, policy, 0)).toThrow();
+  expect(
+    one("SELECT version FROM orders WHERE id=?", order.order)?.version,
+  ).toBe(1);
+  expect(one("SELECT count(*) n FROM sales_ai_holds")?.n).toBe(0);
 });

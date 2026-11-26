@@ -62,3 +62,4 @@ CREATE TABLE IF NOT EXISTS visit_networks(visit_id TEXT PRIMARY KEY REFERENCES v
 CREATE INDEX IF NOT EXISTS visit_networks_key ON visit_networks(network_key);
 CREATE TABLE IF NOT EXISTS visit_exclusions(network_key TEXT PRIMARY KEY,expires INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS sales_ai_holds(order_id TEXT PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,version INTEGER NOT NULL,day TEXT NOT NULL,reserved INTEGER NOT NULL,expires INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS ai_generation_evidence(order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,version INTEGER NOT NULL,response_enc TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(order_id,version));

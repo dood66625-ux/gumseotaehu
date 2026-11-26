@@ -10,6 +10,7 @@ export async function runBudgetedAiJob(options: {
   generate: (
     chart: Chart,
     recordUsage: (estimatedUsdMicros: number) => void,
+    context: Readonly<{ orderId: string; version: number }>,
   ) => Promise<Report>;
 }) {
   // Explicit per-order selection prevents a future opt-in from draining historical queues.
@@ -28,10 +29,14 @@ export async function runBudgetedAiJob(options: {
       );
       let recordedCost: number | null = null;
       try {
-        const report = await options.generate(chart, (amount) => {
-          options.ledger.recordUsage(reservation, amount);
-          recordedCost = Math.max(recordedCost ?? 0, amount);
-        });
+        const report = await options.generate(
+          chart,
+          (amount) => {
+            options.ledger.recordUsage(reservation, amount);
+            recordedCost = Math.max(recordedCost ?? 0, amount);
+          },
+          context,
+        );
         if (recordedCost === null) throw Error("AI_DURABLE_USAGE_REQUIRED");
         if (report.provider !== "openai") throw Error("AI_PROVIDER_MISMATCH");
         const validated = validateReport(report, chart);

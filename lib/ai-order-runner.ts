@@ -1,3 +1,4 @@
+import { saveAiGenerationEvidence } from "./ai-generation-evidence";
 /** Opt-in per-order orchestration. Used by the explicitly enrolled worker, never by public request data. */
 import { runBudgetedAiJob } from "./ai-generation-worker";
 import type { aiSpendLedger } from "./ai-spend-ledger";
@@ -26,7 +27,7 @@ export async function runOrderOpenAiJob(options: {
     enabled: true,
     orderId: options.orderId,
     ledger: options.ledger,
-    async generate(chart, recordUsage) {
+    async generate(chart, recordUsage, context) {
       const transport = createOrderOpenAiTransport({
         approval: options.approval,
         chart,
@@ -35,6 +36,9 @@ export async function runOrderOpenAiJob(options: {
         fetch: options.fetch,
         // Outer orchestration already committed the reservation before entering this generator.
         reserve() {},
+        onResponse(raw) {
+          saveAiGenerationEvidence(options.orderId, context.version, raw);
+        },
         onUsage(usage) {
           recordUsage(usage.estimatedUsdMicros);
         },

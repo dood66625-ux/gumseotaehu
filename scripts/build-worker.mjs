@@ -8,6 +8,7 @@ await build({
     "scripts/sales-enroll.ts",
     "scripts/toss-live-enroll.ts",
     "scripts/ai-worker-control.ts",
+    "scripts/recover-paid-generation.ts",
     "scripts/runtime-health.ts",
     "scripts/mail-status.ts",
     "scripts/retention-plan.ts",

@@ -75,6 +75,16 @@ export function applyDeletions(db: DatabaseSync, rows: Deletions, key: Buffer) {
         .get(row.orderId);
       if (order) {
         db.prepare("DELETE FROM reports WHERE order_id=?").run(row.orderId);
+        if (
+          db
+            .prepare(
+              "SELECT 1 FROM sqlite_master WHERE name='ai_generation_evidence'",
+            )
+            .get()
+        )
+          db.prepare("DELETE FROM ai_generation_evidence WHERE order_id=?").run(
+            row.orderId,
+          );
         const readings = db
           .prepare(
             "SELECT reading_id FROM reading_history WHERE order_id=? UNION SELECT reading_id FROM orders WHERE id=?",

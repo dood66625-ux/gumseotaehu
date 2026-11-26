@@ -80,3 +80,7 @@ cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/check-paid
 ```
 
 Do not delete spend reservations or request another payment to recover an uncertain call. Inspect the sanitized failure code and usage receipt before choosing recovery.
+
+For the legacy failed paid order only (usage received, no saved response), `sudo bash deploy/iwinv/recover-paid-generation.sh ORDER_UUID` explicitly approves one additional generation under the existing policy. It waits for the ordinary deployment, reserves capacity including the original spend, advances the report version without changing the payment/birth information or using a birth correction, and queues exactly one job. Repeating the command cannot create another generation. Unknown provider completion, saved responses, expired/deleted/refunded or completed orders are rejected. The command prints REPORT_READY on completion or safe diagnostics on failure. No Toss charge is issued by this command.
+
+New customer AI responses are encrypted before content validation. Successful publication removes temporary evidence; failed evidence follows content deletion, expiry and backup deletion manifests. Rich Korean requests now express the 700-character minimum in the output schema as well as local validation. This mitigates short output; it does not establish the original legacy failure's cause.

@@ -538,6 +538,11 @@ function publishReportJob(
       seal(report),
       Date.now(),
     );
+    run(
+      "DELETE FROM ai_generation_evidence WHERE order_id=? AND version=?",
+      o.id,
+      job.version,
+    );
     if (inserted.changes)
       run(
         "INSERT OR IGNORE INTO report_usage VALUES(?,?,?,?,?,?)",
@@ -566,7 +571,7 @@ function publishReportJob(
 export function generationFailureCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
   if (
-    !/^(?:AI_[A-Z0-9_]{2,70}|REPORT_[A-Z0-9_]{2,65}|DAY_FACT_MISMATCH|UNSUPPORTED_PILLAR)$/.test(
+    !/^(?:AI_[A-Z0-9_]{2,70}|UNSAFE_AI_CONTENT|UNSAFE_CONTENT|UNCERTAINTY_REMOVED|CHART_CHANGED|DUPLICATE_CHAPTER|UNSUPPORTED_FACT|COUNT_FACT_MISMATCH|REPORT_[A-Z0-9_]{2,65}|DAY_FACT_MISMATCH|UNSUPPORTED_PILLAR)$/.test(
       message,
     )
   )
@@ -1138,6 +1143,7 @@ export function deleteContent(
   });
 }
 function wipeContent(oid: string) {
+  run("DELETE FROM ai_generation_evidence WHERE order_id=?", oid);
   run("DELETE FROM reports WHERE order_id=?", oid);
   for (const r of all(
     "SELECT reading_id FROM reading_history WHERE order_id=?",
