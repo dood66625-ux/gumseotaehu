@@ -3,7 +3,10 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DatabaseSync } from "node:sqlite";
-import { inspectQuickOpen } from "../scripts/quick-open-status.mjs";
+import {
+  inspectQuickOpen,
+  compactQuickOpen,
+} from "../scripts/quick-open-status.mjs";
 it("reports missing runtime settings without requiring completed card review or exposing values", () => {
   const r = inspectQuickOpen({
     TOSS_LIVE_SECRET_KEY: "live_sk_private-fixture",
@@ -41,4 +44,14 @@ it("reads enrollment holds without creating schemas, files or altering the datab
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+it("provides a short secret-free summary grouped by the next deployment action", () => {
+  const text = compactQuickOpen(
+    inspectQuickOpen({ OPENAI_API_KEY: "private-fixture" }),
+  );
+  expect(text.split("\n")).toHaveLength(5);
+  expect(text).toContain("메일:");
+  expect(text).toContain("결제:");
+  expect(text).not.toContain("private-fixture");
 });

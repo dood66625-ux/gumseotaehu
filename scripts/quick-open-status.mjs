@@ -135,5 +135,61 @@ export function inspectQuickOpen(env = process.env) {
     ],
   };
 }
-if (!process.argv[1] || pathToFileURL(process.argv[1]).href === import.meta.url)
-  console.log(JSON.stringify(inspectQuickOpen(), null, 2));
+export function compactQuickOpen(report) {
+  const failed = report.checks.filter((c) => !c.ok);
+  const groups = {
+    기본: ["https", "database"],
+    결제: [
+      "payment-mode",
+      "payment-approval",
+      "payment-secret",
+      "payment-client",
+      "merchant",
+      "payment-cutover",
+      "payment-enrollment",
+    ],
+    운명서: [
+      "ai-mode",
+      "ai-approval",
+      "ai-key",
+      "ai-budget",
+      "ai-cutover",
+      "ai-enrollment",
+    ],
+    메일: [
+      "mail-mode",
+      "mail-approval",
+      "mail-key",
+      "mail-profile",
+      "mail-cutover",
+    ],
+  };
+  return [
+    "설정 " +
+      report.configured +
+      "/" +
+      report.total +
+      " · 실결제/메일/AI 호출 0 · 변경 없음",
+    ...Object.entries(groups).map(([name, ids]) => {
+      const missing = failed.filter((c) => ids.includes(String(c.id)));
+      return (
+        name +
+        ": " +
+        (missing.length
+          ? missing.map((c) => c.label).join(", ") + " 미준비"
+          : "설정 확인")
+      );
+    }),
+  ].join("\n");
+}
+if (
+  !process.argv[1] ||
+  pathToFileURL(process.argv[1]).href === import.meta.url
+) {
+  const report = inspectQuickOpen();
+  console.log(
+    process.env.QUICK_OPEN_STATUS_SUMMARY === "1"
+      ? compactQuickOpen(report)
+      : JSON.stringify(report, null, 2),
+  );
+}
