@@ -4,7 +4,9 @@ type Agreement = {
     event: string,
     handler: (value: { agreedRequiredTerms: boolean }) => void,
   ) => void;
-  getAgreementStatus?: () => { agreedRequiredTerms: boolean };
+  getAgreementStatus?: () =>
+    | { agreedRequiredTerms: boolean }
+    | Promise<{ agreedRequiredTerms: boolean }>;
 };
 export type LiveWidget = {
   setAmount: (amount: { currency: "KRW"; value: number }) => Promise<void>;
@@ -88,7 +90,9 @@ export async function openLiveWidget(
       onAgreement(value.agreedRequiredTerms === true),
     );
     if (agreement.getAgreementStatus)
-      onAgreement(agreement.getAgreementStatus().agreedRequiredTerms === true);
+      onAgreement(
+        (await agreement.getAgreementStatus()).agreedRequiredTerms === true,
+      );
     return widget;
   } catch (error) {
     document.querySelector(targets.methods)?.replaceChildren();

@@ -78,7 +78,6 @@ export default function Checkout({
         return;
       }
       if (mode === "live" && liveOrder && widget.current) {
-        if (!agreed) throw Error("카드 결제에 필요한 약관을 확인해 주세요.");
         await widget.current.requestPayment({
           orderId: liveOrder.id,
           orderName: liveOrder.orderName,
@@ -146,18 +145,31 @@ export default function Checkout({
       });
       window.location.href = "/checkout/success?orderId=" + order.id;
     } catch (e) {
-      const cardDetailNeeded =
-        typeof e === "object" &&
-        e !== null &&
-        "code" in e &&
-        e.code === "NEED_CARD_PAYMENT_DETAIL";
+      const code =
+        typeof e === "object" && e !== null && "code" in e
+          ? String(e.code)
+          : "";
+      const message = e instanceof Error ? e.message : "";
+      const agreementNeeded =
+        /AGREE|TERMS/.test(code) || /약관.*동의|동의.*약관/.test(message);
+      const cardDetailNeeded = code === "NEED_CARD_PAYMENT_DETAIL";
       setError(
         cardDetailNeeded
-          ? "결제수단에서 카드사를 선택한 뒤 다시 눌러주세요."
-          : mode === "live"
-            ? "결제를 완료하지 못했습니다. 추가 결제 전에 같은 주문의 상태를 확인해 주세요."
-            : (e as Error).message,
+          ? "카드사를 선택한 뒤 다시 눌러주세요."
+          : agreementNeeded
+            ? "토스 결제창의 필수 약관에 동의한 뒤 다시 눌러주세요."
+            : mode === "live"
+              ? "결제를 완료하지 못했습니다. 같은 주문으로 다시 확인해주세요."
+              : message,
       );
+      if (agreementNeeded)
+        document
+          .getElementById("live-payment-agreement-" + id)
+          ?.scrollIntoView({ block: "center", behavior: "smooth" });
+      if (cardDetailNeeded)
+        document
+          .getElementById("live-payment-methods-" + id)
+          ?.scrollIntoView({ block: "center", behavior: "smooth" });
     } finally {
       locked.current = false;
       setBusy(false);
@@ -384,6 +396,14 @@ export default function Checkout({
               <section aria-label="카드 결제 수단">
                 <div id={"live-payment-methods-" + id} />
                 <div id={"live-payment-agreement-" + id} />
+                {liveOrder && widget.current && (
+                  <p className="hint" role="status">
+                    {agreed
+                      ? "카드 결제 약관을 확인했습니다."
+                      : "카드사와 필수 약관을 확인한 뒤 아래 카드 결제 버튼을 눌러주세요."}
+                  </p>
+                )}
+
                 {!liveOrder && (
                   <p className="hint">
                     아래 버튼을 누르면 카드 결제 수단을 선택할 수 있습니다.
@@ -413,13 +433,7 @@ export default function Checkout({
                 <button
                   className="button"
                   style={{ width: "100%" }}
-                  disabled={
-                    busy ||
-                    submitted ||
-                    !verified ||
-                    !mode ||
-                    (mode === "live" && !!widget.current && !agreed)
-                  }
+                  disabled={busy || submitted || !verified || !mode}
                 >
                   {busy
                     ? "주문 확인 중…"

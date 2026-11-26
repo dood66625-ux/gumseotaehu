@@ -20,7 +20,9 @@ const bundle = buildSync({
   jsx: "automatic",
   define: { "process.env.NODE_ENV": '"production"', "process.env": "{}" },
 }).outputFiles[0].text;
-let mode = "live",
+let initialAgreed = false,
+  emitAgreement = true,
+  mode = "live",
   confirmation = "success",
   posts = [],
   sdkLoads = 0;
@@ -49,7 +51,7 @@ try {
       sdkLoads++;
       await route.fulfill({
         contentType: "text/javascript; charset=utf-8",
-        body: `window.__payments=[];window.TossPayments=()=>({widgets:()=>({setAmount:async a=>{window.__amount=a;},renderPaymentMethods:async o=>{document.querySelector(o.selector).textContent='카드';},renderAgreement:async o=>{let h;const b=document.createElement('button');b.type='button';b.textContent='카드 약관 동의';b.onclick=()=>h({agreedRequiredTerms:true});document.querySelector(o.selector).append(b);return{on:(_,f)=>{h=f;},getAgreementStatus:()=>({agreedRequiredTerms:false})};},requestPayment:async o=>{window.__payments.push(o);}})});`,
+        body: `window.__payments=[];window.__agreed=${initialAgreed};window.TossPayments=()=>({widgets:()=>({setAmount:async a=>{window.__amount=a;},renderPaymentMethods:async o=>{document.querySelector(o.selector).textContent='카드';},renderAgreement:async o=>{let h;const b=document.createElement('button');b.type='button';b.textContent='카드 약관 동의';b.onclick=()=>{window.__agreed=true;if(h)h({agreedRequiredTerms:true});};document.querySelector(o.selector).append(b);return{on:(_,f)=>{if(${emitAgreement})h=f;},...(${emitAgreement}?{getAgreementStatus:()=>({agreedRequiredTerms:window.__agreed})}:{})};},requestPayment:async o=>{if(!window.__agreed){const e=new Error('필수 약관 동의가 필요합니다');e.code='NOT_AGREED_TERMS';throw e;}window.__payments.push(o);}})});`,
       });
     });
     await page.route("**/api/**", async (route) => {
@@ -154,7 +156,15 @@ try {
         throw error;
       });
     const pay = page.getByRole("button", { name: "카드로 결제하기" });
-    if (!(await pay.isDisabled())) throw Error("WIDGET_AGREEMENT_BYPASSED");
+    if (await pay.isDisabled()) throw Error("WIDGET_EVENT_LOCKED_PAYMENT");
+    await pay.click();
+    await page
+      .getByText("토스 결제창의 필수 약관에 동의한 뒤 다시 눌러주세요.", {
+        exact: true,
+      })
+      .waitFor();
+    if ((await page.evaluate(() => window.__payments.length)) !== 0)
+      throw Error("SDK_AGREEMENT_BYPASSED");
     await page.getByRole("button", { name: "카드 약관 동의" }).click();
     await pay.click();
     if (!(await pay.isDisabled())) throw Error("PAYMENT_REQUEST_NOT_LOCKED");
@@ -173,6 +183,22 @@ try {
       posts.some((p) => p.path === "payments/live-return")
     )
       throw Error("CARD_LAUNCH_CONFIRMED_PAYMENT");
+    initialAgreed = true;
+    emitAgreement = false;
+    await page.goto(origin);
+    await advanceCheckout();
+    await page.getByRole("button", { name: "카드 결제 수단 선택" }).click();
+    const missedEventPay = page.getByRole("button", {
+      name: "카드로 결제하기",
+    });
+    await missedEventPay.waitFor();
+    if (await missedEventPay.isDisabled())
+      throw Error("MISSED_AGREEMENT_EVENT_LOCKED_PAYMENT");
+    await missedEventPay.click();
+    if ((await page.evaluate(() => window.__payments.length)) !== 1)
+      throw Error("MISSED_EVENT_PAYMENT_NOT_LAUNCHED");
+    initialAgreed = false;
+    emitAgreement = true;
     confirmation = "success";
     posts = [];
     await page.goto(
