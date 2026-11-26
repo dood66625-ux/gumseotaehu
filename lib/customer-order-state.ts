@@ -2,6 +2,7 @@
 type Order = {
   payment?: unknown;
   fulfillment?: unknown;
+  generationHeld?: unknown;
   deleted?: unknown;
   expires?: unknown;
 };
@@ -21,6 +22,12 @@ const copy = {
     label: "운명서 작성 중",
     heading: "운명서를 작성하고 있습니다.",
     description: "창을 닫아도 서버의 작성 작업은 계속됩니다.",
+  },
+  held: {
+    label: "작성 결과 확인 중",
+    heading: "운명서 작성 결과를 확인하고 있습니다.",
+    description:
+      "중복 생성과 추가 비용을 막기 위해 자동 재호출을 보류했습니다. 추가 결제 없이 이 주문의 복구 확인을 요청해주세요.",
   },
   failed: {
     label: "작성 복구 필요",
@@ -81,6 +88,7 @@ export function customerOrderState(order: Order, now = Date.now()) {
     state = "expired";
   else if (order.payment === "pending") state = "pending";
   else if (permitted && order.fulfillment === "ready") state = "ready";
+  else if (permitted && order.generationHeld === true) state = "held";
   else if (permitted && order.fulfillment === "failed") state = "failed";
   else if (
     permitted &&

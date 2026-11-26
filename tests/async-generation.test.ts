@@ -1116,3 +1116,8 @@ it("offline operator CLI selects one post-cutover order without generating or pr
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+it("persists only safe generation error codes and HTTP status", () => {
+  expect(svc.generationFailureCode(Object.assign(new Error("AI_QUOTA_EXHAUSTED"), {httpStatus:429}))).toBe("AI_QUOTA_EXHAUSTED_HTTP_429");
+  expect(svc.generationFailureCode(new Error("provider secret: customer@example.invalid"))).toBe("GENERATION_UNAVAILABLE");
+});

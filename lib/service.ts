@@ -563,7 +563,26 @@ function publishReportJob(
     return true;
   });
 }
-function failReportJob(job: ReportJob) {
+export function generationFailureCode(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (
+    !/^(?:AI_[A-Z0-9_]{2,70}|REPORT_[A-Z0-9_]{2,65}|DAY_FACT_MISMATCH|UNSUPPORTED_PILLAR)$/.test(
+      message,
+    )
+  )
+    return "GENERATION_UNAVAILABLE";
+  const status =
+    typeof error === "object" && error !== null && "httpStatus" in error
+      ? Number(error.httpStatus)
+      : 0;
+  return (
+    message +
+    (Number.isInteger(status) && status >= 100 && status <= 599
+      ? "_HTTP_" + status
+      : "")
+  );
+}
+function failReportJob(job: ReportJob, error?: unknown) {
   tx(() => {
     const lease = one(
       "SELECT state,attempts,lease_until FROM jobs WHERE id=?",
@@ -593,7 +612,7 @@ function failReportJob(job: ReportJob) {
     run(
       "UPDATE jobs SET state=?,error=?,scheduled=?,lease_until=NULL WHERE id=?",
       exhausted ? "failed" : "retrying",
-      "GENERATION_UNAVAILABLE",
+      generationFailureCode(error),
       Date.now() + Math.min(60000, 1000 * 2 ** job.attempts),
       job.id,
     );
@@ -649,8 +668,8 @@ export async function workOnceWithGenerator(
         Object.freeze({ orderId: order.id, version: order.version }),
       ),
     );
-  } catch {
-    failReportJob(job);
+  } catch (error) {
+    failReportJob(job, error);
   }
   return true;
 }
@@ -662,6 +681,9 @@ export function orderView(o: Record<string, any>) {
     amount: o.amount,
     payment: o.payment_status,
     fulfillment: o.fulfillment,
+    generationHeld:
+      ["retrying", "failed"].includes(o.fulfillment) &&
+      hasAiReservation(db(), o.id, o.version),
     expires: o.expires,
     version: o.version,
     created: o.created,

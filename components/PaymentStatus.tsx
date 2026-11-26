@@ -67,7 +67,7 @@ export default function PaymentStatus({ id }: { id: string }) {
           </div>
           <div>
             <dt>운명서 상태</dt>
-            <dd>{o.fulfillment}</dd>
+            <dd>{view.label}</dd>
           </div>
         </dl>
         {ready ? (

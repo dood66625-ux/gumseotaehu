@@ -68,3 +68,15 @@ compose.sales-candidate.yml은 별도 gumseo-sales 프로젝트/볼륨과 loopba
 판매 모드 메인은 별도의 사전 렌더 HTML을 사용해 '실제 결제 없음' 오표시를 제거하고, 정책 화면에는 현재 AI/메일 전송과 서비스 정보를 표시한다. 기존 `?screen=privacy` 주소는 같은 도메인의 실제 개인정보 페이지로 연결한다. 유료 주문 동의 기록에는 판매 정책 버전과 AI/메일 처리 고지 동의를 함께 기록한다.
 
 검증은 모의 PG/AI·메일, 임시 DB에서 서명 등록/재실행/변조 거절, 일괄 전환 성공·공개 경로 실패 시 복원, 예산 슬롯/자정 경계·소진 차단, 개인정보 파기, 기존 자동 배포·감시를 포함한다. 실제 상점 키 유효성·최초 실결제·실메일 수신·운명서 내용 검수는 서버 실행 후 별도 확인해야 하며 이 스크립트가 완료됐다는 사실만으로 전체 출시 인수를100%로 표시하지 않는다.
+
+### Paid report held after an AI error
+
+A `retrying` job with an existing AI spend reservation is deliberately excluded from automatic HTTP retries to avoid duplicate spend. The order API now exposes this as `generationHeld`, and the customer screen says 작성 결과 확인 중. New failures retain only allowlisted error codes and optional HTTP status; old generic failures cannot reveal their original cause retroactively.
+
+Read-only server inspection (no provider requests or customer inputs printed):
+
+```bash
+cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/check-paid-generation.sh
+```
+
+Do not delete spend reservations or request another payment to recover an uncertain call. Inspect the sanitized failure code and usage receipt before choosing recovery.

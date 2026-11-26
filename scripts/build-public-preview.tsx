@@ -54,6 +54,7 @@ const data = {
     id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
     order: {
       livePayment: false,
+      generationHeld: false,
       id: oid,
       amount: PRODUCT_PRICE_KRW,
       payment: "paid",

@@ -13,6 +13,8 @@ it.each([
   [{ ...paid, fulfillment: "working" }, "working"],
   [{ ...paid, fulfillment: "generating" }, "working"],
   [{ ...paid, fulfillment: "failed" }, "failed"],
+  [{ ...paid, fulfillment: "retrying", generationHeld: true }, "held"],
+  [{ ...paid, payment: "refunded", generationHeld: true }, "refunded"],
   [{ ...paid, payment: "refund_pending" }, "refund_pending"],
   [{ ...paid, payment: "refunded" }, "refunded"],
   [{ ...paid, deleted: true }, "deleted"],
