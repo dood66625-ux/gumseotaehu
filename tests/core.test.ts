@@ -1,3 +1,4 @@
+import { prepareAiOrder } from "../lib/order-generation";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { rotateDataKey } from "../lib/key-rotation";
@@ -1143,4 +1144,32 @@ it("an old unbound elevated cookie is rejected and token signatures cannot be ed
   );
   expect(svc.sessionFor(token + "x")).toBeUndefined();
   expect(svc.sessionFor(token.replace(/^ad1\./, "ad2."))).toBeUndefined();
+});
+
+it("gives rich paid AI jobs a lease longer than their HTTP deadline", async () => {
+  const { oid } = paid();
+  prepareAiOrder(oid);
+  const prior = process.env.AI_REPORT_PROFILE;
+  process.env.AI_REPORT_PROFILE = "rich-ko-v1";
+  let remaining = 0;
+  try {
+    await svc.workOnceWithGenerator(
+      async (chart) => {
+        remaining =
+          Number(
+            one("SELECT lease_until FROM jobs WHERE order_id=?", oid)!
+              .lease_until,
+          ) - Date.now();
+        const report = generate(chart);
+        report.provider = "openai";
+        return report;
+      },
+      oid,
+      "openai",
+    );
+  } finally {
+    if (prior === undefined) delete process.env.AI_REPORT_PROFILE;
+    else process.env.AI_REPORT_PROFILE = prior;
+  }
+  expect(remaining).toBeGreaterThan(120000);
 });

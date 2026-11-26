@@ -30,7 +30,7 @@ def inspect(path):
 def main():
     if os.geteuid()!=0:raise SystemExit('Run with sudo')
     print('기존 설정 위치 (존재 여부만 확인; 설정 변경·외부 요청 없음)')
-    paths=sorted(Path('/etc/gumseo').glob('*.env'))+[Path('/etc/gumseo/sales/credentials.env'),Path('/opt/gumseo/source/.env.local')]
+    paths=sorted(Path('/etc/gumseo').glob('*.env'))+[Path('/etc/gumseo/sales/credentials.env'),Path('/etc/gumseo/sales/runtime.env'),Path('/opt/gumseo/source/.env.local')]
     for path in paths:
         row=inspect(path)
         if row:

@@ -28,7 +28,7 @@ export function buildAiRequest(
     model,
     store: false,
     max_output_tokens: aiRequestPolicy(profile).maxOutputTokens,
-    ...(profile === "synthetic-review-v1"
+    ...(profile === "synthetic-review-v1" || profile === "rich-ko-v1"
       ? { reasoning: { effort: "none" as const } }
       : {}),
     instructions:
@@ -65,6 +65,13 @@ export function buildAiRequest(
       },
     },
   };
+  if (profile === "rich-ko-v1") {
+    if (locale !== "ko") throw Error("AI_RICH_KOREAN_ONLY");
+    request.instructions = request.instructions.replace(
+      "각 장은 350~650자의 고유한 해석과 실천 제안을 포함한다.",
+      "각 장은 800~1000자의 고유한 해석과 실천 제안을 포함한다. 분량을 채우기 위한 같은 말 반복은 피한다. 주어진 근거를 쉬운 말로 풀고, 생활 속 사례와 실천할 행동을 구체적으로 설명한다. 12살 독자도 알아들을 쉬운 표현을 사용하고 어려운 용어를 쓰면 바로 설명한다.",
+    );
+  }
   if (locale === "zh-TW")
     request.instructions =
       "你是中國太后意象的虛構人物禁書太后。所有 intro 與章節正文只用臺灣繁體中文，語氣典雅溫暖，以本宮、你、且看、不妨等自然說話，不恐嚇、不命令讀者。每章至少350字，保留既定韓文章節標題供系統識別，正文不要使用韓文。notes 的原始不確定性說明必須逐字保留，即使原文為韓文。不得改動命盤、日主、干支或五行數量；不斷言強弱、用神、健康、死亡、感情背叛或投資結果。未知出生時辰不補造時柱或大運。禁止使用必定成功、保證獲利、必死、絕症、一定會出軌等詞，包括否定句。按所附 facts 寫九章，claimIds 沿用原值，第一章涵蓋日主和五行，第二三五章含TEN_GODS，第四六章含RELATIONS，第七章含CYCLES，第八章含MONTHS並逐一列出1月到12月的建議，第九章含日主。";
@@ -118,6 +125,11 @@ export async function generateAiReport(
   } catch {
     throw Error("AI_INVALID_REPORT_SHAPE");
   }
+  if (
+    profile === "rich-ko-v1" &&
+    output.chapters.some((c) => c.text.length < 700)
+  )
+    throw Error("AI_RICH_CHAPTER_TOO_SHORT");
   // Factual/safety checks supplement schema validation; expert semantic review remains required.
   const allowed = new Set([
     ...chart.pillars.filter(Boolean),

@@ -1,0 +1,42 @@
+# Prepared candidate only. No script installs or starts this file automatically.
+# Keep the existing review/admin and private-reader services running during staging.
+name: gumseo-sales
+services:
+  storage:
+    image: node:24-bookworm-slim
+    user: '0:0'
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: [no-new-privileges:true]
+    volumes: [sales-data:/data]
+    command: [node, -e, "const f=require('node:fs');f.mkdirSync('/data/private',{recursive:true,mode:0o700});for(const p of ['/data','/data/private']){f.chownSync(p,1000,1000);f.chmodSync(p,0o700)}"]
+    restart: 'no'
+  web:
+    image: gumseo-local-web:local
+    env_file: /etc/gumseo/sales/runtime.env
+    ports: ['127.0.0.1:3110:3000']
+    volumes: [sales-data:/data]
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: unless-stopped
+    depends_on:
+      storage: {condition: service_completed_successfully}
+  worker:
+    image: gumseo-local-worker:local
+    env_file: /etc/gumseo/sales/runtime.env
+    volumes: [sales-data:/data]
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: unless-stopped
+    depends_on:
+      storage: {condition: service_completed_successfully}
+volumes:
+  sales-data:

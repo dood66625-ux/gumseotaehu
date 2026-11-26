@@ -13,6 +13,7 @@ export async function runOrderOpenAiJob(options: {
   orderId: string;
   ledger: ReturnType<typeof aiSpendLedger>;
   apiKey: string;
+  profile?: "standard" | "rich-ko-v1";
   fetch?: typeof fetch;
 }) {
   if (options.enabled !== true) return false;
@@ -29,6 +30,7 @@ export async function runOrderOpenAiJob(options: {
       const transport = createOrderOpenAiTransport({
         approval: options.approval,
         chart,
+        profile: options.profile,
         apiKey: options.apiKey,
         fetch: options.fetch,
         // Outer orchestration already committed the reservation before entering this generator.
@@ -41,6 +43,8 @@ export async function runOrderOpenAiJob(options: {
         chart,
         approvedOpenAiModel,
         transport,
+        "ko",
+        options.profile,
       );
       report.generation = {
         model: approvedOpenAiModel,

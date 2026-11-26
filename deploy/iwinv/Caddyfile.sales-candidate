@@ -14,7 +14,7 @@ gumseo.kr {
   # Candidate only: install after the HTTPS runtime and live fulfillment are ready.
   @neverPublic path /.git* /.env* /api/auth/local* /api/local* /api/local-mail/* /api/email-change/local-code /api/test* /api/payments/authenticate
   respond @neverPublic 404
-  reverse_proxy 127.0.0.1:3100 {
+  reverse_proxy 127.0.0.1:3110 {
     header_up X-Gumseo-Client-IP {remote_host}
   }
 }

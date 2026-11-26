@@ -130,14 +130,19 @@ export function createOrderOpenAiTransport(
     approval?: "customer-data-approved";
     chart: Chart;
     locale?: "ko" | "zh-TW";
+    profile?: "standard" | "rich-ko-v1";
   },
 ): Transport {
   const chart = structuredClone(options.chart);
+  const profile = options.profile ?? "standard";
+  if (!["standard", "rich-ko-v1"].includes(profile))
+    throw new AiHttpError("AI_ORDER_PROFILE_NOT_APPROVED");
   return pinnedTransport(
     options,
     () => options.approval === "customer-data-approved",
-    () => buildAiRequest(chart, approvedOpenAiModel, options.locale),
+    () => buildAiRequest(chart, approvedOpenAiModel, options.locale, profile),
     "AI_ORDER_REQUEST_MISMATCH",
+    aiRequestPolicy(profile).timeoutMs,
   );
 }
 function pinnedTransport(

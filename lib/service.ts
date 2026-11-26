@@ -481,7 +481,10 @@ function claimReportJob(
     if (!j) return null;
     run(
       "UPDATE jobs SET state='running',attempts=attempts+1,lease_until=? WHERE id=?",
-      now + 60000,
+      now +
+        (lane === "openai" && process.env.AI_REPORT_PROFILE === "rich-ko-v1"
+          ? 180000
+          : 60000),
       j.id,
     );
     run("UPDATE orders SET fulfillment='generating' WHERE id=?", j.order_id);

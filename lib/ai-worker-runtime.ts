@@ -46,6 +46,9 @@ export async function runConfiguredAiCycle(
   const key = process.env.OPENAI_API_KEY ?? "";
   if (!/^sk-[A-Za-z0-9_-]{20,}$/.test(key))
     throw Error("AI_CREDENTIAL_REQUIRED");
+  const profile = process.env.AI_REPORT_PROFILE ?? "standard";
+  if (profile !== "standard" && profile !== "rich-ko-v1")
+    throw Error("AI_ORDER_PROFILE_NOT_APPROVED");
   const ledger = aiSpendLedger(database, setup.policy);
   return runAiWorkerCycle(database, {
     enabled: true,
@@ -61,6 +64,7 @@ export async function runConfiguredAiCycle(
         orderId,
         ledger,
         apiKey: key,
+        profile,
         fetch: options.fetch,
       });
     },

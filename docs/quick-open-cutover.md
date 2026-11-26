@@ -42,3 +42,13 @@ cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/check-quic
 `sudo python3 deploy/iwinv/prepare-sales-credentials.py`는 소유자의 대화형 SSH에서 운영 위젯 live_gck/live_gsk·MID와 선택적 Resend 키를 입력받는다. 화면에 값을 표시하지 않고 `/etc/gumseo/sales/credentials.env`에0600으로 보관한다. 새 하위 폴더는0700이며 symlink/공개 권한 파일을 거절한다. 기존 AI 키를 읽거나 복사하거나 바꾸지 않는다. 토스 테스트 키와 활성화 플래그는 저장하지 않는다. 기존 test.env/private-reader.env/toss-sandbox.env·실행 컨테이너·전환 DB는 변경하지 않는다. 외부 HTTP 요청도 없다. 메일 키가 없으면 Enter로 건너뛰고 결제 키만 먼저 보관할 수 있다. 이것만으로 판매가 활성화되지는 않는다.
 
 키는 채팅으로 전달하지 않는다. 토스 개발자센터 운영 키 화면에서 현재 MID의 위젯용 키 조합을 확인한다. 운영 키가 표시되지 않거나 발급되지 않았다면 테스트 키로 대체하지 말고 퀵오픈 이용 상점/권한을 확인한다. 메일은 기존 Resend 계정의 인증된 발신 도메인을 사용한다.
+
+### 2026-11-26 추가: 고객용 AI 재사용·풍성한 본문 준비
+
+소유자가 기존 AI 키 재사용 및 `/etc/gumseo/sales/runtime.env` 비공개 저장을 승인했다. 비용은 고객이 만족할 만큼 풍성한 답변을 우선한다는 답변에 따라 건당 예약USD0.50·일USD5·누적USD30을 준비했다. 실제 사용량을 보장하는 요금제가 아니며 현재 원장은 예약액을 보수적으로 비용 계산에 반영한다. 이는 하루 최소10건·누적60건 예약 규모에 해당하므로 실제 판매 공개 전 예산 소진 시 신규 결제를 제한하는 조건과 운영자 예산 인수를 함께 확인해야 한다. 이 단계에서 provider mode는 disabled다.
+
+`sudo python3 deploy/iwinv/prepare-sales-runtime.py --prepare`는 기존 test.env의 암호화/서명/환경 초기 인증 값을 보존하고, sales/credentials.env의 운영 토스·메일 설정과 private-reader.env의 기존 AI 키를 승인 경로에0600으로 새로 저장한다. 기존 파일을 덮어쓰지 않으며 기존 서비스·DB·프로세스·비공개 reader를 바꾸지 않는다. 세 공급자 모드는 비활성이며 실제 요청0회다. 기존 관리자 개인 설정은 원래 DB에 보존돼 있으며 향후 새 운영 DB의 관리자 설정 이전/분리를 별도로 검토한다.
+
+운영 전용 rich-ko-v1은 한국어 장당800~1000자·쉬운 설명·구체적 사례를 요청하고700자 미만을 거절한다. 출력20000토큰/HTTP120초, 해당 AI 작업 lease180초다. 기존 standard9000/45초/60초와 고정 모델·가격표는 유지한다. 실패/시간초과 예약의 불확실 비용 보존·추가 호출 차단도 그대로다. 생성 요청은 모의 transport로 검증했으며 실제 완성본 품질 검수는 별도다.
+
+compose.sales-candidate.yml은 별도 gumseo-sales 프로젝트/볼륨과 loopback3110을 사용하는 미설치 후보이며 기존3100 서비스를 건드리지 않는다. worker는 공급자 통신에 필요한 기본 bridge 네트워크를 사용한다. Caddy 판매 후보는3110을 바라보도록 맞췄다. 데이터/등록/관리자·배포·백업 연동과 공급자 준비가 끝나기 전 후보 파일만으로 외부 판매를 시작하지 않는다.
