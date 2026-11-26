@@ -34,3 +34,11 @@ cd /opt/gumseo/source && git pull --ff-only && sudo bash deploy/iwinv/check-quic
 ### 전체 상태를 짧게 공유하기
 
 긴 JSON의 마지막 메일 항목만 보이면 결제·AI 상태는 알 수 없다. `sudo bash deploy/iwinv/check-quick-open.sh --summary`는 컨테이너별 5줄과 기존 `/etc/gumseo/*.env` 및 소스의 `.env.local` 내 공급자 키 존재 여부만 출력한다. 비밀번호·키 원문·상점 ID·메일 주소는 출력하지 않는다. 파일은 읽기만 하고 shell source/eval을 사용하지 않는다. 다른 서비스에 키가 있다는 사실은 본 서비스에 연결됐거나 실제 키가 유효하다는 증거가 아니다.
+
+### 사용자 서버 점검 결과와 운영 키 준비
+
+2026-11-26 사용자 화면: 일반 web/worker는 각각1/20(기존 DB 읽기만 준비). private-reader.env에는 AI 키·토스 테스트 키가 있고 test.env에는 공급자 키가 없으며 toss-sandbox.env에는 테스트 키만 있다. 조회한 위치에서는 운영 토스 키와 Resend 키가 확인되지 않았다. 다른 위치에 저장됐는지나 키의 공급자 유효성을 단정하지 않는다.
+
+`sudo python3 deploy/iwinv/prepare-sales-credentials.py`는 소유자의 대화형 SSH에서 운영 위젯 live_gck/live_gsk·MID와 선택적 Resend 키를 입력받는다. 화면에 값을 표시하지 않고 `/etc/gumseo/sales/credentials.env`에0600으로 보관한다. 새 하위 폴더는0700이며 symlink/공개 권한 파일을 거절한다. 기존 AI 키를 읽거나 복사하거나 바꾸지 않는다. 토스 테스트 키와 활성화 플래그는 저장하지 않는다. 기존 test.env/private-reader.env/toss-sandbox.env·실행 컨테이너·전환 DB는 변경하지 않는다. 외부 HTTP 요청도 없다. 메일 키가 없으면 Enter로 건너뛰고 결제 키만 먼저 보관할 수 있다. 이것만으로 판매가 활성화되지는 않는다.
+
+키는 채팅으로 전달하지 않는다. 토스 개발자센터 운영 키 화면에서 현재 MID의 위젯용 키 조합을 확인한다. 운영 키가 표시되지 않거나 발급되지 않았다면 테스트 키로 대체하지 말고 퀵오픈 이용 상점/권한을 확인한다. 메일은 기존 Resend 계정의 인증된 발신 도메인을 사용한다.
