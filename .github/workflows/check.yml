@@ -32,7 +32,11 @@ jobs:
         shell: bash
         run: |
           if [[ "$TEST_BASE" =~ ^[0-9a-f]{40}$ ]] && git fetch --no-tags --depth=1 origin "$TEST_BASE"; then
-            npx vitest run --changed="$TEST_BASE" --passWithNoTests
+            if git diff --name-only "$TEST_BASE" HEAD -- .github/workflows/check.yml | rg -q .; then
+              npm test
+            else
+              npx vitest run --changed="$TEST_BASE" --passWithNoTests
+            fi
           else
             npm test
           fi
