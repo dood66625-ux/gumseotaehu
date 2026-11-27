@@ -4,20 +4,52 @@ import { api, ErrorBox, useLoad } from "./client";
 import ReadableText from "./ReadableText";
 import type { CounselEntry } from "../lib/taehou-counsel";
 type View = { entries: CounselEntry[]; remaining: number; total: number };
-export default function TaehouCounsel({ orderId }: { orderId: string }) {
+const tabs = ["첫번째 자문", "두번째 자문", "세번째 자문"];
+export default function TaehouCounsel({
+  orderId,
+  active = true,
+}: {
+  orderId: string;
+  active?: boolean;
+}) {
   const path = "reports/" + orderId + "/counsel";
   const { data, error: loadError, load } = useLoad<View>(path);
   const [view, setView] = useState<View | null>(null),
     [question, setQuestion] = useState(""),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  const request = useRef<{ question: string; id: string } | null>(null);
-  useEffect(() => {
-    if (data) setView(data);
-  }, [data]);
+    [busy, setBusy] = useState(false),
+    [selected, setSelected] = useState(1);
+  const dialog = useRef<HTMLDialogElement>(null),
+    request = useRef<{ question: string; id: string } | null>(null),
+    watch = useRef<string | null>(null);
   const pending = !!view?.entries.some(
     (e) => e.state === "queued" || e.state === "working",
   );
+  function show(number: number) {
+    setSelected(number);
+    if (active && !dialog.current?.open) dialog.current?.showModal();
+  }
+  useEffect(() => {
+    if (!active) dialog.current?.close();
+  }, [active]);
+  useEffect(() => {
+    if (data) setView(data);
+  }, [data]);
+  useEffect(() => {
+    if (!view) return;
+    const waiting = view.entries.find(
+      (e) => e.state === "queued" || e.state === "working",
+    );
+    if (waiting && !watch.current) watch.current = waiting.id;
+    const finished = view.entries.find(
+      (e) => e.id === watch.current && (e.answer || e.state === "failed"),
+    );
+    if (finished && active) {
+      if (!dialog.current?.open || selected === finished.number)
+        show(finished.number);
+      watch.current = null;
+    }
+  }, [view, active, selected]);
   useEffect(() => {
     if (!pending) return;
     const timer = setInterval(() => load(), 3000);
@@ -25,7 +57,8 @@ export default function TaehouCounsel({ orderId }: { orderId: string }) {
   }, [pending, load]);
   async function ask(event: React.FormEvent) {
     event.preventDefault();
-    if (busy || pending || !question.trim()) return;
+    if (busy || pending || !question.trim() || !view || view.remaining <= 0)
+      return;
     setBusy(true);
     setError("");
     const value = question.trim();
@@ -39,6 +72,12 @@ export default function TaehouCounsel({ orderId }: { orderId: string }) {
       setView(next);
       setQuestion("");
       request.current = null;
+      const latest = next.entries.at(-1);
+      if (latest) {
+        watch.current =
+          latest.answer || latest.state === "failed" ? null : latest.id;
+        show(latest.number);
+      }
     } catch (e) {
       setError((e as Error).message);
       load();
@@ -46,65 +85,128 @@ export default function TaehouCounsel({ orderId }: { orderId: string }) {
       setBusy(false);
     }
   }
+  const entry = view?.entries.find((e) => e.number === selected);
   return (
     <section
       className="card gold taehou-counsel"
       aria-labelledby="counsel-title"
     >
-      <p className="eyebrow">금서태후의 자문</p>
-      <h2 id="counsel-title">
-        태후에게 자문을 구해보세요{" "}
-        <span className="counsel-count">({view ? view.remaining : "…"}/3)</span>
-      </h2>
-      <p>그대의 운명서를 읽고 마음에 남은 물음 하나를 들려주거라.</p>
-      <p className="hint">
-        질문은 50자까지. 주고받은 이야기는 운명서와 새로 내려받는 PDF에 함께
-        남느니라.
-      </p>
-      {view?.entries.map((e) => (
-        <article className="counsel-entry" key={e.id}>
-          <p className="eyebrow">자문 {e.number}</p>
-          <p className="counsel-question">{e.question}</p>
-          {e.answer ? (
-            <ReadableText text={e.answer} />
+      <div className="counsel-heading-row">
+        <h2 id="counsel-title">
+          태후에게 세번의 자문을 구하거라{" "}
+          <span className="counsel-count">
+            ({view ? view.remaining : "…"}/3)
+          </span>
+        </h2>
+        {!!view?.entries.length && (
+          <button
+            type="button"
+            className="counsel-history-trigger"
+            aria-label="이전 자문 보기"
+            title="이전 자문 보기"
+            onClick={() => show(view.entries.at(-1)!.number)}
+          >
+            ↺
+          </button>
+        )}
+      </div>
+      <form onSubmit={ask}>
+        <textarea
+          id="counsel-question"
+          aria-label="태후에게 올릴 물음"
+          value={question}
+          onChange={(e) =>
+            setQuestion(Array.from(e.target.value).slice(0, 50).join(""))
+          }
+          disabled={!view || busy || pending || view.remaining <= 0}
+        />
+        <button
+          className="button counsel-submit"
+          disabled={
+            !view || busy || pending || view.remaining <= 0 || !question.trim()
+          }
+        >
+          자문 구하기
+        </button>
+      </form>
+      <ErrorBox error={error || loadError} />
+      <dialog
+        ref={dialog}
+        className="counsel-answer-dialog"
+        aria-label="태후의 자문"
+      >
+        <div
+          className="counsel-tabs"
+          role="tablist"
+          aria-label="자문 기록"
+          onKeyDown={(event) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+              return;
+            event.preventDefault();
+            const available = view?.entries.map((e) => e.number) ?? [];
+            if (!available.length) return;
+            const index = available.indexOf(selected),
+              next =
+                event.key === "Home"
+                  ? available[0]
+                  : event.key === "End"
+                    ? available.at(-1)!
+                    : available[
+                        (index +
+                          (event.key === "ArrowRight" ? 1 : -1) +
+                          available.length) %
+                          available.length
+                      ];
+            setSelected(next);
+            dialog.current
+              ?.querySelector<HTMLButtonElement>(`[data-number="${next}"]`)
+              ?.focus();
+          }}
+        >
+          {tabs.map((label, i) => (
+            <button
+              type="button"
+              role="tab"
+              key={label}
+              id={"counsel-tab-" + (i + 1)}
+              data-number={i + 1}
+              aria-selected={selected === i + 1}
+              aria-controls="counsel-answer-panel"
+              tabIndex={selected === i + 1 ? 0 : -1}
+              disabled={!view?.entries.some((e) => e.number === i + 1)}
+              onClick={() => setSelected(i + 1)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div
+          id="counsel-answer-panel"
+          className="counsel-answer-body"
+          role="tabpanel"
+          aria-labelledby={"counsel-tab-" + selected}
+          tabIndex={0}
+          key={selected}
+        >
+          <p className="counsel-question">{entry?.question}</p>
+          {entry?.answer ? (
+            <ReadableText text={entry.answer} />
           ) : (
             <p role="status">
-              {e.state === "failed"
-                ? "답변을 마무리하지 못했구나. 같은 질문을 다시 보내지 말고 고객 문의로 확인해 주거라."
-                : "그대의 물음에 답하고 있느니라…"}
+              {entry?.state === "failed"
+                ? "답문을 마무리하지 못했구나. 같은 질문을 다시 보내지 말고 주문 확인을 요청해 주거라."
+                : "그대의 물음에 답문을 적고 있느니라…"}
             </p>
           )}
-        </article>
-      ))}
-      {view && view.remaining > 0 ? (
-        <form onSubmit={ask}>
-          <label htmlFor="counsel-question">태후에게 올릴 물음</label>
-          <textarea
-            id="counsel-question"
-            value={question}
-            onChange={(e) =>
-              setQuestion(Array.from(e.target.value).slice(0, 50).join(""))
-            }
-            disabled={busy || pending}
-            placeholder="예: 일을 시작할 때 어떤 장점을 살리면 좋을까요?"
-            aria-describedby="counsel-length"
-          />
-          <div className="counsel-meta">
-            <small id="counsel-length">
-              {Array.from(question).length}/50자 · 남은 자문 {view.remaining}/3
-            </small>
-            <button
-              className="button"
-              disabled={busy || pending || !question.trim()}
-            >
-              {busy ? "물음을 올리는 중…" : "자문 구하기"}
-            </button>
-          </div>
-        </form>
-      ) : view ? (
-        <p>세 번의 자문을 모두 남겼구나. 이 이야기는 언제든 다시 펼쳐보거라.</p>
-      ) : null}
-      <ErrorBox error={error || loadError} />
+        </div>
+        <button
+          type="button"
+          className="button counsel-thanks"
+          onClick={() => dialog.current?.close()}
+        >
+          감사합니다.
+        </button>
+      </dialog>
     </section>
   );
 }

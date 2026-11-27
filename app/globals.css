@@ -4964,3 +4964,30 @@ body:has(.report-unsealing) .page {margin:0;padding:0;max-width:none;}
 .immersive-report-portrait .type-art {position:absolute;left:50%;top:50%;width:min(100vw,600px);transform:translate(-50%,-43%);border-radius:0;}
 
 .unsealing-order-links {display:flex;flex-direction:column;gap:16px;margin-top:24px;font-size:12px;}
+
+/* Counsel: only the invitation, question and full-width action in the reading. */
+.scene-panel-tools[hidden],.immersive-copy-panel h1[hidden] {display:none;}
+.counsel-heading-row {display:flex;align-items:flex-start;gap:10px;margin:12px 0 20px;}
+.immersive-scene-text .taehou-counsel .counsel-heading-row h2 {margin:0;font-size:clamp(18px,3vw,23px);line-height:1.6;font-weight:600;color:#ead4ac;flex:1;}
+.counsel-count {white-space:nowrap;}
+.taehou-counsel textarea {width:100%;box-sizing:border-box;min-height:100px;resize:vertical;border:1px solid #ad8a5266;background:#0e0b09;color:#f2e6d1;padding:16px;line-height:1.8;border-radius:10px;font:16px/1.8 var(--sans);}
+.taehou-counsel .counsel-submit {width:100%;display:block;margin:14px 0 0;min-height:48px;border-radius:10px;}
+.counsel-history-trigger {border:1px solid #b9955544;border-radius:50%;width:34px;height:34px;flex-shrink:0;background:none;color:#dec491;font-size:22px;cursor:pointer;}
+.counsel-answer-dialog {width:min(640px,calc(100vw - 32px));max-height:85svh;max-height:85dvh;padding:26px;border:1px solid #c5a16388;border-radius:20px;background:linear-gradient(145deg,#241b12,#100d0b 65%);color:#eadbc4;box-shadow:0 24px 100px #000b;overflow:hidden;}
+.counsel-answer-dialog[open] {display:flex;flex-direction:column;gap:22px;}
+.counsel-answer-dialog::backdrop {background:#000c;backdrop-filter:blur(7px);}
+.counsel-tabs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex-shrink:0;}
+.counsel-tabs button {font:500 13px/1.5 var(--sans);padding:12px 3px;background:#100c08;color:#b5a181;border:1px solid #80613955;border-radius:8px;cursor:pointer;}
+.counsel-tabs button[aria-selected="true"] {background:#b89a63;color:#160f08;border-color:#e6ca91;}
+.counsel-tabs button:disabled {opacity:.35;cursor:default;}
+.counsel-answer-body {min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:6px;}
+.counsel-answer-body .counsel-question {font-weight:600;color:#e8ca93;border-bottom:1px solid #a580493d;padding:0 0 18px;margin:0 0 20px;line-height:1.8;}
+.counsel-answer-body .readable-text {font-size:16px;line-height:1.9;}
+.counsel-answer-dialog .counsel-thanks {width:100%;margin:0;min-height:48px;flex-shrink:0;border-radius:10px;}
+@media(max-width:400px) {.counsel-answer-dialog {padding:18px;}.counsel-tabs button {font-size:12px;}}
+@media(max-height:650px) {
+  .counsel-heading-row {margin:6px 0 10px;}
+  .immersive-scene-text .taehou-counsel .counsel-heading-row h2 {font-size:17px;line-height:1.5;}
+  .taehou-counsel textarea {height:72px;min-height:72px;padding:10px 12px;resize:none;}
+  .taehou-counsel .counsel-submit {margin-top:10px;min-height:44px;}
+}

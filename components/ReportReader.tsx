@@ -102,7 +102,9 @@ export default function ReportReader({
       orderId={id}
       scenes={reportScenes(d.report, d.name)}
       assetBase={assetBase}
-      counsel={<TaehouCounsel key={id + "-counsel"} orderId={id} />}
+      counsel={(active) => (
+        <TaehouCounsel key={id + "-counsel"} orderId={id} active={active} />
+      )}
     >
       <div className="report-reader">
         <p className="eyebrow">

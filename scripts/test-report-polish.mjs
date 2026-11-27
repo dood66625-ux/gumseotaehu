@@ -141,7 +141,7 @@ try {
         if (++turns > 30) throw Error("PAGING_LOOP");
       }
       await page
-        .getByRole("heading", { name: "태후에게 자문을 구해보세요 (3/3)" })
+        .getByRole("heading", { name: "태후에게 세번의 자문을 구하거라 (3/3)" })
         .waitFor();
       await page.getByLabel("태후에게 올릴 물음").fill("가".repeat(70));
       if (
@@ -159,7 +159,7 @@ try {
           .count()
       )
         throw Error("REMOVED_DETAIL_BUTTON_REMAINS");
-      if (await page.locator("dialog").count())
+      if (await page.locator("dialog:not(.counsel-answer-dialog)").count())
         throw Error("OLD_READING_DIALOG_REMAINS");
 
       const recover = page.locator(".header .recover-link");

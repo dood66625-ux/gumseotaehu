@@ -14,7 +14,7 @@ export default function ImmersiveReport({
   scenes: ReportScene[];
   assetBase?: string;
   children: ReactNode;
-  counsel: ReactNode;
+  counsel: (active: boolean) => ReactNode;
 }) {
   const [page, setPage] = useState(0),
     [expanded, setExpanded] = useState(false),
@@ -125,9 +125,9 @@ export default function ImmersiveReport({
           className="immersive-copy-panel"
           data-expanded={expanded}
           data-folded={folded}
-          aria-labelledby="scene-title"
+          aria-labelledby={isCounsel ? "counsel-title" : "scene-title"}
         >
-          <div className="scene-panel-tools">
+          <div className="scene-panel-tools" hidden={isCounsel}>
             <span className="scene-panel-handle" aria-hidden="true" />
             <div>
               <button
@@ -152,7 +152,7 @@ export default function ImmersiveReport({
               </button>
             </div>
           </div>
-          <h1 ref={title} id="scene-title" tabIndex={-1}>
+          <h1 ref={title} id="scene-title" tabIndex={-1} hidden={isCounsel}>
             {scene.title}
           </h1>
           <div
@@ -166,9 +166,9 @@ export default function ImmersiveReport({
             <div hidden={isCounsel}>
               <ReadableText text={scene.text} />
             </div>
-            <div hidden={!isCounsel}>{counsel}</div>
+            <div hidden={!isCounsel}>{counsel(isCounsel)}</div>
           </div>
-          {!folded && (
+          {!folded && !isCounsel && (
             <p className="scene-scroll-hint">
               글상자 안에서 아래로 읽어 보거라.
             </p>
@@ -177,7 +177,6 @@ export default function ImmersiveReport({
             <button type="button" onClick={() => turn(scenes.length + 1)}>
               전체 운명서
             </button>
-            <span>PDF는 전체 보기에서</span>
           </div>
         </section>
         <nav className="immersive-report-arrows" aria-label="운명서 장 넘기기">
