@@ -1,103 +1,55 @@
 import { expect, test } from "@playwright/test";
-
-test("support outage is retryable without treating failure as authentication loss or empty history", async ({
+import { business } from "../../lib/business";
+test("legacy help links open the email refund policy without requiring login", async ({
   page,
 }) => {
-  let unavailable = true;
-  await page.route("**/api/orders", (route) => route.fulfill({ json: [] }));
-  await page.route("**/api/tickets", (route) =>
-    unavailable
-      ? route.fulfill({
-          status: 503,
-          json: { error: "synthetic temporary outage" },
-        })
-      : route.fulfill({ json: [] }),
-  );
   await page.goto("/help");
+  await expect(page).toHaveURL(/\/legal\/refund$/);
+  await expect(
+    page.getByRole("link", { name: "이메일로 접수하기", exact: true }),
+  ).toHaveAttribute(
+    "href",
+    new RegExp("^mailto:" + business.email.replaceAll(".", "\\.")),
+  );
+  await expect(page.getByLabel("문의 내용")).toHaveCount(0);
   await expect(
     page
-      .getByRole("alert")
-      .filter({ hasText: "주문·문의 내역을 불러오지 못했습니다" }),
-  ).toContainText("주문·문의 내역을 불러오지 못했습니다");
-  await expect(page.getByLabel("이메일 주소", { exact: true })).toHaveCount(0);
-  await expect(
-    page.getByText("아직 접수한 문의가 없습니다.", { exact: true }),
-  ).toHaveCount(0);
-  unavailable = false;
-  await page.getByRole("button", { name: "주문·문의 내역 다시 확인" }).click();
-  await expect(page.getByLabel("문의 내용")).toBeVisible();
-  await expect(
-    page.getByText("아직 접수한 문의가 없습니다.", { exact: true }),
+      .locator(".footer-links")
+      .getByRole("link", { name: "환불 정책", exact: true }),
   ).toBeVisible();
 });
-
-test("successful support receipt survives a list refresh outage and retry performs no second submission", async ({
+test("email intake remains available when the former support API is unavailable", async ({
   page,
 }) => {
-  let unavailable = false,
-    submissions = 0;
-  const ticket = {
-    id: "synthetic-receipt-001",
-    status: "open",
-    category: "refund",
-    due: Date.now() + 86400000,
-    message: "가상 환불 요청 검증",
-  };
-  await page.route("**/api/orders", (route) => route.fulfill({ json: [] }));
-  await page.route("**/api/tickets", (route) => {
-    if (route.request().method() === "POST") {
-      submissions++;
-      unavailable = true;
-      return route.fulfill({ json: { id: ticket.id } });
-    }
-    return unavailable
-      ? route.fulfill({
-          status: 503,
-          json: { error: "synthetic temporary outage" },
-        })
-      : route.fulfill({ json: submissions ? [ticket] : [] });
+  let reads = 0;
+  await page.route("**/api/tickets", (r) => {
+    reads++;
+    return r.fulfill({ status: 503, json: { error: "offline" } });
   });
-  await page.goto("/help");
-  await page.getByLabel("문의 내용").fill(ticket.message);
-  await page
-    .getByRole("button", { name: "문의 접수하기", exact: true })
-    .click();
+  await page.goto("/legal/refund");
   await expect(
-    page.getByRole("status").filter({ hasText: "접수되었습니다" }),
-  ).toContainText(ticket.id);
-  await expect(
-    page
-      .getByRole("alert")
-      .filter({ hasText: "주문·문의 내역을 불러오지 못했습니다" }),
-  ).toContainText("다시 접수하지 말고");
-  await expect(page.getByLabel("이메일 주소", { exact: true })).toHaveCount(0);
-  unavailable = false;
-  await page.getByRole("button", { name: "주문·문의 내역 다시 확인" }).click();
-  await expect(page.getByRole("article")).toContainText(ticket.message);
-  await expect(
-    page.getByRole("status").filter({ hasText: "접수되었습니다" }),
-  ).toContainText(ticket.id);
-  expect(submissions).toBe(1);
+    page.getByRole("link", { name: "이메일로 접수하기", exact: true }),
+  ).toBeVisible();
+  expect(reads).toBe(0);
+  await expect(page.getByText("3영업일", { exact: false })).toBeVisible();
 });
-
-test("support session expiration requests fresh authentication instead of showing stale records", async ({
+test("email template includes order lookup fields and a copyable address without submitting data", async ({
   page,
 }) => {
-  await page.route("**/api/orders", (route) =>
-    route.fulfill({
-      status: 401,
-      json: { error: "synthetic session expired" },
-    }),
-  );
-  await page.route("**/api/tickets", (route) =>
-    route.fulfill({
-      status: 401,
-      json: { error: "synthetic session expired" },
-    }),
-  );
-  await page.goto("/help");
-  await expect(page.getByLabel("이메일 주소", { exact: true })).toBeVisible();
+  let submissions = 0;
+  page.on("request", (r) => {
+    if (r.method() === "POST" && r.url().includes("/api/tickets"))
+      submissions++;
+  });
+  await page.goto("/legal/refund");
+  const href = await page
+    .getByRole("link", { name: "이메일로 접수하기", exact: true })
+    .getAttribute("href");
+  expect(decodeURIComponent(href!)).toContain("구매 이메일:");
+  expect(decodeURIComponent(href!)).toContain("주문번호 또는 결제일:");
+  expect(decodeURIComponent(href!)).toContain("문의·환불 사유:");
   await expect(
-    page.getByRole("button", { name: "주문·문의 내역 다시 확인" }),
-  ).toHaveCount(0);
+    page.getByText("메일 앱이 열리지 않으면", { exact: false }),
+  ).toContainText(business.email);
+  expect(submissions).toBe(0);
 });

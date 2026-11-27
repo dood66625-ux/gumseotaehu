@@ -124,13 +124,19 @@ try {
         await image.decode();
       }
     });
-  const evidence = page.locator(".chapter-evidence").first();
-  if ((await evidence.getAttribute("open")) !== null)
-    throw Error("Chapter evidence should start collapsed");
-  await evidence.locator("summary").click();
-  if (!(await evidence.locator("small").isVisible()))
-    throw Error("Chapter evidence cannot be opened");
-  await page.locator(".report-method summary").click();
+  if (await page.locator(".chapter-evidence,.report-method").count())
+    throw Error("REMOVED_REPORT_APPENDICES_REMAIN");
+  await page
+    .locator(".report-chapter")
+    .first()
+    .getByRole("button", { name: "자세히 보기", exact: true })
+    .click();
+  if (!(await page.locator("dialog[open] .readable-text p").count()))
+    throw Error("READABLE_DETAIL_MISSING");
+  await page
+    .locator("dialog[open]")
+    .getByRole("button", { name: "상세 풀이 닫기" })
+    .click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PDF 다운로드" }).click();
   await (await download).saveAs("var/public-preview-proof.pdf");
@@ -141,11 +147,11 @@ try {
   await go("recover");
   await page.getByRole("link", { name: "같은 운명서 다시 읽기" }).waitFor();
   await go("help");
-  await page.getByRole("button", { name: "문의 접수하기" }).click();
   await page
-    .getByRole("article")
-    .getByText("가상 미리보기 문의입니다. 실제 상담 접수가 아닙니다.")
+    .getByRole("link", { name: "이메일로 접수하기", exact: true })
     .waitFor();
+  if (await page.getByRole("button", { name: "문의 접수하기" }).count())
+    throw Error("REMOVED_WEB_INTAKE_REMAINS");
   await go("recover");
   await page.getByText("구매 이메일 변경", { exact: true }).click();
   const changedEmail = page.getByLabel("새 구매 이메일");
@@ -209,7 +215,7 @@ try {
     throw Error(JSON.stringify({ errors, apiRequests }));
   const result = {
     passed: true,
-    flow: "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → synthetic inquiry → locked two-address email change; admin restricted",
+    flow: "landing → locked synthetic input → mock OTP/payment → report/PDF → recovery → email intake policy → locked two-address email change; admin restricted",
     externalApiRequests: apiRequests.length,
     realPersonalInputEnabled: false,
     origin: base,

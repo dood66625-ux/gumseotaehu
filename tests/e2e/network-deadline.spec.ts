@@ -28,39 +28,6 @@ test("hung recovery request releases loading and allows read-only retry without 
   expect(calls).toBe(2);
 });
 
-test("a lost support POST acknowledgement exits busy state with uncertainty and never auto-resubmits", async ({
-  page,
-}) => {
-  let submitted = 0;
-  await page.clock.install();
-  await page.route("**/api/orders", (route) => route.fulfill({ json: [] }));
-  await page.route("**/api/tickets", (route) => {
-    if (route.request().method() === "POST") {
-      submitted++;
-      return;
-    }
-    return route.fulfill({ json: [] });
-  });
-  await page.goto("/help");
-  await page.getByLabel("문의 내용").fill("가상 연결 장애 문의입니다.");
-  await page
-    .getByRole("button", { name: "문의 접수하기", exact: true })
-    .click();
-  await expect.poll(() => submitted).toBe(1);
-  await page.clock.fastForward(20001);
-  await expect(
-    page.getByRole("alert").filter({ hasText: "다시 요청하기 전에" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "문의 접수하기", exact: true }),
-  ).toBeEnabled();
-  await expect(page.getByLabel("문의 내용")).toHaveValue(
-    "가상 연결 장애 문의입니다.",
-  );
-  await page.clock.fastForward(60000);
-  expect(submitted).toBe(1);
-});
-
 test("checkout read timeout offers a read-only retry without creating an order", async ({
   page,
 }) => {

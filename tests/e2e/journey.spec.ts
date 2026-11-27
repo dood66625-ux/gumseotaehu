@@ -244,10 +244,10 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   const after = await (await page.request.get("/api/reports/" + oid)).json();
   expect(after.report).toEqual(before.report);
   await page.goto("/help");
-  await page.getByLabel("관련 주문").selectOption(oid);
-  await page.getByLabel("문의 내용").fill("모의 결제 환불을 요청합니다.");
-  await page.getByRole("button", { name: "문의 접수하기" }).click();
-  await expect(page.getByText("모의 결제 환불을 요청합니다.")).toBeVisible();
+  await expect(page).toHaveURL(/\/legal\/refund$/);
+  await expect(
+    page.getByRole("link", { name: "이메일로 접수하기", exact: true }),
+  ).toHaveAttribute("href", /^mailto:/);
   await page.goto("/admin");
   await page.getByLabel("운영자 비밀번호").fill(process.env.ADMIN_PASSWORD!);
   await page.getByLabel("1회용 인증코드").fill(await freshAdminCode());
