@@ -20,6 +20,7 @@ on:
       - 'next.config.ts'
       - 'tsconfig.json'
       - '.github/workflows/private-runtime.yml'
+      - '.github/workflows/check.yml'
 concurrency:
   group: private-mock-runtime${{ inputs.notify_only && '-notify' || '' }}
   cancel-in-progress: true
