@@ -114,6 +114,7 @@ export function reportType(chart: {
   const selected = ranked[0].type;
   return {
     ...selected,
+    imageIndex: ranked[0].index,
     note: "사주의 특징을 이야기로 풀어낸 금서태후의 캐릭터 타입이니라.",
     shareText: `나는 금서태후에서 ${selected.name}이래! ${selected.title}. 너는 무슨 타입일까?`,
     shareUrl: "https://gumseo.kr/?from=type-share",

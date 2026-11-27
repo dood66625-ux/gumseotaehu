@@ -13,10 +13,11 @@ it("chooses exactly one distinct type for each chart label and keeps it stable",
     "비견",
     "겁재",
   ];
-  const names = gods.map((god) => {
+  const names = gods.map((god, index) => {
     const chart = { tenGods: [null, god, "비견", null], element: "목" };
     const before = JSON.stringify(chart);
     const type = reportType(chart);
+    expect(type.imageIndex).toBe(index);
     expect(reportType({ ...chart })).toEqual(type);
     expect(JSON.stringify(chart)).toBe(before);
     return type.name;

@@ -4887,9 +4887,9 @@ body:has(.visitor-admin) > .header,body:has(.visitor-admin) .test-banner,body:ha
 .report-type button { border-radius:999px; }
 .report-type.compact:has([role="status"]) .type-share-copy { display:block; }
 /* Paid reading: a portrait audience first, complete archive on the final page. */
-body:has(.immersive-report-stage) > .header,body:has(.immersive-report-stage) > footer,body:has(.immersive-report-stage) .test-banner { display:none; }
-body:has(.immersive-report-stage) .page { max-width:none;margin:0;padding:0; }
-body:has(.immersive-report-stage) .page:before { display:none; }
+body:has(.immersive-report-stage:not([hidden])) > .header,body:has(.immersive-report-stage:not([hidden])) > footer,body:has(.immersive-report-stage:not([hidden])) .test-banner { display:none; }
+body:has(.immersive-report-stage:not([hidden])) .page { max-width:none;margin:0;padding:0; }
+body:has(.immersive-report-stage:not([hidden])) .page:before { display:none; }
 .immersive-report-stage { position:relative;height:100svh;height:100dvh;min-height:360px;overflow:hidden;background:#100e0c;color:#efe7d9; }
 .immersive-report-header { position:absolute;z-index:6;inset:env(safe-area-inset-top,0px) 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:860px;margin:auto;padding:16px 20px;font-size:11px;text-shadow:0 1px 5px #000; }
 .immersive-report-header a { padding:8px 10px;border-radius:99px;background:#100e0c9c;color:#f1d6a0;flex-shrink:0; }
@@ -4930,8 +4930,37 @@ body:has(.birth-wizard) .recover-link,body:has(.screen-flow) .recover-link,body:
 body:has(.screen-flow) .screen-flow-heading { top:62px; }
 body:has(.checkout-flow) .checkout-flow { padding-top:56px; }
 body:has(.birth-wizard) .header { right:max(14px,calc((100vw - 520px)/2)); }
-body:has(.immersive-report-stage) .header,body:has(.immersive-report-stage) footer { display:none; }
+body:has(.immersive-report-stage:not([hidden])) .header,body:has(.immersive-report-stage:not([hidden])) footer { display:none; }
 .immersive-copy-panel h1,.report-reader > h1 { overflow-wrap:anywhere; }
 
 /* Preserve the original portrait scale; move the form below the complete face. */
 .start-experience .birth-wizard .birth-portrait { height:min(82vw,460px);max-height:none; }
+
+/* The unsealing wait has no artificial duration or invented percentage. */
+body:has(.report-unsealing) .header,body:has(.report-unsealing) footer,body:has(.report-unsealing) .test-banner {display:none;}
+body:has(.report-unsealing) .page {margin:0;padding:0;max-width:none;}
+.report-unsealing {min-height:100svh;background:#050505;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px;color:#ead9b8;}
+.unsealing-mark {width:140px;height:140px;margin-bottom:28px;animation:unseal-breathe 3s ease-in-out infinite;filter:drop-shadow(0 0 18px #b48b3833);}
+.unsealing-mark.complete {animation:none;}
+.report-unsealing h1 {font:500 23px/1.6 var(--sans);margin:0 0 12px;}
+.report-unsealing p {font-size:14px;line-height:1.9;color:#b8aa91;}
+.report-unsealing .unsealing-recovery {margin-top:36px;font-size:12px;}
+.unsealing-recovery a {color:#d8bd86;text-decoration:underline;}
+.unsealing-dialog {color:#ead9b8;background:#17120e;border:1px solid #b9955570;border-radius:20px;padding:36px 26px;width:min(420px,calc(100vw - 40px));text-align:center;box-shadow:0 20px 90px #000b;}
+.unsealing-dialog::backdrop {background:#000b;backdrop-filter:blur(6px);}
+.unsealing-dialog h2 {font:600 23px/1.7 var(--sans);}
+.unsealing-dialog .button {display:flex;justify-content:center;margin-top:24px;}
+.unsealing-later {border:0;background:none;color:#b8aa91;padding:18px;font:inherit;font-size:12px;cursor:pointer;}
+@keyframes unseal-breathe {0%,100% {transform:scale(.94);opacity:.72;}50% {transform:scale(1.06);opacity:1;}}
+.immersive-report-stage[hidden] {display:none;}
+.immersive-scene-text .taehou-counsel {padding:0;margin:0;background:none;border:0;box-shadow:none;}
+.immersive-scene-text .taehou-counsel:before {display:none;}
+.immersive-scene-text .taehou-counsel h2 {font-size:20px;line-height:1.6;}
+@media(prefers-reduced-motion:reduce) {.unsealing-mark {animation:none;}}
+
+.type-art {width:180px;aspect-ratio:1;background-size:500% 200%;background-repeat:no-repeat;border-radius:16px;margin:0 auto 20px;}
+.report-type.compact .type-art {width:72px;float:right;margin:0 0 8px 12px;border-radius:10px;}
+.report-type:after {content:"";display:block;clear:both;}
+.immersive-report-portrait .type-art {position:absolute;left:50%;top:50%;width:min(100vw,600px);transform:translate(-50%,-43%);border-radius:0;}
+
+.unsealing-order-links {display:flex;flex-direction:column;gap:16px;margin-top:24px;font-size:12px;}

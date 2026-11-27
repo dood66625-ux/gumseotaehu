@@ -141,6 +141,40 @@ export async function reportPdf(
       });
     doc.font("book");
     doc.addPage();
+    const typeArt = path.join(process.cwd(), "public/report-types.jpg");
+    doc
+      .font("emphasis")
+      .fontSize(25)
+      .fillColor(ink)
+      .text(`그대는 ${type.name}`, 58, 90, { align: "center", width: W - 116 });
+    if (existsSync(typeArt)) {
+      const size = 230,
+        x = (W - size) / 2,
+        y = 150;
+      doc
+        .save()
+        .rect(x, y, size, size)
+        .clip()
+        .image(
+          typeArt,
+          x - (type.imageIndex % 5) * size,
+          y - Math.floor(type.imageIndex / 5) * size,
+          { width: size * 5, height: size * 2 },
+        )
+        .restore();
+    }
+    doc
+      .font("emphasis")
+      .fontSize(16)
+      .text(type.title, 58, 410, { align: "center", width: W - 116 });
+    doc
+      .font("book")
+      .fontSize(12)
+      .text([type.lead, type.action, type.note].join("\n\n"), 58, 460, {
+        width: W - 116,
+        lineGap: 8,
+      });
+    doc.addPage();
     doc.fontSize(9).fillColor(gold).text("THE EMPRESS TO YOU");
     doc
       .moveDown(1.5)

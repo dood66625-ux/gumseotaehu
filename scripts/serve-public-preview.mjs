@@ -2,6 +2,7 @@ import http from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 const types = {
+  "report-types.webp": "image/webp",
   "korean-reading-regular.woff2": "font/woff2",
   "korean-reading-bold.woff2": "font/woff2",
   "brand/geumseo-logo-v1.webp": "image/webp",

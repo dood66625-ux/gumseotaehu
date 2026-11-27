@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, ErrorBox, Loading } from "./client";
+import ReportUnsealing from "./ReportUnsealing";
 import PaymentReceipt from "./PaymentReceipt";
 import { customerOrderState } from "../lib/customer-order-state";
 export default function PaymentStatus({ id }: { id: string }) {
@@ -15,14 +16,15 @@ export default function PaymentStatus({ id }: { id: string }) {
       try {
         const r = await api("orders/" + id);
         if (active) {
-          shouldPoll = !customerOrderState(r).terminal;
+          const state = customerOrderState(r);
+          shouldPoll = !state.terminal && !state.canRead;
           setO(r);
           setError("");
         }
       } catch (e) {
         if (active) setError((e as Error).message);
       } finally {
-        if (active && shouldPoll) timer = setTimeout(load, 2000);
+        if (active && shouldPoll) timer = setTimeout(load, 1000);
       }
     }
     load();
@@ -43,6 +45,12 @@ export default function PaymentStatus({ id }: { id: string }) {
   if (!o || o.id !== id) return <Loading />;
   const view = customerOrderState(o);
   const ready = view.canRead;
+  if (view.state === "working" || ready)
+    return (
+      <ReportUnsealing id={id} ready={ready}>
+        {ready && o.livePayment && <PaymentReceipt key={id} id={id} />}
+      </ReportUnsealing>
+    );
   return (
     <section className="payment-status-screen">
       <img

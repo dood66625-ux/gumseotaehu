@@ -82,6 +82,17 @@ try {
       )
         throw Error("IMMERSIVE_RECOVERY_HIDDEN");
       await stage.getByRole("button", { name: "다음 장", exact: true }).click();
+      if (!(await stage.locator(".type-art").isVisible()))
+        throw Error("TYPE_IMAGE_MISSING");
+      if (
+        !(await page.evaluate(async () => {
+          const im = new Image();
+          im.src = "/report-types.webp";
+          await im.decode();
+          return im.naturalWidth > 0;
+        }))
+      )
+        throw Error("TYPE_IMAGE_NOT_LOADED");
       await stage.getByRole("button", { name: "다음 장", exact: true }).click();
       const chapter = await page.locator("#scene-title").innerText();
       const scroller = page.locator(".immersive-scene-text");
@@ -97,6 +108,12 @@ try {
       const up = await panel.boundingBox();
       if (up.y >= box.y || up.height < height * 0.75)
         throw Error("PANEL_DID_NOT_EXPAND_UPWARDS");
+      await stage.getByRole("button", { name: "다음 장", exact: true }).click();
+      if ((await panel.getAttribute("data-expanded")) !== "true")
+        throw Error("EXPANSION_LOST_NEXT");
+      await stage.getByRole("button", { name: "이전 장", exact: true }).click();
+      if ((await panel.getAttribute("data-expanded")) !== "true")
+        throw Error("EXPANSION_LOST_PREVIOUS");
       await page.getByRole("button", { name: "접기", exact: true }).click();
       if (await scroller.isVisible()) throw Error("PANEL_NOT_FOLDED");
       await page.getByRole("button", { name: "글 읽기", exact: true }).click();
@@ -124,6 +141,14 @@ try {
         if (++turns > 30) throw Error("PAGING_LOOP");
       }
       await page
+        .getByRole("heading", { name: "태후에게 자문을 구해보세요 (3/3)" })
+        .waitFor();
+      await page.getByLabel("태후에게 올릴 물음").fill("가".repeat(70));
+      if (
+        (await page.getByLabel("태후에게 올릴 물음").inputValue()).length !== 50
+      )
+        throw Error("QUESTION_LENGTH");
+      await page
         .getByRole("button", { name: "전체 운명서 펼치기", exact: true })
         .click();
       if ((await page.locator(".report-chapter:visible").count()) !== 9)
@@ -136,9 +161,7 @@ try {
         throw Error("REMOVED_DETAIL_BUTTON_REMAINS");
       if (await page.locator("dialog").count())
         throw Error("OLD_READING_DIALOG_REMAINS");
-      await page
-        .getByRole("heading", { name: "태후에게 자문을 구해보세요 (3/3)" })
-        .waitFor();
+
       const recover = page.locator(".header .recover-link");
       if (!(await recover.isVisible())) throw Error("MOBILE_RECOVERY_HIDDEN");
       const recoveryBox = await recover.boundingBox();
@@ -153,11 +176,6 @@ try {
         /생년|report\//.test(JSON.stringify(shared))
       )
         throw Error("PRIVATE_TYPE_SHARE");
-      await page.getByLabel("태후에게 올릴 물음").fill("가".repeat(70));
-      if (
-        (await page.getByLabel("태후에게 올릴 물음").inputValue()).length !== 50
-      )
-        throw Error("QUESTION_LENGTH");
       await page
         .getByRole("button", { name: "장별로 다시 읽기", exact: true })
         .click();
@@ -165,10 +183,16 @@ try {
       await page
         .getByRole("button", { name: "전체 운명서", exact: true })
         .click();
+      await page
+        .getByRole("button", { name: "태후에게 자문하기", exact: true })
+        .click();
       if (
         (await page.getByLabel("태후에게 올릴 물음").inputValue()).length !== 50
       )
         throw Error("COUNSEL_DRAFT_LOST_WHEN_TURNING_PAGES");
+      await page
+        .getByRole("button", { name: "전체 운명서", exact: true })
+        .click();
       await page
         .getByRole("button", { name: "장별로 다시 읽기", exact: true })
         .click();

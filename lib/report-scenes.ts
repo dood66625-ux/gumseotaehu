@@ -12,6 +12,7 @@ export type ReportScene = {
   title: string;
   eyebrow: string;
   text: string;
+  imageIndex?: number;
 };
 /** Presentation only. Existing saved report and supplements are reused without generation. */
 export function reportScenes(report: Report, name: string): ReportScene[] {
@@ -27,6 +28,7 @@ export function reportScenes(report: Report, name: string): ReportScene[] {
     },
     {
       key: "type",
+      imageIndex: type.imageIndex,
       title: `그대는 ${type.name}이니라`,
       eyebrow: "그대의 대표 타입",
       text: [

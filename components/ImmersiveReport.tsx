@@ -1,17 +1,20 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ReportScene } from "../lib/report-scenes";
+import ReportTypeImage from "./ReportTypeImage";
 import ReadableText from "./ReadableText";
 export default function ImmersiveReport({
   orderId,
   scenes,
   assetBase = "",
   children,
+  counsel,
 }: {
   orderId: string;
   scenes: ReportScene[];
   assetBase?: string;
   children: ReactNode;
+  counsel: ReactNode;
 }) {
   const [page, setPage] = useState(0),
     [expanded, setExpanded] = useState(false),
@@ -23,7 +26,7 @@ export default function ImmersiveReport({
   useEffect(() => {
     try {
       const p = Number(sessionStorage.getItem(storage));
-      if (Number.isInteger(p) && p >= 0 && p <= scenes.length) setPage(p);
+      if (Number.isInteger(p) && p >= 0 && p <= scenes.length + 1) setPage(p);
     } catch {}
     setLoaded(true);
   }, [storage, scenes.length]);
@@ -34,8 +37,7 @@ export default function ImmersiveReport({
       } catch {}
   }, [page, loaded, storage]);
   function turn(next: number) {
-    setPage(Math.max(0, Math.min(scenes.length, next)));
-    setExpanded(false);
+    setPage(Math.max(0, Math.min(scenes.length + 1, next)));
     setFolded(false);
     window.scrollTo(0, 0);
   }
@@ -46,49 +48,70 @@ export default function ImmersiveReport({
   const overview = (
     <section
       className="report-overview"
-      hidden={page !== scenes.length}
+      hidden={page !== scenes.length + 1}
       aria-label="전체 운명서"
     >
       <div className="report-overview-bar">
         <button className="button secondary" onClick={() => turn(0)}>
           장별로 다시 읽기
         </button>
+        <button
+          className="button secondary"
+          onClick={() => turn(scenes.length)}
+        >
+          태후에게 자문하기
+        </button>
         <span>그대의 운명서, 한눈에 펼쳐 보거라.</span>
       </div>
       {children}
     </section>
   );
-  const scene = scenes[Math.min(page, scenes.length - 1)];
+  const isCounsel = page === scenes.length;
+  const scene = isCounsel
+    ? {
+        key: "counsel",
+        title: "태후에게 세 번의 자문을 구하거라",
+        eyebrow: "편지에 이어지는 대화",
+        text: "",
+      }
+    : scenes[Math.min(page, scenes.length - 1)];
   return (
     <>
-      {page < scenes.length && (
-        <section
-          className="immersive-report-stage"
-          aria-label="태후와 읽는 운명서"
-          onKeyDown={(e) => {
-            if (
-              (e.target as HTMLElement).closest("button,a,input,textarea") ||
-              e.altKey ||
-              e.ctrlKey ||
-              e.metaKey
-            )
-              return;
-            if (e.key === "ArrowRight") {
-              e.preventDefault();
-              turn(page + 1);
-            } else if (e.key === "ArrowLeft") {
-              e.preventDefault();
-              turn(page - 1);
-            }
-          }}
-        >
-          <header className="immersive-report-header">
-            <span aria-live="polite">
-              {page + 1} / {scenes.length + 1} · {scene.eyebrow}
-            </span>
-            <a href="/recover">내 운명서 찾기</a>
-          </header>
-          <div className="immersive-report-portrait" aria-hidden="true">
+      <section
+        className="immersive-report-stage"
+        hidden={page > scenes.length}
+        aria-label="태후와 읽는 운명서"
+        onKeyDown={(e) => {
+          if (
+            (e.target as HTMLElement).closest("button,a,input,textarea") ||
+            e.altKey ||
+            e.ctrlKey ||
+            e.metaKey
+          )
+            return;
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            turn(page + 1);
+          } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            turn(page - 1);
+          }
+        }}
+      >
+        <header className="immersive-report-header">
+          <span aria-live="polite">
+            {page + 1} / {scenes.length + 2} · {scene.eyebrow}
+          </span>
+          <a href="/recover">내 운명서 찾기</a>
+        </header>
+        <div className="immersive-report-portrait" aria-hidden="true">
+          {scene.imageIndex !== undefined ? (
+            <ReportTypeImage
+              index={scene.imageIndex}
+              name={scene.title}
+              assetBase={assetBase}
+            />
+          ) : (
             <div
               className="empress-expression"
               style={{
@@ -96,87 +119,87 @@ export default function ImmersiveReport({
                 backgroundPosition: `${page % 2 ? "100%" : "0%"} ${page % 4 >= 2 ? "100%" : "0%"}`,
               }}
             />
-          </div>
-          <section
-            className="immersive-copy-panel"
-            data-expanded={expanded}
-            data-folded={folded}
-            aria-labelledby="scene-title"
-          >
-            <div className="scene-panel-tools">
-              <span className="scene-panel-handle" aria-hidden="true" />
-              <div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExpanded(!expanded);
-                    setFolded(false);
-                  }}
-                  aria-expanded={expanded}
-                >
-                  {expanded ? "반으로 줄이기" : "위로 펼치기"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFolded(!folded);
-                    setExpanded(folded);
-                  }}
-                  aria-expanded={!folded}
-                >
-                  {folded ? "글 읽기" : "접기"}
-                </button>
-              </div>
+          )}
+        </div>
+        <section
+          className="immersive-copy-panel"
+          data-expanded={expanded}
+          data-folded={folded}
+          aria-labelledby="scene-title"
+        >
+          <div className="scene-panel-tools">
+            <span className="scene-panel-handle" aria-hidden="true" />
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setExpanded(!expanded);
+                  setFolded(false);
+                }}
+                aria-expanded={expanded}
+              >
+                {expanded ? "반으로 줄이기" : "위로 펼치기"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFolded(!folded);
+                  setExpanded(folded);
+                }}
+                aria-expanded={!folded}
+              >
+                {folded ? "글 읽기" : "접기"}
+              </button>
             </div>
-            <h1 ref={title} id="scene-title" tabIndex={-1}>
-              {scene.title}
-            </h1>
-            <div
-              ref={copy}
-              className="immersive-scene-text"
-              hidden={folded}
-              tabIndex={0}
-              role="region"
-              aria-label={scene.title + " 본문"}
-            >
+          </div>
+          <h1 ref={title} id="scene-title" tabIndex={-1}>
+            {scene.title}
+          </h1>
+          <div
+            ref={copy}
+            className="immersive-scene-text"
+            hidden={folded}
+            tabIndex={0}
+            role="region"
+            aria-label={scene.title + " 본문"}
+          >
+            <div hidden={isCounsel}>
               <ReadableText text={scene.text} />
             </div>
-            {!folded && (
-              <p className="scene-scroll-hint">
-                글상자 안에서 아래로 읽어 보거라.
-              </p>
-            )}
-            <div className="scene-footer">
-              <button type="button" onClick={() => turn(scenes.length)}>
-                전체 운명서
-              </button>
-              <span>PDF·자문은 전체 보기에서</span>
-            </div>
-          </section>
-          <nav
-            className="immersive-report-arrows"
-            aria-label="운명서 장 넘기기"
-          >
-            <button
-              type="button"
-              aria-label="이전 장"
-              disabled={page === 0}
-              onClick={() => turn(page - 1)}
-            >
-              〈
+            <div hidden={!isCounsel}>{counsel}</div>
+          </div>
+          {!folded && (
+            <p className="scene-scroll-hint">
+              글상자 안에서 아래로 읽어 보거라.
+            </p>
+          )}
+          <div className="scene-footer">
+            <button type="button" onClick={() => turn(scenes.length + 1)}>
+              전체 운명서
             </button>
-            <button
-              type="button"
-              aria-label={
-                page === scenes.length - 1 ? "전체 운명서 펼치기" : "다음 장"
-              }
-              onClick={() => turn(page + 1)}
-            >
-              〉
-            </button>
-          </nav>
+            <span>PDF는 전체 보기에서</span>
+          </div>
         </section>
-      )}
+        <nav className="immersive-report-arrows" aria-label="운명서 장 넘기기">
+          <button
+            type="button"
+            aria-label="이전 장"
+            disabled={page === 0}
+            onClick={() => turn(page - 1)}
+          >
+            〈
+          </button>
+          <button
+            type="button"
+            aria-label={
+              page === scenes.length ? "전체 운명서 펼치기" : "다음 장"
+            }
+            onClick={() => turn(page + 1)}
+          >
+            〉
+          </button>
+        </nav>
+      </section>
       {overview}
     </>
   );

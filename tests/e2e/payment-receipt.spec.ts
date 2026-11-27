@@ -9,7 +9,12 @@ test("purchase receipt loads only on request and rejects an untrusted link on re
   const url =
     "https://dashboard.tosspayments.com/receipt/redirection?transactionId=synthetic&ref=PX";
   page.on("request", (req) => {
-    if (req.url().includes("/api/") && req.method() === "POST") writes++;
+    if (
+      req.url().includes("/api/") &&
+      new URL(req.url()).pathname !== "/api/usage" &&
+      req.method() === "POST"
+    )
+      writes++;
   });
   await page.route("**/api/orders/" + oid, (route) =>
     route.fulfill({

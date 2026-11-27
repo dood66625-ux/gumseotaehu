@@ -1,4 +1,5 @@
 "use client";
+import ReportTypeImage from "./ReportTypeImage";
 import { useState } from "react";
 import { reportType } from "../lib/report-type";
 export default function ReportType({
@@ -35,6 +36,7 @@ export default function ReportType({
       className={compact ? "report-type compact" : "card gold report-type"}
       aria-label="그대의 대표 타입"
     >
+      <ReportTypeImage index={type.imageIndex} name={type.name} />
       <p className="eyebrow">금서태후가 읽은 그대의 타입</p>
       <h2>{type.name}</h2>
       <p className="type-title">{type.title}</p>

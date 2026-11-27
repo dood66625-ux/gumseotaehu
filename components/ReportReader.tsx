@@ -102,6 +102,7 @@ export default function ReportReader({
       orderId={id}
       scenes={reportScenes(d.report, d.name)}
       assetBase={assetBase}
+      counsel={<TaehouCounsel key={id + "-counsel"} orderId={id} />}
     >
       <div className="report-reader">
         <p className="eyebrow">
@@ -266,7 +267,6 @@ export default function ReportReader({
           </section>
         )}
         <ReportClosing report={d.report} name={d.name} />
-        <TaehouCounsel key={id + "-counsel"} orderId={id} />
         <div className="actions">
           <Link className="button secondary" href="/recover">
             내 운명서 다시 찾기

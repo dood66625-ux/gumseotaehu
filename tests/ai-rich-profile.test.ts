@@ -23,7 +23,7 @@ it("uses a larger Korean request only on the explicitly selected rich profile", 
     (request.text.format.schema as any).properties.chapters.items.properties
       .text.minLength,
   ).toBe(700);
-  expect(request.instructions).toContain("800~1000");
+  expect(request.instructions).toContain("800~900");
   expect(request.store).toBe(false);
   expect(aiRequestPolicy("rich-ko-v1").timeoutMs).toBe(120000);
   expect(buildAiRequest(chart, approvedOpenAiModel).max_output_tokens).toBe(

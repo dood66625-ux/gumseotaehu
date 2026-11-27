@@ -205,6 +205,7 @@ writeFileSync(
 );
 
 for (const file of [
+  "report-types.webp",
   "empress.webp",
   "icon.svg",
   "empress-royal-v2.webp",
