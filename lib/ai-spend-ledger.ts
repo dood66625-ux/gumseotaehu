@@ -52,7 +52,20 @@ export function aiSpendLedger(
     return new Date(now).toISOString().slice(0, 10);
   };
   return {
-    reserve(orderId: string, version: number, now = Date.now()) {
+    reserve(
+      orderId: string,
+      version: number,
+      now = Date.now(),
+      purpose: "report" | "counsel" = "report",
+    ) {
+      if (
+        purpose !== "report" &&
+        (purpose !== "counsel" || version < 1000001 || version > 1000003)
+      )
+        throw Error("AI_INVALID_SPEND_PURPOSE");
+      // Short follow-up answers have a smaller bounded request; keep the same signed daily/lifetime policy.
+      const reserved =
+        purpose === "counsel" ? 60000 : policy.reservationUsdMicros;
       if (
         !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           orderId,
@@ -63,7 +76,8 @@ export function aiSpendLedger(
         throw Error("AI_INVALID_ORDER_RESERVATION");
       orderId = orderId.toLowerCase();
       let day = dayOf(now);
-      db.exec("BEGIN IMMEDIATE");
+      const ownTransaction = !db.isTransaction;
+      if (ownTransaction) db.exec("BEGIN IMMEDIATE");
       try {
         if (
           db
@@ -93,26 +107,23 @@ export function aiSpendLedger(
               .get(day, orderId, version)
           : { lifetime: 0, daily: 0 };
         if (
-          totals.lifetime +
-            Number(holds!.lifetime) +
-            policy.reservationUsdMicros >
+          totals.lifetime + Number(holds!.lifetime) + reserved >
             policy.lifetimeUsdMicros ||
-          totals.daily + Number(holds!.daily) + policy.reservationUsdMicros >
-            policy.dailyUsdMicros
+          totals.daily + Number(holds!.daily) + reserved > policy.dailyUsdMicros
         )
           throw Error("AI_SPEND_LIMIT_REACHED");
         const id = randomUUID();
         db.prepare(
           "INSERT INTO ai_spend_calls(id,order_id,version,day,reserved,state,created) VALUES(?,?,?,?,?,'reserved',?)",
-        ).run(id, orderId, version, day, policy.reservationUsdMicros, now);
+        ).run(id, orderId, version, day, reserved, now);
         if (hasHolds)
           db.prepare(
             "DELETE FROM sales_ai_holds WHERE order_id=? AND version=?",
           ).run(orderId, version);
-        db.exec("COMMIT");
+        if (ownTransaction) db.exec("COMMIT");
         return id;
       } catch (error) {
-        db.exec("ROLLBACK");
+        if (ownTransaction) db.exec("ROLLBACK");
         throw error;
       }
     },

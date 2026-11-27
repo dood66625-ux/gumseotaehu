@@ -848,3 +848,9 @@ input::-webkit-date-and-time-value {
     display: none;
   }
 }
+
+.reading-detail-open { background: #68462b; color: #fff4dc; border: 1px solid #68462b; border-radius: 999px; min-height: 44px; padding: 11px 22px; box-shadow: 0 3px 12px #24150c18; }
+.reading-detail-open:hover { background: #4f321d; color: #fff4dc; }
+.reading-dialog-bar button { background: #f5e7c8; color: #48311b; border: 1px solid #997548; border-radius: 999px; }
+.readable-text p { line-height: 1.95; margin: 0 0 1.25em; word-break: keep-all; overflow-wrap: anywhere; }
+.readable-text strong { font-weight: 750; }

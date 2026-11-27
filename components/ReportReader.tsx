@@ -1,5 +1,7 @@
 "use client";
 import { taehouNarration } from "../lib/taehou-narration";
+import ReadableText from "./ReadableText";
+import TaehouCounsel from "./TaehouCounsel";
 import ReportFocus from "./ReportFocus";
 import ReportTop3 from "./ReportTop3";
 import ReportClosing from "./ReportClosing";
@@ -95,7 +97,7 @@ export default function ReportReader({
   const guide = readingGuide(d.report);
   const figures = reportFigures(d.report.chart.element);
   return (
-    <>
+    <div className="report-reader">
       <p className="eyebrow">
         YOUR SEALED ARCHIVE · {reportDisclosure(d.report.provider).label}
       </p>
@@ -131,10 +133,6 @@ export default function ReportReader({
           이메일로 받기
         </button>
       </div>
-      <p className="fine">
-        카카오톡 안에서 PDF가 저장되지 않으면 메뉴에서 ‘다른 브라우저로 열기’를
-        선택해 Chrome 또는 Safari에서 저장해주세요.
-      </p>
       {message && (
         <p className="success" role="status">
           {message}
@@ -184,11 +182,11 @@ export default function ReportReader({
             title={c.title}
             brief={<p>{readingExcerpt(book.chapters[i].text, 150)}</p>}
           >
-            <p>{book.chapters[i].text}</p>
+            <ReadableText text={book.chapters[i].text} />
             {book.chapters[i].practice && (
               <section>
                 <h3>그대의 일상에 가져가 보거라</h3>
-                <p>{book.chapters[i].practice}</p>
+                <ReadableText text={book.chapters[i].practice} />
               </section>
             )}
           </ReadingDetails>
@@ -198,18 +196,6 @@ export default function ReportReader({
               <p className="quote">{book.chapters[i].takeaway}</p>
             </aside>
           )}
-          <details className="chapter-evidence">
-            <summary>풀이 근거 살펴보기</summary>
-            <small className="chapter-fact">
-              {c.claimIds
-                .map(
-                  (id: string) =>
-                    d.report.chart.claims.find((f: any) => f.id === id)?.text ??
-                    id,
-                )
-                .join(" ")}
-            </small>
-          </details>
         </article>
       ))}
       <section
@@ -243,15 +229,6 @@ export default function ReportReader({
             <p>{point.text}</p>
           </div>
         ))}
-        <h3>낯선 말이 있었느냐?</h3>
-        <dl>
-          {guide.glossary.map(([term, meaning]) => (
-            <div key={term}>
-              <dt>{term}</dt>
-              <dd>{meaning}</dd>
-            </div>
-          ))}
-        </dl>
         <p className="hint">
           <a
             href={assetBase ? assetBase + "/?screen=content" : "/legal/content"}
@@ -280,26 +257,12 @@ export default function ReportReader({
         </section>
       )}
       <ReportClosing report={d.report} name={d.name} />
-      <details className="card report-method">
-        <summary>계산 기준과 해석의 범위</summary>
-        {book.notes.map((n: string) => (
-          <p className="hint" key={n}>
-            {n}
-          </p>
-        ))}
-        <p className="hint">
-          {d.report.chart.meta.engine} · {d.report.chart.meta.rules} ·{" "}
-          {d.report.promptVersion}
-        </p>
-      </details>
+      <TaehouCounsel key={id + "-counsel"} orderId={id} />
       <div className="actions">
         <Link className="button secondary" href="/recover">
           내 운명서 다시 찾기
         </Link>
-        <Link className="button secondary" href="/help">
-          문의·정정·환불
-        </Link>
       </div>
-    </>
+    </div>
   );
 }

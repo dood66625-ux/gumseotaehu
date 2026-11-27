@@ -1,3 +1,4 @@
+import ReadableText from "./ReadableText";
 import { reportTop3 } from "../lib/report-extras";
 import ReadingDetails from "./ReadingDetails";
 import { readingExcerpt } from "../lib/reading-excerpt";
@@ -25,13 +26,13 @@ export default function ReportTop3({ element }: { element: unknown }) {
               </>
             }
           >
-            <p>{lead}</p>
+            <ReadableText text={lead} />
             {items.map((item, i) => (
               <section key={item.title}>
                 <h3>
                   {i + 1}. {item.title}
                 </h3>
-                <p>{item.text}</p>
+                <ReadableText text={item.text} />
               </section>
             ))}
             <p className="fine">{note}</p>

@@ -417,7 +417,11 @@ export default function Admin() {
           <ul>
             {data.aiSpendReview.entries.map((entry: any) => (
               <li key={entry.orderId + ":" + entry.version}>
-                주문 {entry.orderId} · 버전 {entry.version} ·{" "}
+                주문 {entry.orderId} ·{" "}
+                {entry.version >= 1000001 && entry.version <= 1000003
+                  ? `자문 ${entry.version - 1000000}`
+                  : `운명서 버전 ${entry.version}`}{" "}
+                ·{" "}
                 {entry.state === "uncertain"
                   ? "응답 또는 저장 결과 확인 필요"
                   : entry.state === "reserved"

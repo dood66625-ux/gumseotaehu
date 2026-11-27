@@ -1143,6 +1143,7 @@ export function deleteContent(
   });
 }
 function wipeContent(oid: string) {
+  run("DELETE FROM taehou_counsel WHERE order_id=?", oid);
   run("DELETE FROM ai_generation_evidence WHERE order_id=?", oid);
   run("DELETE FROM reports WHERE order_id=?", oid);
   for (const r of all(

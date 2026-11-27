@@ -113,3 +113,23 @@ it("cannot change active limits by mutating the caller policy object", () => {
   ledger.reserve(b, 1, now);
   expect(() => ledger.reserve(c, 1, now)).toThrow("AI_SPEND_LIMIT_REACHED");
 });
+it("commits counsel reservation only with the outer durable question transaction", () => {
+  const database = open();
+  const ledger = aiSpendLedger(database, {
+    dailyUsdMicros: 1000000,
+    lifetimeUsdMicros: 2000000,
+    reservationUsdMicros: 500000,
+  });
+  database.exec("BEGIN IMMEDIATE");
+  ledger.reserve(a, 1000001, now, "counsel");
+  expect(database.isTransaction).toBe(true);
+  database.exec("ROLLBACK");
+  expect(ledger.summary(now).calls).toBe(0);
+  database.exec("BEGIN IMMEDIATE");
+  ledger.reserve(a, 1000001, now, "counsel");
+  database.exec("COMMIT");
+  expect(ledger.summary(now).dailyReservedOrActualUsdMicros).toBe(60000);
+  expect(() => ledger.reserve(b, 1, now, "counsel")).toThrow(
+    "INVALID_SPEND_PURPOSE",
+  );
+});

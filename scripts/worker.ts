@@ -1,3 +1,4 @@
+import { runCounselCycle } from "../lib/taehou-counsel-worker";
 import { finishErasure } from "../lib/financial-erasure";
 import { runConfiguredRetentionCycle } from "../lib/retention-runtime";
 import { configuredExternalLedger } from "../lib/external-deletion-ledger";
@@ -37,6 +38,11 @@ while (!stopped) {
       await runConfiguredAiCycle({ stopping: () => stopped });
     } catch {
       console.error("AI_WORKER_CYCLE_FAILED (no customer data logged)");
+    }
+    try {
+      if (!stopped) await runCounselCycle();
+    } catch {
+      console.error("COUNSEL_WORKER_CYCLE_FAILED (no customer data logged)");
     }
     // Sequential await: never overlap sends; stop prevents another cycle.
     try {

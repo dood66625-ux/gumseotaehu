@@ -77,6 +77,14 @@ export function applyDeletions(db: DatabaseSync, rows: Deletions, key: Buffer) {
         db.prepare("DELETE FROM reports WHERE order_id=?").run(row.orderId);
         if (
           db
+            .prepare("SELECT 1 FROM sqlite_master WHERE name='taehou_counsel'")
+            .get()
+        )
+          db.prepare("DELETE FROM taehou_counsel WHERE order_id=?").run(
+            row.orderId,
+          );
+        if (
+          db
             .prepare(
               "SELECT 1 FROM sqlite_master WHERE name='ai_generation_evidence'",
             )

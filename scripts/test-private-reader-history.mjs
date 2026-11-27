@@ -175,20 +175,8 @@ try {
     if ((await page.locator("html").getAttribute("lang")) !== "ko")
       throw Error("KOREAN_ONLY_LANGUAGE");
     await page.locator('#toc a[href="#book-portrait"]').click();
-    await page.locator("#book-portrait .court-choices button").first().click();
-    if (
-      (await page
-        .locator('#book-portrait button[aria-pressed="true"]')
-        .count()) !== 1
-    )
-      throw Error("CHOICE_NOT_SELECTED");
-    await page.locator("#book-portrait .court-choices button").nth(1).click();
-    if (
-      (await page
-        .locator('#book-portrait button[aria-pressed="true"]')
-        .count()) !== 1
-    )
-      throw Error("MULTIPLE_CHOICES_SELECTED");
+    if (await page.locator("#book-portrait .court-choices").count())
+      throw Error("REMOVED_CHOICES_REMAIN");
     if (
       await page.evaluate(
         () => document.documentElement.scrollWidth > innerWidth,
@@ -349,9 +337,8 @@ try {
     )
       throw Error("GLOBAL_NOTE_REPEATED");
     await page.locator("#toc a").last().click();
-    await page.locator("#notes-title").click();
-    if (!(await page.locator("#notes").textContent()).includes(calculationNote))
-      throw Error("CALCULATION_DISCLOSURE_LOST");
+    if (await page.locator("#notes-title,#notes,#book-note-line").count())
+      throw Error("REMOVED_METHOD_REMAINS");
     await page.locator('#toc a[href="#book-figures"]').click();
     if (
       !(await page.locator("#book-figures").textContent()).includes("허난설헌")
@@ -413,11 +400,11 @@ try {
       historicalFigures: true,
       koreanOnly: true,
       courtPortrait: true,
-      interactiveChoice: true,
+      removedChoices: true,
       rememberedPage: true,
       printAllChapters: true,
       reducedMotion: true,
-      disclosuresAtEnd: true,
+      removedMethodAppendix: true,
       bookmarkReload: true,
       staleResponseIgnored: true,
       generationRequests: writes,

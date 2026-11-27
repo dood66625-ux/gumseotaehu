@@ -1,3 +1,8 @@
+import {
+  readCounsel,
+  queueCounsel,
+  counselEntries,
+} from "@/lib/taehou-counsel";
 import { checkAdminPassword, setAdminPassword } from "@/lib/admin-password";
 import { excludeAdminVisit } from "@/lib/visit-network";
 import { protectProxyRequest } from "@/lib/proxy-access";
@@ -160,7 +165,7 @@ async function handler(
         const oid = p.split("/")[1];
         limit("pdf:" + s.id, 15);
         const report = svc.getReport(s, oid),
-          buf = await reportPdf(report);
+          buf = await reportPdf({ ...report, counsel: counselEntries(oid) });
         audit(s.id, "pdf_download", oid);
         return new NextResponse(new Uint8Array(buf), {
           headers: {
@@ -170,6 +175,8 @@ async function handler(
           },
         });
       }
+      if (/^reports\/[^/]+\/counsel$/.test(p))
+        return json(readCounsel(s, z.string().uuid().parse(p.split("/")[1])));
       if (/^reports\/[^/]+$/.test(p))
         return json(svc.getReport(s, p.split("/")[1]));
       if (p.startsWith("local-mail/"))
@@ -222,6 +229,17 @@ async function handler(
       return setCookie(json({ ok: true }), token, req);
     }
     const s = session(req);
+    if (/^reports\/[^/]+\/counsel$/.test(p)) {
+      limit("counsel:" + s.id, 10, 60000);
+      return json(
+        queueCounsel(
+          s,
+          z.string().uuid().parse(p.split("/")[1]),
+          b.question,
+          b.requestId,
+        ),
+      );
+    }
     if (p === "logout") {
       run("DELETE FROM sessions WHERE id=?", s.id);
       const r = json({ ok: true });

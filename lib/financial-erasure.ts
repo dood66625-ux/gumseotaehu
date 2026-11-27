@@ -3,6 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 const orderChildren = new Set([
   "reports",
   "ai_generation_evidence",
+  "taehou_counsel",
   "jobs",
   "refunds",
   "reading_history",

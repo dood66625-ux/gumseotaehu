@@ -146,6 +146,16 @@ window.fetch = async (input: any, init: any = {}) => {
   if (p.startsWith("reports/")) {
     if (!s.authenticated || !s.paid)
       return response({ error: "가상 구매 흐름을 먼저 체험해 주세요." }, 403);
+    if (p.endsWith("/counsel"))
+      return init.method === "POST"
+        ? response(
+            {
+              error:
+                "가상 예시에서는 자문을 보내지 않습니다. 실제 AI 호출은 없습니다.",
+            },
+            409,
+          )
+        : response({ entries: [], remaining: 3, total: 3 });
     if (p.endsWith("/pdf")) return nativeFetch(base + "/sample-report.pdf");
     return response(snapshot.report);
   }

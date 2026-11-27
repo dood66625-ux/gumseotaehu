@@ -55,7 +55,7 @@ export function usageTelemetry(
     ),
   };
 }
-async function readBoundedJson(
+export async function readBoundedJson(
   response: Response,
 ): Promise<Record<string, any>> {
   if (Number(response.headers.get("content-length")) > 262144) {

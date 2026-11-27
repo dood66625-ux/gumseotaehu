@@ -1,8 +1,6 @@
 "use client";
-import { useState } from "react";
 import { reportPortrait } from "../lib/report-portrait";
 export default function CourtPortrait({ element }: { element: unknown }) {
-  const [choice, setChoice] = useState<number | null>(null);
   const p = reportPortrait(element);
   if (!p) return null;
   return (
@@ -23,24 +21,6 @@ export default function CourtPortrait({ element }: { element: unknown }) {
       </div>
       <p>{p.item}</p>
       <p className="hint">{p.colorNote}</p>
-      <h3>오늘은 어떤 한 걸음을 고르겠느냐?</h3>
-      <div className="court-choices">
-        {p.actions.map((action, i) => (
-          <button
-            key={action}
-            type="button"
-            aria-pressed={choice === i}
-            onClick={() => setChoice(i)}
-          >
-            {action}
-          </button>
-        ))}
-      </div>
-      <p role="status">
-        {choice === null
-          ? "마음이 가는 카드 하나를 골라 보거라."
-          : `좋다. 오늘은 ‘${p.actions[choice]}’부터 시작하거라.`}
-      </p>
       <p className="hint">{p.note}</p>
     </section>
   );

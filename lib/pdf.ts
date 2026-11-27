@@ -1,3 +1,5 @@
+import { readingParagraphs } from "./reading-paragraphs";
+import type { CounselEntry } from "./taehou-counsel";
 import { taehouNarration } from "./taehou-narration";
 import { reportClosing } from "./report-closing";
 import { reportTop3 } from "./report-extras";
@@ -12,7 +14,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import type { getReport } from "./service";
 export async function reportPdf(
-  data: ReturnType<typeof getReport>,
+  data: ReturnType<typeof getReport> & { counsel?: CounselEntry[] },
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const book = reportBook(data.report);
@@ -58,6 +60,25 @@ export async function reportPdf(
       doc.fillColor(ink).fontSize(10.5);
       doc.x = 58;
       doc.y = 87;
+    }
+    const bookFont = path.resolve("assets/NotoSansKR-Book.ttf");
+    const strongFont = path.resolve("assets/NotoSansKR-Emphasis.ttf");
+    doc.registerFont("book", bookFont);
+    doc.registerFont("emphasis", strongFont);
+    function readable(text: string) {
+      for (const p of readingParagraphs(text)) {
+        doc.moveDown(0.6).font("book").fontSize(10.5).fillColor(ink);
+        if (p.emphasis)
+          doc.font("emphasis").text(p.emphasis, {
+            continued: p.text.length > p.emphasis.length,
+            lineGap: 5,
+          });
+        if (p.text.length > p.emphasis.length)
+          doc
+            .font("book")
+            .text(p.text.slice(p.emphasis.length), { lineGap: 5 });
+      }
+      doc.font("book");
     }
     frame();
     doc.on("pageAdded", frame);
@@ -193,11 +214,7 @@ export async function reportPdf(
           align: "center",
           width: W - 116,
         });
-      doc
-        .moveDown(1.3)
-        .fontSize(10.5)
-        .fillColor(ink)
-        .text(book.chapters[i].text, { lineGap: 5, align: "left" });
+      readable(book.chapters[i].text);
       if (book.chapters[i].practice) {
         doc
           .moveDown()
@@ -265,16 +282,6 @@ export async function reportPdf(
         .text(point.text, { lineGap: 6 });
     }
     doc.addPage();
-    doc.fontSize(20).fillColor(ink).text("낯선 말이 있었느냐?");
-    for (const [term, meaning] of guide.glossary) {
-      doc.moveDown().fontSize(12).fillColor(gold).text(term);
-      doc
-        .moveDown(0.5)
-        .fontSize(11)
-        .fillColor(ink)
-        .text(meaning, { lineGap: 7 });
-    }
-    doc.addPage();
     const courtPortrait = reportPortrait(data.report.chart.element);
     if (courtPortrait) {
       doc.fontSize(20).fillColor(ink).text(courtPortrait.title);
@@ -293,14 +300,6 @@ export async function reportPdf(
         .text(courtPortrait.colors.map(([name]) => name).join(" · "));
       doc.moveDown().text(courtPortrait.item);
       doc.moveDown().fontSize(9).text(courtPortrait.colorNote);
-      doc.moveDown().fontSize(13).fillColor(gold).text("오늘의 작은 한 걸음");
-      courtPortrait.actions.forEach((action) =>
-        doc
-          .moveDown(0.5)
-          .fontSize(10.5)
-          .fillColor(ink)
-          .text("· " + action),
-      );
       doc.moveDown().fontSize(8.5).text(courtPortrait.note);
       doc.addPage();
     }
@@ -379,32 +378,28 @@ export async function reportPdf(
           .text(text, { lineGap: 4.5 }),
       );
       doc.moveDown().fontSize(10).fillColor(gold).text(ending.signature);
-      doc.addPage();
     }
-    doc.fontSize(9).fillColor(gold).text("METHOD & NOTES");
-    doc.moveDown().fontSize(21).fillColor(ink).text("계산 기준과 해석의 범위");
-    doc
-      .moveDown(1.3)
-      .fontSize(10)
-      .text(book.notes.join("\n\n"), { lineGap: 7 });
-    doc
-      .moveDown(1.5)
-      .fontSize(9)
-      .fillColor(gold)
-      .text(
-        "금서태후는 이야기를 안내하는 창작 캐릭터입니다. " +
-          reportDisclosure(data.report.provider).description,
-        { lineGap: 6 },
-      );
-    doc.addPage();
-    doc.fontSize(9).fillColor(gold).text("CALCULATION RECORDS");
-    doc.moveDown().fontSize(21).fillColor(ink).text("풀이의 계산 기록");
-    doc
-      .moveDown()
-      .fontSize(10)
-      .text(data.report.chart.claims.map((claim) => claim.text).join("\n\n"), {
-        lineGap: 7,
-      });
+    const conversations = (data.counsel ?? []).filter(
+      (c) => c.state === "answered" && c.answer,
+    );
+    if (conversations.length) {
+      doc.addPage();
+      doc.fontSize(9).fillColor(gold).text("금서태후의 자문");
+      doc
+        .moveDown()
+        .fontSize(22)
+        .fillColor(ink)
+        .text("그대가 태후에게 남긴 물음");
+      for (const entry of conversations) {
+        if (doc.y > H - 220) doc.addPage();
+        doc
+          .moveDown()
+          .fontSize(12)
+          .fillColor(gold)
+          .text(`${entry.number}. ${entry.question}`, { lineGap: 6 });
+        readable(entry.answer!);
+      }
+    }
     doc.switchToPage(tocPage);
     starts.forEach((page, i) => {
       doc

@@ -1,3 +1,4 @@
+import { readingParagraphs } from "../../lib/reading-paragraphs";
 import { taehouNarration } from "../../lib/taehou-narration";
 import { reportFocusTopics } from "../../lib/report-focus";
 import { reportTop3, easyLuckText } from "../../lib/report-extras";
@@ -165,7 +166,6 @@ function language() {
     "range-note": "range",
     "result-title": "result",
     "summary-title": "summary",
-    "notes-title": "notes",
     print: "print",
     "about-title": "aboutTitle",
     about: "about",
@@ -312,7 +312,7 @@ function addReadingDetails() {
       )
         continue;
       const text = p.textContent;
-      const print = p.cloneNode(true) as HTMLElement;
+      const print = readableElement(text, p.className);
       print.removeAttribute("id");
       print.className = p.className + " reading-print-full";
       p.after(print);
@@ -333,6 +333,10 @@ function addReadingDetails() {
     button.addEventListener("click", () => {
       title.textContent = heading;
       content.replaceChildren(full.cloneNode(true));
+      content.querySelectorAll("p").forEach((p) => {
+        if ((p.textContent?.length ?? 0) > 100)
+          p.replaceWith(readableElement(p.textContent!, p.className));
+      });
       modal.showModal();
       content.scrollTop = 0;
       modal.scrollTop = 0;
@@ -429,8 +433,7 @@ function draw(report: any) {
         : cleaned.text;
     const takeaway = chapterTakeaway(displayText, locale);
     article.append(image);
-    for (const paragraph of displayText.split(/\n\s*\n/).filter(Boolean))
-      article.append(el("p", paragraph, "chapter-copy"));
+    article.append(el("p", displayText, "chapter-copy"));
     if (locale === "ko" && i !== 6 && displayText.length < 700) {
       article.append(
         el("h3", "그대의 일상에 가져가 보거라"),
@@ -479,26 +482,8 @@ function draw(report: any) {
       colors,
       el("p", portrait.item),
       el("p", portrait.colorNote, "figure-note"),
-      el("h3", "오늘은 어떤 한 걸음을 고르겠느냐?"),
     );
-    const choices = el("div", undefined, "court-choices"),
-      chosen = el("p", "마음이 가는 카드 하나를 골라 보거라.");
-    chosen.setAttribute("role", "status");
-    portrait.actions.forEach((action) => {
-      const button = el("button", action) as HTMLButtonElement;
-      button.type = "button";
-      button.setAttribute("aria-pressed", "false");
-      button.addEventListener("click", () => {
-        choices
-          .querySelectorAll("button")
-          .forEach((other) =>
-            other.setAttribute("aria-pressed", String(other === button)),
-          );
-        chosen.textContent = `좋다. 오늘은 ‘${action}’부터 시작하거라.`;
-      });
-      choices.append(button);
-    });
-    page.append(choices, chosen, el("p", portrait.note, "figure-note"));
+    page.append(el("p", portrait.note, "figure-note"));
     $("chapters").append(page);
     const link = el("a", portrait.title) as HTMLAnchorElement;
     link.href = "#book-portrait";
@@ -598,22 +583,6 @@ function draw(report: any) {
       "이 금서에서 마음에 남은 제안 하나를 골라 작은 행동으로 옮겨 보거라.",
     );
   }
-  set(
-    "notes",
-    locale === "ko"
-      ? [...new Set([...sharedNotes, ...movedNotes])].join("\n\n")
-      : [
-          report.chart.pillars[3]
-            ? "出生時辰已填寫，以當地標準時間計算。"
-            : "出生時辰不明：不提供時柱、大運起始或順逆。",
-          report.chart.cycles.length
-            ? "大運只呈現計算區間，不保證特定事件。"
-            : "資料不足，未計算大運。",
-          "以午夜換日，不校正真太陽時；月度干支採每月15日代表時點，並非整個節氣月份的邊界。",
-          "臺灣使用UTC+8；韓國使用UTC+9。曆法與節氣尚未完成獨立專家審核。五行數量不等於強弱或用神判定。",
-          ...movedNotes.filter((note) => !sharedNotes.includes(note)),
-        ].join("\n\n"),
-  );
   const closing = ending?.letterTitle ?? "마지막 장 · 그대에게 남기는 말";
   const closingLink = el("a", closing) as HTMLAnchorElement;
   closingLink.href = "#book-ending";
@@ -624,17 +593,6 @@ function draw(report: any) {
   $("toc").append(closingLink);
   $("book-prev").textContent = locale === "ko" ? "← 이전 장" : "← 上一章";
   $("book-next").textContent = locale === "ko" ? "다음 장 →" : "下一章 →";
-  const noteLine =
-    locale === "ko"
-      ? "표준시 기준의 참고용 풀이이니, 계산 기준과 검수 범위는 아래에서 살펴보거라."
-      : "解讀以當地標準時間為基準，供自我探索參考；計算方式與審核範圍詳見下方。";
-  let noteSummary = document.getElementById("book-note-line");
-  if (!noteSummary) {
-    noteSummary = el("p", undefined, "book-note-line");
-    noteSummary.id = "book-note-line";
-    $("notes").parentElement!.before(noteSummary);
-  }
-  noteSummary.textContent = noteLine;
   let remembered = 0;
   try {
     remembered = Number(sessionStorage.getItem(pageKey())) || 0;
@@ -840,3 +798,18 @@ refreshSaved().catch(() => {});
 loadSaved(addressReading());
 
 window.addEventListener("pagehide", cancelSaved);
+
+function readableElement(text: string, className = "") {
+  const wrapper = el("div", undefined, "readable-text " + className);
+  for (const block of readingParagraphs(text)) {
+    const p = el("p");
+    if (block.emphasis) {
+      p.append(
+        el("strong", block.emphasis),
+        document.createTextNode(block.text.slice(block.emphasis.length)),
+      );
+    } else p.textContent = block.text;
+    wrapper.append(p);
+  }
+  return wrapper;
+}

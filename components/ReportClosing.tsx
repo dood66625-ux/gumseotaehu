@@ -1,3 +1,4 @@
+import ReadableText from "./ReadableText";
 import { reportClosing } from "../lib/report-closing";
 import ReadingDetails from "./ReadingDetails";
 import { readingExcerpt } from "../lib/reading-excerpt";
@@ -37,7 +38,7 @@ export default function ReportClosing({
               <h3>
                 {i + 1}. {point.title}
               </h3>
-              <p>{point.text}</p>
+              <ReadableText text={point.text} />
             </section>
           ))}
         </ReadingDetails>
@@ -56,7 +57,7 @@ export default function ReportClosing({
           }
         >
           {ending.paragraphs.map((text, i) => (
-            <p key={i}>{text}</p>
+            <ReadableText key={i} text={text} />
           ))}
           <p className="quote">{ending.signature}</p>
         </ReadingDetails>
