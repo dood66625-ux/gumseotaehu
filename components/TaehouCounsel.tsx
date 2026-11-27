@@ -8,9 +8,11 @@ const tabs = ["첫번째 자문", "두번째 자문", "세번째 자문"];
 export default function TaehouCounsel({
   orderId,
   active = true,
+  onComplete,
 }: {
   orderId: string;
   active?: boolean;
+  onComplete?: () => void;
 }) {
   const path = "reports/" + orderId + "/counsel";
   const { data, error: loadError, load } = useLoad<View>(path);
@@ -106,7 +108,21 @@ export default function TaehouCounsel({
             title="이전 자문 보기"
             onClick={() => show(view.entries.at(-1)!.number)}
           >
-            ↺
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 11a9 9 0 1 1 2.4 7.1M3 4v7h7M12 7v5l3 2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         )}
       </div>
@@ -202,7 +218,15 @@ export default function TaehouCounsel({
         <button
           type="button"
           className="button counsel-thanks"
-          onClick={() => dialog.current?.close()}
+          onClick={() => {
+            dialog.current?.close();
+            if (
+              selected === 3 &&
+              view?.remaining === 0 &&
+              view.entries.every((e) => !!e.answer)
+            )
+              onComplete?.();
+          }}
         >
           감사합니다.
         </button>

@@ -19,7 +19,7 @@ export default function Landing({
             />
             <source
               media="(max-width:600px)"
-              srcSet="/empress-mobile-v2.webp"
+              srcSet="/empress-royal-v2.webp"
             />
             <img
               src="/empress-royal-v2.webp"

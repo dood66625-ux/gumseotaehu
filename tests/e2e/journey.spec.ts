@@ -227,11 +227,11 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
     scale: "css",
   });
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "PDF 다운로드" }).click();
+  await page.getByRole("button", { name: "PDF 저장" }).click();
   const file = await download;
   expect(file.suggestedFilename()).toBe("geumseo-report.pdf");
   await file.saveAs("docs/" + info.project.name + "-report.pdf");
-  await page.getByRole("button", { name: "이메일로 받기" }).click();
+  await page.getByRole("button", { name: "메일로 보내기" }).click();
   await expect(
     page.getByText(
       "로컬 발송함에 재열람 안내를 저장했습니다. 실제 발송은 하지 않았습니다.",

@@ -122,6 +122,10 @@ test("minimal counsel form keeps three durable replies in a tabbed dialog withou
   await dialog
     .getByRole("button", { name: "감사합니다.", exact: true })
     .click();
+  await expect(page.locator(".report-chapter:visible")).toHaveCount(9);
+  await page
+    .getByRole("button", { name: "태후에게 자문하기", exact: true })
+    .click();
   await expect(input).toBeDisabled();
   await page
     .getByRole("button", { name: "이전 자문 보기", exact: true })

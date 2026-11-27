@@ -1,5 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => false,
+    });
+  });
+});
 const html = readFileSync("public/merchant-review/index.html", "utf8");
 const report = JSON.parse(
   html.match(
@@ -34,21 +42,21 @@ test("PDF timeout releases the button and a manual retry downloads without anoth
   await page.goto("/report/synthetic-pdf");
   await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "PDF 다운로드", exact: true }),
+    page.getByRole("button", { name: "PDF 저장", exact: true }),
   ).toBeVisible();
   await page.clock.install();
-  await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
+  await page.getByRole("button", { name: "PDF 저장", exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   await page.clock.fastForward(20001);
   await expect(
     page.getByRole("alert").filter({ hasText: "PDF를 가져오지 못했습니다" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "PDF 다운로드", exact: true }),
+    page.getByRole("button", { name: "PDF 저장", exact: true }),
   ).toBeEnabled();
   stalled = false;
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
+  await page.getByRole("button", { name: "PDF 저장", exact: true }).click();
   expect((await download).suggestedFilename()).toBe("geumseo-report.pdf");
   expect(requests).toBe(2);
   expect(mutations).toBe(0);
@@ -74,18 +82,18 @@ test("an HTML response does not download or retain the previous success notice",
   await page.goto("/report/synthetic-pdf");
   await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
+  await page.getByRole("button", { name: "PDF 저장", exact: true }).click();
   await download;
   await expect(
-    page.getByRole("status").filter({ hasText: "다운로드를 요청했습니다" }),
+    page.getByRole("status").filter({ hasText: "PDF 저장을 요청했느니라" }),
   ).toBeVisible();
   invalid = true;
-  await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
+  await page.getByRole("button", { name: "PDF 저장", exact: true }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "PDF를 가져오지 못했습니다" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("status").filter({ hasText: "다운로드를 요청했습니다" }),
+    page.getByRole("status").filter({ hasText: "PDF 저장을 요청했느니라" }),
   ).toHaveCount(0);
   expect(downloads).toBe(1);
 });
@@ -109,7 +117,7 @@ test("leaving the reader aborts its pending PDF and never downloads on the recov
   await page.route("**/api/orders", (route) => route.fulfill({ json: [] }));
   await page.goto("/report/synthetic-pdf");
   await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
-  await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
+  await page.getByRole("button", { name: "PDF 저장", exact: true }).click();
   await expect.poll(() => !!pending).toBe(true);
   await page
     .getByRole("link", { name: "내 운명서 다시 찾기", exact: true })

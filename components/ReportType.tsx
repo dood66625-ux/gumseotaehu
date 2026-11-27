@@ -47,7 +47,6 @@ export default function ReportType({
         내 타입 친구에게 보여주기
       </button>
       <p className="type-share-copy">{type.shareText}</p>
-      <p className="hint">{type.note}</p>
       {message && <p role="status">{message}</p>}
     </section>
   );

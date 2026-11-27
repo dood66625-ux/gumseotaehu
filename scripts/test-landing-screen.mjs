@@ -80,8 +80,13 @@ try {
         source: img.currentSrc,
         loaded: img.complete && img.naturalWidth > 0,
         position: getComputedStyle(img).objectPosition,
+        fit: getComputedStyle(img).objectFit,
+        pixels: img.naturalWidth,
       }));
     if (!portrait.loaded) throw Error("PORTRAIT_NOT_LOADED");
+    if(width <= 900 && (portrait.fit !== "contain" || portrait.pixels < 1200)) throw Error("MOBILE_PORTRAIT_CROP_OR_LOW_RES");
+    await page.locator("#prologue-replay").focus();
+    if(await page.locator("#prologue-replay").evaluate(n=>getComputedStyle(n).outlineStyle !== "none")) throw Error("REPLAY_RECTANGULAR_RING");
     if (
       width >= 901 &&
       !portrait.source.endsWith("/empress-royal-distant.webp")

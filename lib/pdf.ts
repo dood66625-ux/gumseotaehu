@@ -170,7 +170,7 @@ export async function reportPdf(
     doc
       .font("book")
       .fontSize(12)
-      .text([type.lead, type.action, type.note].join("\n\n"), 58, 460, {
+      .text([type.lead, type.action].join("\n\n"), 58, 460, {
         width: W - 116,
         lineGap: 8,
       });

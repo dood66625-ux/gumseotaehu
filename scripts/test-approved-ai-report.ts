@@ -211,7 +211,7 @@ try {
   }
   const downloadPromise = page.waitForEvent("download");
   await page
-    .getByRole("button", { name: "PDF 다운로드", exact: true })
+    .getByRole("button", { name: "PDF 저장", exact: true })
     .first()
     .click();
   const download = await downloadPromise;

@@ -141,7 +141,7 @@ try {
   )
     throw Error("FULL_CHAPTER_NOT_INLINE");
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "PDF 다운로드" }).click();
+  await page.getByRole("button", { name: "PDF 저장" }).click();
   await (await download).saveAs("var/public-preview-proof.pdf");
   await page.screenshot({
     path: "docs/public-preview-report.png",

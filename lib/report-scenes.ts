@@ -36,7 +36,6 @@ export function reportScenes(report: Report, name: string): ReportScene[] {
         type.lead,
         type.tags.map((t) => "#" + t).join(" "),
         type.action,
-        type.note,
       ].join("\n\n"),
     },
   ];

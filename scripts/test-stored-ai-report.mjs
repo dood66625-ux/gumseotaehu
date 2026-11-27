@@ -156,11 +156,11 @@ try {
         .getByRole("button", { name: "전체 운명서", exact: true })
         .click();
     await page
-      .getByRole("button", { name: "PDF 다운로드", exact: true })
+      .getByRole("button", { name: "PDF 저장", exact: true })
       .waitFor();
   }
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
+  await page.getByRole("button", { name: "PDF 저장", exact: true }).click();
   await (await download).saveAs(join(root, "unknown-browser-report.pdf"));
   if (
     readFileSync(join(root, "unknown-browser-report.pdf"))

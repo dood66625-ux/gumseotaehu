@@ -9,17 +9,25 @@ export default function ImmersiveReport({
   assetBase = "",
   children,
   counsel,
+  onOverview,
 }: {
   orderId: string;
   scenes: ReportScene[];
   assetBase?: string;
   children: ReactNode;
-  counsel: (active: boolean) => ReactNode;
+  counsel: (active: boolean, onComplete: () => void) => ReactNode;
+  onOverview?: () => void;
 }) {
   const [page, setPage] = useState(0),
     [expanded, setExpanded] = useState(false),
     [folded, setFolded] = useState(false),
     [loaded, setLoaded] = useState(false);
+  const wasOverview = useRef(false);
+  useEffect(() => {
+    const overview = page === scenes.length + 1;
+    if (overview && !wasOverview.current) onOverview?.();
+    wasOverview.current = overview;
+  }, [page, scenes.length, onOverview]);
   const copy = useRef<HTMLDivElement>(null),
     title = useRef<HTMLHeadingElement>(null);
   const storage = "gumseo-report-page:" + orderId;
@@ -115,8 +123,15 @@ export default function ImmersiveReport({
             <div
               className="empress-expression"
               style={{
-                backgroundImage: `url(${assetBase}/empress-expressions-${page % 8 < 4 ? 1 : 2}.webp)`,
-                backgroundPosition: `${page % 2 ? "100%" : "0%"} ${page % 4 >= 2 ? "100%" : "0%"}`,
+                backgroundImage:
+                  page === 0
+                    ? `url(${assetBase}/empress-royal-v2.webp)`
+                    : `url(${assetBase}/empress-expressions-${page % 8 < 4 ? 1 : 2}.webp)`,
+                backgroundSize: page === 0 ? "cover" : undefined,
+                backgroundPosition:
+                  page === 0
+                    ? "center top"
+                    : `${page % 2 ? "100%" : "0%"} ${page % 4 >= 2 ? "100%" : "0%"}`,
               }}
             />
           )}
@@ -166,13 +181,10 @@ export default function ImmersiveReport({
             <div hidden={isCounsel}>
               <ReadableText text={scene.text} />
             </div>
-            <div hidden={!isCounsel}>{counsel(isCounsel)}</div>
+            <div hidden={!isCounsel}>
+              {counsel(isCounsel, () => turn(scenes.length + 1))}
+            </div>
           </div>
-          {!folded && !isCounsel && (
-            <p className="scene-scroll-hint">
-              글상자 안에서 아래로 읽어 보거라.
-            </p>
-          )}
           <div className="scene-footer">
             <button type="button" onClick={() => turn(scenes.length + 1)}>
               전체 운명서

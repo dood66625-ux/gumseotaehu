@@ -20,6 +20,20 @@ import { reportDownload } from "../lib/report-download";
 import { reportFigures } from "../lib/report-figures";
 import CourtPortrait from "./CourtPortrait";
 import { api, useLoad, ErrorBox, Loading } from "./client";
+function canSharePdf() {
+  try {
+    return (
+      !!navigator.share &&
+      !!navigator.canShare?.({
+        files: [
+          new File([""], "geumseo-report.pdf", { type: "application/pdf" }),
+        ],
+      })
+    );
+  } catch {
+    return false;
+  }
+}
 export default function ReportReader({
   id,
   assetBase = "",
@@ -30,11 +44,17 @@ export default function ReportReader({
   const { data: d, error: loadError } = useLoad<any>("reports/" + id),
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [inKakao, setInKakao] = useState<boolean | null>(null),
+    [shareFile, setShareFile] = useState<File | null>(null),
+    [nativePdfShare, setNativePdfShare] = useState(false);
   const generation = useRef(0);
   const pendingPdf = useRef<AbortController | null>(null);
   useLayoutEffect(() => {
     generation.current++;
+    setInKakao(/KAKAOTALK/i.test(navigator.userAgent));
+    setShareFile(null);
+    setNativePdfShare(canSharePdf());
     setMessage("");
     setError("");
     setBusy(false);
@@ -44,14 +64,57 @@ export default function ReportReader({
       pendingPdf.current = null;
     };
   }, [id]);
-  async function pdf() {
-    if (busy || pendingPdf.current) return;
+  async function preparePdf() {
+    if (!canSharePdf()) return;
+    pendingPdf.current?.abort();
     const current = generation.current,
       controller = new AbortController();
     pendingPdf.current = controller;
     setBusy(true);
+    setShareFile(null);
+    setError("");
+    try {
+      const blob = await reportDownload(id, controller.signal);
+      if (current === generation.current && !controller.signal.aborted)
+        setShareFile(
+          new File([blob], "geumseo-report.pdf", { type: "application/pdf" }),
+        );
+    } catch (e) {
+      if (current === generation.current && !controller.signal.aborted)
+        setError((e as Error).message);
+    } finally {
+      if (pendingPdf.current === controller) {
+        pendingPdf.current = null;
+        if (current === generation.current) setBusy(false);
+      }
+    }
+  }
+  async function pdf() {
+    if (busy || pendingPdf.current) return;
     setError("");
     setMessage("");
+    if (nativePdfShare) {
+      if (!shareFile) {
+        await preparePdf();
+        return;
+      }
+      try {
+        await navigator.share({
+          files: [shareFile],
+          title: "금서태후 · 나의 운명서",
+        });
+      } catch (e) {
+        if ((e as Error).name !== "AbortError")
+          setError(
+            "공유창을 열지 못했구나. 메일로 받거나 Safari·Chrome에서 다시 열어 보거라.",
+          );
+      }
+      return;
+    }
+    const current = generation.current,
+      controller = new AbortController();
+    pendingPdf.current = controller;
+    setBusy(true);
     try {
       const blob = await reportDownload(id, controller.signal);
       if (current !== generation.current || controller.signal.aborted) return;
@@ -62,7 +125,7 @@ export default function ReportReader({
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setMessage(
-        "PDF 다운로드를 요청했습니다. 브라우저의 다운로드 목록에서 저장 결과를 확인해주세요.",
+        "PDF 저장을 요청했느니라. 브라우저의 다운로드 목록을 확인해 보거라.",
       );
     } catch (e) {
       if (current === generation.current) setError((e as Error).message);
@@ -102,8 +165,14 @@ export default function ReportReader({
       orderId={id}
       scenes={reportScenes(d.report, d.name)}
       assetBase={assetBase}
-      counsel={(active) => (
-        <TaehouCounsel key={id + "-counsel"} orderId={id} active={active} />
+      onOverview={preparePdf}
+      counsel={(active, onComplete) => (
+        <TaehouCounsel
+          key={id + "-counsel"}
+          orderId={id}
+          active={active}
+          onComplete={onComplete}
+        />
       )}
     >
       <div className="report-reader">
@@ -135,11 +204,17 @@ export default function ReportReader({
           <p>{reportDisclosure(d.report.provider).description}</p>
         </details>
         <div className="actions">
-          <button className="button" onClick={pdf} disabled={busy}>
-            {busy ? "PDF 작성 중…" : "PDF 다운로드"}
-          </button>
+          {(!inKakao || nativePdfShare) && (
+            <button className="button" onClick={pdf} disabled={busy}>
+              {busy
+                ? "PDF 준비 중…"
+                : nativePdfShare && !shareFile
+                  ? "PDF 준비하기"
+                  : "PDF 저장"}
+            </button>
+          )}
           <button className="button secondary" onClick={resend}>
-            이메일로 받기
+            메일로 보내기
           </button>
         </div>
         {message && (
