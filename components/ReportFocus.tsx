@@ -6,7 +6,7 @@ export default function ReportFocus() {
   const [selected, setSelected] = useState<string | null>(null);
   const topic = reportFocusTopics.find((item) => item.key === selected);
   return (
-    <section className="report-focus" aria-label="지금 고민에 맞춰 읽기">
+    <section id="report-focus" className="report-focus" aria-label="지금 고민에 맞춰 읽기">
       <h2>지금, 무엇이 궁금하느냐?</h2>
       <p className="hint">마음에 걸린 주제부터 펼쳐 보거라.</p>
       <div className="report-focus-buttons">

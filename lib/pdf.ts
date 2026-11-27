@@ -388,11 +388,6 @@ export async function reportPdf(
           .text(person.work, { lineGap: 5 });
         doc.moveDown(0.5).text(person.lesson, { lineGap: 5 });
       });
-      doc
-        .moveDown(1.5)
-        .fontSize(8.5)
-        .fillColor(gold)
-        .text(figures.note, { lineGap: 4 });
       doc.addPage();
     }
     const ending = reportClosing(data.report, data.name);

@@ -3,16 +3,23 @@ import { useEffect, useRef, useState } from "react";
 import { api, ErrorBox, useLoad } from "./client";
 import ReadableText from "./ReadableText";
 import type { CounselEntry } from "../lib/taehou-counsel";
-type View = { entries: CounselEntry[]; remaining: number; total: number };
+export type CounselView = {
+  entries: CounselEntry[];
+  remaining: number;
+  total: number;
+};
+type View = CounselView;
 const tabs = ["첫번째 자문", "두번째 자문", "세번째 자문"];
 export default function TaehouCounsel({
   orderId,
   active = true,
   onComplete,
+  onViewChange,
 }: {
   orderId: string;
   active?: boolean;
   onComplete?: () => void;
+  onViewChange?: (view: CounselView) => void;
 }) {
   const path = "reports/" + orderId + "/counsel";
   const { data, error: loadError, load } = useLoad<View>(path);
@@ -24,6 +31,9 @@ export default function TaehouCounsel({
   const dialog = useRef<HTMLDialogElement>(null),
     request = useRef<{ question: string; id: string } | null>(null),
     watch = useRef<string | null>(null);
+  useEffect(() => {
+    if (view) onViewChange?.(view);
+  }, [view, onViewChange]);
   const pending = !!view?.entries.some(
     (e) => e.state === "queued" || e.state === "working",
   );

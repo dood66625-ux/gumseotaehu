@@ -368,7 +368,7 @@ function draw(report: any) {
       }
     } catch (e) {
       if ((e as Error).name !== "AbortError")
-        shareStatus.textContent = "타입 소개 문장을 길게 눌러 복사해 보거라.";
+        shareStatus.textContent = "브라우저의 공유 기능을 이용해 보거라.";
     }
   });
   typeCard.replaceChildren(
@@ -378,7 +378,6 @@ function draw(report: any) {
     el("p", type.lead),
     el("p", type.tags.map((t) => "#" + t).join(" ")),
     share,
-    el("p", type.shareText, "figure-note"),
     shareStatus,
   );
   $("pillars").replaceChildren();
@@ -523,7 +522,6 @@ function draw(report: any) {
       );
       page.append(card);
     }
-    page.append(el("p", figures.note, "figure-note"));
     $("chapters").append(page);
     const link = el("a", figures.title) as HTMLAnchorElement;
     link.href = "#book-figures";

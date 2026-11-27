@@ -151,6 +151,10 @@ try {
       await page
         .getByRole("button", { name: "전체 운명서 펼치기", exact: true })
         .click();
+      await page
+        .getByRole("dialog", { name: "더 궁금한 점은 더이상 없느냐?" })
+        .getByRole("button", { name: "예", exact: true })
+        .click();
       if ((await page.locator(".report-chapter:visible").count()) !== 9)
         throw Error("ARCHIVE_CHAPTERS_MISSING");
       if (
@@ -159,7 +163,13 @@ try {
           .count()
       )
         throw Error("REMOVED_DETAIL_BUTTON_REMAINS");
-      if (await page.locator("dialog:not(.counsel-answer-dialog)").count())
+      if (
+        await page
+          .locator(
+            "dialog:not(.counsel-answer-dialog):not(.counsel-leave-dialog)",
+          )
+          .count()
+      )
         throw Error("OLD_READING_DIALOG_REMAINS");
 
       const recover = page.locator(".header .recover-link");
@@ -192,6 +202,10 @@ try {
         throw Error("COUNSEL_DRAFT_LOST_WHEN_TURNING_PAGES");
       await page
         .getByRole("button", { name: "전체 운명서", exact: true })
+        .click();
+      await page
+        .getByRole("dialog", { name: "더 궁금한 점은 더이상 없느냐?" })
+        .getByRole("button", { name: "예", exact: true })
         .click();
       await page
         .getByRole("button", { name: "장별로 다시 읽기", exact: true })

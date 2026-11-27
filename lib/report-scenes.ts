@@ -101,7 +101,6 @@ export function reportScenes(report: Report, name: string): ReportScene[] {
       text: [
         figures.lead,
         ...figures.people.map((p) => `${p.name}\n${p.work}\n${p.lesson}`),
-        figures.note,
       ].join("\n\n"),
     });
   const ending = reportClosing(report, name);

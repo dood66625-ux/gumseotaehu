@@ -4,7 +4,7 @@ import { reportScenes } from "../lib/report-scenes";
 import ReportType from "./ReportType";
 import { taehouNarration } from "../lib/taehou-narration";
 import ReadableText from "./ReadableText";
-import TaehouCounsel from "./TaehouCounsel";
+import TaehouCounsel, { type CounselView } from "./TaehouCounsel";
 import ReportFocus from "./ReportFocus";
 import ReportTop3 from "./ReportTop3";
 import ReportClosing from "./ReportClosing";
@@ -47,13 +47,15 @@ export default function ReportReader({
     [busy, setBusy] = useState(false),
     [inKakao, setInKakao] = useState<boolean | null>(null),
     [shareFile, setShareFile] = useState<File | null>(null),
-    [nativePdfShare, setNativePdfShare] = useState(false);
+    [nativePdfShare, setNativePdfShare] = useState(false),
+    [counselView, setCounselView] = useState<CounselView | null>(null);
   const generation = useRef(0);
   const pendingPdf = useRef<AbortController | null>(null);
   useLayoutEffect(() => {
     generation.current++;
     setInKakao(/KAKAOTALK/i.test(navigator.userAgent));
     setShareFile(null);
+    setCounselView(null);
     setNativePdfShare(canSharePdf());
     setMessage("");
     setError("");
@@ -166,19 +168,58 @@ export default function ReportReader({
       scenes={reportScenes(d.report, d.name)}
       assetBase={assetBase}
       onOverview={preparePdf}
+      remainingCounsel={counselView?.remaining ?? null}
+      overviewRevision={
+        counselView?.entries
+          .filter((e) => !!e.answer)
+          .map((e) => e.id)
+          .join(",") ?? ""
+      }
+      footerActions={
+        <>
+          {(!inKakao || nativePdfShare) && (
+            <button className="button" onClick={pdf} disabled={busy}>
+              {busy
+                ? "PDF 준비 중…"
+                : nativePdfShare && !shareFile
+                  ? "PDF 준비하기"
+                  : "PDF 저장"}
+            </button>
+          )}
+          <button className="button secondary" onClick={resend}>
+            메일로 보내기
+          </button>
+        </>
+      }
+      footerMessage={
+        <>
+          {message && (
+            <p className="success" role="status">
+              {message}
+            </p>
+          )}
+          <ErrorBox error={error} />
+        </>
+      }
+      disclosure={
+        <>
+          <details className="report-disclosure">
+            <summary>이 운명서의 콘텐츠·제공 안내</summary>
+            <p>{reportDisclosure(d.report.provider).description}</p>
+          </details>
+        </>
+      }
       counsel={(active, onComplete) => (
         <TaehouCounsel
           key={id + "-counsel"}
           orderId={id}
           active={active}
           onComplete={onComplete}
+          onViewChange={setCounselView}
         />
       )}
     >
       <div className="report-reader">
-        <p className="eyebrow">
-          YOUR SEALED ARCHIVE · {reportDisclosure(d.report.provider).label}
-        </p>
         <h1>
           {d.name} 님의
           <br />
@@ -194,35 +235,10 @@ export default function ReportReader({
           까지
         </p>
         <div className="report-cover illustrated-cover">
-          <p className="eyebrow">A PRIVATE ARCHIVE · 一人一書</p>
           <strong>禁書</strong>
           <p>{d.name} 님을 위해 펼친 아홉 장의 이야기</p>
           <small>금서태후의 종합 운명서 · {d.report.year}</small>
         </div>
-        <details className="report-disclosure">
-          <summary>이 운명서의 콘텐츠·제공 안내</summary>
-          <p>{reportDisclosure(d.report.provider).description}</p>
-        </details>
-        <div className="actions">
-          {(!inKakao || nativePdfShare) && (
-            <button className="button" onClick={pdf} disabled={busy}>
-              {busy
-                ? "PDF 준비 중…"
-                : nativePdfShare && !shareFile
-                  ? "PDF 준비하기"
-                  : "PDF 저장"}
-            </button>
-          )}
-          <button className="button secondary" onClick={resend}>
-            메일로 보내기
-          </button>
-        </div>
-        {message && (
-          <p className="success" role="status">
-            {message}
-          </p>
-        )}
-        <ErrorBox error={error} />
         <div className="card gold">
           <img
             className="mini-portrait"
@@ -340,15 +356,34 @@ export default function ReportReader({
                 <p className="quote">{person.lesson}</p>
               </section>
             ))}
-            <p className="hint">{figures.note}</p>
           </section>
         )}
         <ReportClosing report={d.report} name={d.name} />
-        <div className="actions">
-          <Link className="button secondary" href="/recover">
-            내 운명서 다시 찾기
-          </Link>
-        </div>
+        {!!counselView?.entries.length && (
+          <section
+            className="report-counsel-transcript card gold"
+            aria-label="태후와 나눈 자문"
+          >
+            <h2>태후와 나눈 자문</h2>
+            {counselView.entries.map((e) => (
+              <article key={e.id} className="counsel-transcript-entry">
+                <h3>
+                  {["첫번째 자문", "두번째 자문", "세번째 자문"][e.number - 1]}
+                </h3>
+                <p className="counsel-question">{e.question}</p>
+                {e.answer ? (
+                  <ReadableText text={e.answer} />
+                ) : (
+                  <p role="status">
+                    {e.state === "failed"
+                      ? "답문을 마무리하지 못했구나."
+                      : "답문을 적고 있느니라…"}
+                  </p>
+                )}
+              </article>
+            ))}
+          </section>
+        )}
       </div>
     </ImmersiveReport>
   );

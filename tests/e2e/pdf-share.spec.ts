@@ -71,3 +71,68 @@ test("PDF save shares a prepared PDF under fresh user activation and never a pri
     ),
   ).toHaveCount(0);
 });
+
+test("a reply arriving in the overview refreshes the prepared PDF and visible transcript", async ({
+  page,
+}) => {
+  let finished = false,
+    reads = 0;
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => true,
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: any) => {
+        (window as any).__latestSharedPdf = await data.files[0].text();
+      },
+    });
+  });
+  await page.route("**/api/reports/synthetic-late", (r) =>
+    r.fulfill({ json: report }),
+  );
+  await page.route("**/api/reports/synthetic-late/counsel", (r) =>
+    r.fulfill({
+      json: {
+        entries: [
+          {
+            id: "late-answer-1",
+            number: 1,
+            question: "새 답문을 기다리노라",
+            answer: finished ? "새로 도착한 답문이니라." : null,
+            state: finished ? "ready" : "queued",
+            created: Date.now(),
+          },
+        ],
+        remaining: 2,
+        total: 3,
+      },
+    }),
+  );
+  await page.route("**/api/reports/synthetic-late/pdf", (r) => {
+    reads++;
+    return r.fulfill({
+      contentType: "application/pdf",
+      body:
+        "%PDF-1.4\n" +
+        (finished ? "with-new-answer" : "before-answer") +
+        "\n%%EOF",
+    });
+  });
+  await page.goto("/report/synthetic-late");
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
+  const save = page.getByRole("button", { name: "PDF 저장", exact: true });
+  await expect(save).toBeEnabled();
+  expect(reads).toBe(1);
+  finished = true;
+  await expect(page.locator(".report-counsel-transcript")).toContainText(
+    "새로 도착한 답문이니라.",
+  );
+  await expect.poll(() => reads).toBe(2);
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__latestSharedPdf))
+    .toContain("with-new-answer");
+});

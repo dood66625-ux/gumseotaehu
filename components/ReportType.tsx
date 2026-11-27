@@ -28,7 +28,7 @@ export default function ReportType({
       }
     } catch (e) {
       if ((e as Error).name !== "AbortError")
-        setMessage("아래 타입 소개 문장을 길게 눌러 복사해 보거라.");
+        setMessage("공유창을 열지 못했느니라. 브라우저의 공유 기능을 이용해 보거라.");
     }
   }
   return (
@@ -46,7 +46,6 @@ export default function ReportType({
       <button className="button secondary" type="button" onClick={share}>
         내 타입 친구에게 보여주기
       </button>
-      <p className="type-share-copy">{type.shareText}</p>
       {message && <p role="status">{message}</p>}
     </section>
   );

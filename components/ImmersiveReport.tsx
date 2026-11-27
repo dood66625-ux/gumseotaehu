@@ -10,6 +10,11 @@ export default function ImmersiveReport({
   children,
   counsel,
   onOverview,
+  remainingCounsel,
+  overviewRevision = "",
+  footerActions,
+  footerMessage,
+  disclosure,
 }: {
   orderId: string;
   scenes: ReportScene[];
@@ -17,17 +22,32 @@ export default function ImmersiveReport({
   children: ReactNode;
   counsel: (active: boolean, onComplete: () => void) => ReactNode;
   onOverview?: () => void;
+  remainingCounsel?: number | null;
+  overviewRevision?: string;
+  footerActions?: ReactNode;
+  footerMessage?: ReactNode;
+  disclosure?: ReactNode;
 }) {
   const [page, setPage] = useState(0),
     [expanded, setExpanded] = useState(false),
     [folded, setFolded] = useState(false),
-    [loaded, setLoaded] = useState(false);
+    [loaded, setLoaded] = useState(false),
+    [confirmingLeave, setConfirmingLeave] = useState(false);
+  const leaveDialog = useRef<HTMLDialogElement>(null);
+  const nextPage = useRef(0);
   const wasOverview = useRef(false);
+  const preparedRevision = useRef("");
   useEffect(() => {
     const overview = page === scenes.length + 1;
-    if (overview && !wasOverview.current) onOverview?.();
+    if (
+      overview &&
+      (!wasOverview.current || preparedRevision.current !== overviewRevision)
+    ) {
+      preparedRevision.current = overviewRevision;
+      onOverview?.();
+    }
     wasOverview.current = overview;
-  }, [page, scenes.length, onOverview]);
+  }, [page, scenes.length, onOverview, overviewRevision]);
   const copy = useRef<HTMLDivElement>(null),
     title = useRef<HTMLHeadingElement>(null);
   const storage = "gumseo-report-page:" + orderId;
@@ -44,7 +64,20 @@ export default function ImmersiveReport({
         sessionStorage.setItem(storage, String(page));
       } catch {}
   }, [page, loaded, storage]);
-  function turn(next: number) {
+  function turn(next: number, confirmed = false) {
+    if (
+      !confirmed &&
+      page === scenes.length &&
+      next > page &&
+      remainingCounsel !== 0
+    ) {
+      nextPage.current = next;
+      setConfirmingLeave(true);
+      leaveDialog.current?.showModal();
+      return;
+    }
+    leaveDialog.current?.close();
+    setConfirmingLeave(false);
     setPage(Math.max(0, Math.min(scenes.length + 1, next)));
     setFolded(false);
     window.scrollTo(0, 0);
@@ -59,7 +92,8 @@ export default function ImmersiveReport({
       hidden={page !== scenes.length + 1}
       aria-label="전체 운명서"
     >
-      <div className="report-overview-bar">
+      {children}
+      <div className="report-bottom-actions">
         <button className="button secondary" onClick={() => turn(0)}>
           장별로 다시 읽기
         </button>
@@ -69,9 +103,10 @@ export default function ImmersiveReport({
         >
           태후에게 자문하기
         </button>
-        <span>그대의 운명서, 한눈에 펼쳐 보거라.</span>
+        {footerActions}
       </div>
-      {children}
+      {footerMessage}
+      {disclosure}
     </section>
   );
   const isCounsel = page === scenes.length;
@@ -91,7 +126,9 @@ export default function ImmersiveReport({
         aria-label="태후와 읽는 운명서"
         onKeyDown={(e) => {
           if (
-            (e.target as HTMLElement).closest("button,a,input,textarea") ||
+            (e.target as HTMLElement).closest(
+              "button,a,input,textarea,dialog",
+            ) ||
             e.altKey ||
             e.ctrlKey ||
             e.metaKey
@@ -182,7 +219,9 @@ export default function ImmersiveReport({
               <ReadableText text={scene.text} />
             </div>
             <div hidden={!isCounsel}>
-              {counsel(isCounsel, () => turn(scenes.length + 1))}
+              {counsel(isCounsel && !confirmingLeave, () =>
+                turn(scenes.length + 1, true),
+              )}
             </div>
           </div>
           <div className="scene-footer">
@@ -212,6 +251,34 @@ export default function ImmersiveReport({
         </nav>
       </section>
       {overview}
+      <dialog
+        ref={leaveDialog}
+        className="counsel-leave-dialog"
+        onClose={() => setConfirmingLeave(false)}
+        aria-labelledby="counsel-leave-title"
+      >
+        <h2 id="counsel-leave-title">더 궁금한 점은 더이상 없느냐?</h2>
+        <div className="actions">
+          <button
+            className="button"
+            onClick={() => {
+              leaveDialog.current?.close();
+              turn(nextPage.current, true);
+            }}
+          >
+            예
+          </button>
+          <button
+            className="button secondary"
+            onClick={() => {
+              leaveDialog.current?.close();
+              document.getElementById("counsel-question")?.focus();
+            }}
+          >
+            아니오
+          </button>
+        </div>
+      </dialog>
     </>
   );
 }

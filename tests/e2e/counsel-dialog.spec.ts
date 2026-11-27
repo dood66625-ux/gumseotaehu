@@ -75,9 +75,21 @@ test("minimal counsel form keeps three durable replies in a tabbed dialog withou
     .getByRole("button", { name: "감사합니다.", exact: true })
     .click();
   await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
+  const leave = page.getByRole("dialog", {
+    name: "더 궁금한 점은 더이상 없느냐?",
+  });
+  await expect(leave).toBeVisible();
+  await leave.getByRole("button", { name: "아니오", exact: true }).click();
+  await expect(leave).not.toBeVisible();
+  await expect(input).toBeVisible();
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
+  await leave.getByRole("button", { name: "예", exact: true }).click();
   finish = true;
   await page.waitForTimeout(3300);
   await expect(dialog).not.toBeVisible();
+  await expect(page.locator(".report-counsel-transcript")).toContainText(
+    "첫번째 답문이니라.",
+  );
   await page
     .getByRole("button", { name: "태후에게 자문하기", exact: true })
     .click();
@@ -123,6 +135,13 @@ test("minimal counsel form keeps three durable replies in a tabbed dialog withou
     .getByRole("button", { name: "감사합니다.", exact: true })
     .click();
   await expect(page.locator(".report-chapter:visible")).toHaveCount(9);
+  const transcript = page.locator(".report-counsel-transcript");
+  for (const reply of [
+    "첫번째 답문이니라.",
+    "두번째 답문이니라.",
+    "세번째 답문이니라.",
+  ])
+    await expect(transcript).toContainText(reply);
   await page
     .getByRole("button", { name: "태후에게 자문하기", exact: true })
     .click();
