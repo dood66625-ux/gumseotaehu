@@ -1,7 +1,7 @@
 {
-  "version": 2,
-  "updatedKst": "2026-11-26",
-  "basis": "정의된 소단원 완료 조건 수: 완료 100%, 미완료·진행 중 0%. 중단원·대단원·총 진행률은 하위 소단원 완료/전체 ×100(소수 첫째 자리). 테스트 개수·시간·개발비 비중이 아니며 출시 승인과 별개. 범위 변경 시 개수를 재산정한다. 2026-11-19 v2: 운영 백엔드와 구분해 운영 카드창/복귀 화면 개발 조건 1개를 추가했다(55→56개).",
+  "version": 3,
+  "updatedKst": "2026-11-27",
+  "basis": "정의된 소단원 완료 조건 수: 완료 100%, 미완료·진행 중 0%. 중단원·대단원·총 진행률은 하위 소단원 완료/전체 ×100(소수 첫째 자리). 테스트 개수·시간·개발비 비중이 아니며 출시 승인과 별개. 범위 변경 시 개수를 재산정한다. 2026-11-19 v2: 운영 백엔드와 구분해 운영 카드창/복귀 화면 개발 조건 1개를 추가했다(55→56개). 2026-11-27 v3: 현 도메인 카드 승인/열람은 사용자가 승인한 실제 거래 확인으로 TEST 방식을 대체한다. 기존 운영 활성화 승인을 완료에 반영하고 환불/메일/최종 인수는 별도로 유지한다(전체56개 유지).",
   "previousEstimate": "약 73%는 2026-11-17 당시 추정치이며 아래 체크리스트 비율과 직접 비교하지 않는다.",
   "excludedFutureScope": [
     "유료 광고/GA4/CAPI 운영",
@@ -73,9 +73,10 @@
             },
             {
               "title": "실 iOS/Android·인앱·결제 앱 복귀·PDF 저장 점검",
-              "status": "pending",
+              "status": "in_progress",
               "remainingKind": "verification",
-              "id": "1.2.4"
+              "id": "1.2.4",
+              "evidence": "docs/launch-readiness-20261127.md"
             }
           ],
           "id": "1.2"
@@ -109,9 +110,10 @@
             },
             {
               "title": "최종 한국어 AI 내용·어조·사실성 검수",
-              "status": "pending",
+              "status": "in_progress",
               "remainingKind": "verification",
-              "id": "2.1.4"
+              "id": "2.1.4",
+              "evidence": "docs/launch-readiness-20261127.md"
             }
           ],
           "id": "2.1"
@@ -180,10 +182,10 @@
               "id": "3.1.3"
             },
             {
-              "title": "새 도메인 TEST 승인 전체 흐름 확인",
-              "status": "pending",
-              "remainingKind": "verification",
-              "id": "3.1.4"
+              "title": "현 도메인 카드 승인·운명서 열람 확인(TEST 또는 승인된 실거래)",
+              "status": "done",
+              "id": "3.1.4",
+              "evidence": "docs/launch-readiness-20261127.md"
             },
             {
               "title": "실운영 승인/조회·검증 웹훅 연결",
@@ -193,9 +195,10 @@
             },
             {
               "title": "퀵오픈 이용 상태·계약/정산 조건 확인(카드사 심사는 병행)",
-              "status": "pending",
+              "status": "in_progress",
               "remainingKind": "verification",
-              "id": "3.1.6"
+              "id": "3.1.6",
+              "evidence": "docs/launch-readiness-20261127.md"
             },
             {
               "id": "3.1.7",
@@ -337,9 +340,10 @@
             },
             {
               "title": "실제 호스트 복구 훈련·상시 외부 장애 알림",
-              "status": "pending",
+              "status": "in_progress",
               "remainingKind": "verification",
-              "id": "5.1.4"
+              "id": "5.1.4",
+              "evidence": "docs/launch-readiness-20261127.md"
             }
           ],
           "id": "5.1"
@@ -384,13 +388,13 @@
           "title": "운영자·외부 접근",
           "tasks": [
             {
-              "title": "역할 검사·최근 MFA·재사용 방지 구현",
+              "title": "역할 검사·최근 재인증·재사용 방지 구현",
               "status": "done",
               "evidence": "PROJECT_STATUS.md",
               "id": "5.3.1"
             },
             {
-              "title": "출시 운영자 비밀/MFA 등록·복구·회수 절차 구현",
+              "title": "출시 운영자 비밀 등록·복구·회수 절차 구현",
               "status": "done",
               "id": "5.3.2",
               "evidence": "docs/operator-identity.md"
@@ -446,15 +450,16 @@
           "tasks": [
             {
               "title": "운영 호스트 성능·구매부터 열람까지 최종 인수",
-              "status": "pending",
+              "status": "in_progress",
               "remainingKind": "verification",
-              "id": "6.2.1"
+              "id": "6.2.1",
+              "evidence": "docs/launch-readiness-20261127.md"
             },
             {
-              "title": "판매 범위·모델/예산·실결제/실메일·출시 승인",
-              "status": "pending",
-              "remainingKind": "decision",
-              "id": "6.2.2"
+              "title": "판매 범위·모델/예산·실결제/실메일 활성화 승인",
+              "status": "done",
+              "id": "6.2.2",
+              "evidence": "docs/launch-readiness-20261127.md"
             }
           ],
           "id": "6.2"

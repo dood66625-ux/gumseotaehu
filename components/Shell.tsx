@@ -65,7 +65,6 @@ export default function Shell({
           <a href="/legal/privacy">개인정보 처리방침</a>
           <a href="/legal/refund">환불 정책</a>
           <a href="/legal/content">콘텐츠 안내</a>
-          <a href="/admin">관리자</a>
         </div>
         <details className="footer-business">
           <summary>사업자 정보</summary>

@@ -247,9 +247,9 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   expect(after.report).toEqual(before.report);
   await page.goto("/help");
   await expect(page).toHaveURL(/\/legal\/refund$/);
-  await expect(
-    page.getByRole("link", { name: "이메일로 접수하기", exact: true }),
-  ).toHaveAttribute("href", /^mailto:/);
+  await expect(page.locator(".support-email").first()).toHaveText(
+    "mjreview3@gmail.com",
+  );
   await page.goto("/admin");
   await page.getByLabel("운영자 비밀번호").fill(process.env.ADMIN_PASSWORD!);
   await page.getByLabel("1회용 인증코드").fill(await freshAdminCode());

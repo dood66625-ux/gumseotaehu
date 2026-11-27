@@ -5024,3 +5024,5 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 .counsel-leave-dialog .button {width:100%;justify-content:center;}
 @media(max-width:600px) {.report-nav a {flex-basis:calc((100% - 10px)/2);font-size:12px;}.report-bottom-actions {gap:10px;}.report-bottom-actions .button {font-size:13px;padding:12px 8px;}}
 @media print {.report-bottom-actions,.counsel-leave-dialog {display:none!important;}}
+
+.support-email {user-select:text;-webkit-user-select:text;overflow-wrap:anywhere;}

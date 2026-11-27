@@ -5,12 +5,11 @@ test("legacy help links open the email refund policy without requiring login", a
 }) => {
   await page.goto("/help");
   await expect(page).toHaveURL(/\/legal\/refund$/);
-  await expect(
-    page.getByRole("link", { name: "이메일로 접수하기", exact: true }),
-  ).toHaveAttribute(
-    "href",
-    new RegExp("^mailto:" + business.email.replaceAll(".", "\\.")),
+  await expect(page.locator(".support-email").first()).toHaveText(
+    business.email,
   );
+  await expect(page.locator(".page.legal a[href^=mailto]")).toHaveCount(0);
+  await expect(page.locator('.footer-links a[href="/admin"]')).toHaveCount(0);
   await expect(page.getByLabel("문의 내용")).toHaveCount(0);
   await expect(
     page
@@ -27,13 +26,11 @@ test("email intake remains available when the former support API is unavailable"
     return r.fulfill({ status: 503, json: { error: "offline" } });
   });
   await page.goto("/legal/refund");
-  await expect(
-    page.getByRole("link", { name: "이메일로 접수하기", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".support-email").first()).toBeVisible();
   expect(reads).toBe(0);
   await expect(page.getByText("3영업일", { exact: false })).toBeVisible();
 });
-test("email template includes order lookup fields and a copyable address without submitting data", async ({
+test("email instructions include order lookup fields and a copyable address without submitting data", async ({
   page,
 }) => {
   let submissions = 0;
@@ -42,14 +39,14 @@ test("email template includes order lookup fields and a copyable address without
       submissions++;
   });
   await page.goto("/legal/refund");
-  const href = await page
-    .getByRole("link", { name: "이메일로 접수하기", exact: true })
-    .getAttribute("href");
-  expect(decodeURIComponent(href!)).toContain("구매 이메일:");
-  expect(decodeURIComponent(href!)).toContain("주문번호 또는 결제일:");
-  expect(decodeURIComponent(href!)).toContain("문의·환불 사유:");
+  await expect(page.locator(".support-email").first()).toHaveText(
+    business.email,
+  );
   await expect(
-    page.getByText("메일 앱이 열리지 않으면", { exact: false }),
-  ).toContainText(business.email);
+    page.getByText("구매 이메일, 주문번호 또는 결제일", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "이메일로 접수하기", exact: true }),
+  ).toHaveCount(0);
   expect(submissions).toBe(0);
 });

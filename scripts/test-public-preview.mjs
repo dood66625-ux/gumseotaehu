@@ -150,9 +150,7 @@ try {
   await go("recover");
   await page.getByRole("link", { name: "같은 운명서 다시 읽기" }).waitFor();
   await go("help");
-  await page
-    .getByRole("link", { name: "이메일로 접수하기", exact: true })
-    .waitFor();
+  await page.locator(".support-email").first().waitFor();
   if (await page.getByRole("button", { name: "문의 접수하기" }).count())
     throw Error("REMOVED_WEB_INTAKE_REMAINS");
   await go("recover");
