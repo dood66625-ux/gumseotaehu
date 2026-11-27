@@ -81,8 +81,6 @@ export default function Shell({
             <br />
             사업장 주소: {business.address}
             <br />
-            문의 전화: <a href="tel:01044782275">{business.phone}</a>
-            <br />
             연락 이메일:{" "}
             <a href={`mailto:${business.email}`}>{business.email}</a>
           </p>

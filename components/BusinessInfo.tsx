@@ -37,18 +37,12 @@ export default function BusinessInfo() {
             <a href={`mailto:${business.email}`}>{business.email}</a>
           </dd>
         </div>
-        <div>
-          <dt>문의 전화</dt>
-          <dd>
-            <a href="tel:01044782275">{business.phone}</a>
-          </dd>
-        </div>
       </dl>
       <section className="card">
         <h2>출시 전 추가 고지</h2>
         <p className="hint">
-          통신판매업 신고번호와 문의 전화는 운영자가 제공한 값입니다. 이메일·웹
-          요청 경로도 함께 안내합니다. 연락처의 필수 고지 요건과 개인정보 처리
+          통신판매업 신고번호는 운영자가 제공한 값입니다. 고객 문의는 이메일로
+          접수합니다. 연락처의 필수 고지 요건과 개인정보 처리
           조건 등은 출시 전 추가 확인합니다. 실제 판매는 필요한 고지와 운영
           검토가 끝난 뒤 시작합니다.
         </p>
