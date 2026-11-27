@@ -4884,3 +4884,4 @@ body:has(.visitor-admin) > .header,body:has(.visitor-admin) .test-banner,body:ha
 .screen-flow-copy .report-type.compact .type-title { font-size:15px;margin:5px 0 8px; }
 .screen-flow-copy .report-type.compact .button { margin:7px 0 0;min-height:44px;padding:8px 12px;font-size:12px; }
 .report-type button { border-radius:999px; }
+.report-type.compact:has([role="status"]) .type-share-copy { display:block; }

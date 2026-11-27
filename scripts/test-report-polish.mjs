@@ -122,6 +122,33 @@ try {
       await page.locator(".taehou-counsel").screenshot({
         path: `var/report-polish-checks/counsel-${kind}-${width}.png`,
       });
+      await page.goto(
+        "http://127.0.0.1:3200/?screen=preview&id=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      );
+      await page.locator(".report-type.compact").waitFor();
+      await page.evaluate(() => {
+        Object.defineProperty(navigator, "share", {
+          value: undefined,
+          configurable: true,
+        });
+        Object.defineProperty(navigator, "clipboard", {
+          value: {
+            writeText: async () => {
+              throw Error("permission denied");
+            },
+          },
+          configurable: true,
+        });
+      });
+      await page
+        .getByRole("button", { name: "내 타입 친구에게 보여주기" })
+        .click();
+      if (
+        !(await page
+          .locator(".report-type.compact .type-share-copy")
+          .isVisible())
+      )
+        throw Error("MANUAL_TYPE_SHARE_FALLBACK_HIDDEN");
       if (errors.length) throw Error("BROWSER_ERROR_" + errors.join("|"));
       console.log(
         JSON.stringify({
