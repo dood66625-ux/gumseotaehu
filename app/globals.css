@@ -4484,16 +4484,18 @@ body:has(.birth-wizard) .page {
   position: relative;
   width: 100%;
   height: 42svh;
+  container-type: size;
   overflow: hidden;
   background: #100e0c;
 }
 .birth-portrait .empress-expression {
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: min(100vw, 560px);
-  height: min(100vw, 560px);
-  transform: translate(-50%, -42%);
+  top: 0;
+  width: min(100vw, 560px, 125cqh);
+  height: min(100vw, 560px, 125cqh);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  transform: translateX(-50%);
   border: 0;
   border-radius: 0;
   box-shadow: none;

@@ -1,6 +1,6 @@
 /** Synthetic static UI only: no customer data, API credentials, or generation. */
 import { spawn } from "node:child_process";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 import { mkdirSync } from "node:fs";
 const server = spawn(process.execPath, ["scripts/serve-public-preview.mjs"], {
   env: {
@@ -17,7 +17,7 @@ try {
     server.once("error", reject);
     server.once("exit", (code) => reject(Error("PREVIEW_EXIT_" + code)));
   });
-  browser = await chromium.launch();
+  browser = await (process.env.BROWSER_ENGINE === "webkit" ? webkit : chromium).launch();
   const page = await browser.newPage();
   mkdirSync("var/landing-motion", { recursive: true });
   for (const [width, height] of [
@@ -154,6 +154,12 @@ try {
               .locator(".birth-step-actions")
               .evaluate((n) => n.getBoundingClientRect().bottom)),
         );
+      const portraitFits = await page.locator(".birth-portrait").evaluate((frame) => {
+        const f = frame.getBoundingClientRect();
+        const p = frame.querySelector(".empress-expression").getBoundingClientRect();
+        return p.top >= f.top - 1 && p.width <= f.height * 1.25 + 1;
+      });
+      if (!portraitFits) throw Error("BIRTH_FACE_CROPPED_" + width + "_" + step);
       const contained = await page
         .locator(".birth-wizard fieldset:visible")
         .evaluate((frame) => {
