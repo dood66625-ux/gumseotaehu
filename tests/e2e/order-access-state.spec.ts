@@ -86,7 +86,7 @@ test("recovery lists historical orders without giving read or email-change contr
         { ...base, id: "refund", payment: "refunded" },
         { ...base, id: "deleted", deleted: true },
         { ...base, id: "expired", expires: 1 },
-        { ...base, id: "valid" },
+        { ...base, id: "valid", livePayment: true },
       ],
     }),
   );
@@ -101,6 +101,8 @@ test("recovery lists historical orders without giving read or email-change contr
       cards.nth(i).getByText("구매 이메일 변경", { exact: true }),
     ).toHaveCount(0);
   }
+  await expect(cards.nth(3)).not.toContainText("(모의)");
+  await expect(cards.nth(0)).toContainText("(모의)");
   await expect(
     cards.nth(3).getByRole("link", { name: "같은 운명서 다시 읽기" }),
   ).toBeVisible();

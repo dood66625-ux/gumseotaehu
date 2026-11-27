@@ -76,7 +76,8 @@ export default function Recover() {
                   {new Date(o.created).toLocaleDateString("ko-KR", {
                     timeZone: "Asia/Seoul",
                   })}{" "}
-                  · {o.amount.toLocaleString()}원 (모의)
+                  · {o.amount.toLocaleString()}원
+                  {o.livePayment ? "" : " (모의)"}
                   <br />
                   {o.expires
                     ? (view.terminal ? "기록된 열람기한 " : "열람기한 ") +

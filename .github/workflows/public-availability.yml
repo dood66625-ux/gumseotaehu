@@ -1,6 +1,6 @@
 name: Public availability check
 run-name: ${{ github.event_name == 'workflow_dispatch' && inputs.test_alert && 'ALERT DELIVERY TEST - no service outage' || 'Public availability check' }}
-# Fixed public probes only. GitHub notification delivery depends on the owner account settings.
+# Commercial public paths and anonymous protection checks only. GitHub notification delivery depends on the owner account settings.
 on:
   workflow_dispatch:
     inputs:
