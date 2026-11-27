@@ -86,9 +86,6 @@ export default function ReportReader({
           <Link className="button secondary" href="/recover">
             이메일로 다시 찾기
           </Link>
-          <Link className="button secondary" href="/help">
-            문의·환불 신청
-          </Link>
         </div>
       </>
     );

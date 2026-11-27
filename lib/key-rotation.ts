@@ -9,6 +9,8 @@ const fields: Record<string, string[]> = {
   orders: ["email_enc", "consent_enc"],
   challenges: ["email_enc"],
   reports: ["payload"],
+  ai_generation_evidence: ["response_enc"],
+  taehou_counsel: ["question_enc", "answer_enc", "response_enc"],
   outbox: ["payload"],
   mail_queue: ["recipient_enc", "message_enc"],
   ticket_contacts: ["email_enc"],
@@ -70,6 +72,7 @@ export async function rotateDataKey(
             .all();
           for (const row of rows) {
             const values = columns.map((column) => {
+              if (row[column] === null) return null;
               encryptedFields++;
               return encryptJson(
                 decryptJson(row[column] as string, oldKey),

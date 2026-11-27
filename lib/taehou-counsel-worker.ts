@@ -23,6 +23,10 @@ export async function runCounselCycle(options: { fetch?: typeof fetch } = {}) {
     "UPDATE taehou_counsel SET state='failed',error='AI_COUNSEL_INTERRUPTED' WHERE state='working' AND started<?",
     Date.now() - 90000,
   );
+  run(
+    "UPDATE taehou_counsel SET state='failed',error='AI_COUNSEL_ORDER_CHANGED' WHERE state='queued' AND EXISTS(SELECT 1 FROM orders o WHERE o.id=taehou_counsel.order_id AND (o.version!=taehou_counsel.report_version OR o.payment_status!='paid' OR o.content_deleted=1 OR o.expires<=?))",
+    Date.now(),
+  );
   const q = one(
     "SELECT c.*,r.payload FROM taehou_counsel c JOIN orders o ON o.id=c.order_id JOIN reports r ON r.order_id=o.id AND r.version=o.version WHERE c.state='queued' AND o.payment_status='paid' AND o.fulfillment='ready' AND o.content_deleted=0 AND o.expires>? AND c.report_version=o.version ORDER BY c.created LIMIT 1",
     Date.now(),

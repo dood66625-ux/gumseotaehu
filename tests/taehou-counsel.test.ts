@@ -202,3 +202,36 @@ it("refuses a question without consuming its slot when the budget is full", asyn
   expect(await runCounselCycle({ fetch })).toBe(false);
   expect(fetch).not.toHaveBeenCalled();
 });
+it("rotates all counsel ciphertext and nullable response evidence without changing the source", async () => {
+  const { rotateDataKey } = await import("../lib/key-rotation");
+  const { decryptJson } = await import("../lib/crypto");
+  const { DatabaseSync } = await import("node:sqlite");
+  queueCounsel(s, oid, "나의 장점은 무엇일까?", randomUUID());
+  await runCounselCycle({ fetch: success() });
+  const before = one("SELECT question_enc FROM taehou_counsel")!.question_enc;
+  const newKey = Buffer.from("f".repeat(64), "hex"),
+    target = join(dir, "rotated.sqlite");
+  await rotateDataKey(config().db, target, config().key, newKey, []);
+  const rotated = new DatabaseSync(target, { readOnly: true });
+  try {
+    const q = rotated.prepare("SELECT * FROM taehou_counsel").get()!;
+    expect(decryptJson(q.question_enc as string, newKey)).toBe(
+      "나의 장점은 무엇일까?",
+    );
+    expect(decryptJson(q.answer_enc as string, newKey)).toBe(answer);
+    expect(q.response_enc).toBeNull();
+  } finally {
+    rotated.close();
+  }
+  expect(one("SELECT question_enc FROM taehou_counsel")!.question_enc).toBe(
+    before,
+  );
+});
+it("does not leave a queued question pending forever after a birth correction", async () => {
+  queueCounsel(s, oid, "나의 장점은 무엇일까?", randomUUID());
+  run("UPDATE orders SET version=version+1 WHERE id=?", oid);
+  const fetch = success();
+  expect(await runCounselCycle({ fetch })).toBe(false);
+  expect(one("SELECT state FROM taehou_counsel")?.state).toBe("failed");
+  expect(fetch).not.toHaveBeenCalled();
+});
