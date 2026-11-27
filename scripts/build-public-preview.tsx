@@ -216,6 +216,8 @@ for (const file of [
   "empress-expressions-2.png",
   "empress-expressions-2.webp",
   "imperial-serif-v2.woff2",
+  "korean-reading-regular.woff2",
+  "korean-reading-bold.woff2",
   "intro.js",
   "usage.js",
 ])

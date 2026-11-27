@@ -43,6 +43,20 @@ export default function RefundPolicy() {
         종료·PDF 분실은 구매 후 1년간 이메일 인증으로 재열람하며 추가 결제를
         요구하지 않습니다.
       </p>
+      <h2>이메일로 문의·환불 접수</h2>
+      <p>
+        구매 이메일, 주문번호(모르면 결제일), 문의·환불 사유를 적어 보내주세요.
+      </p>
+      <a
+        className="button"
+        href={`mailto:${business.email}?subject=${encodeURIComponent("[금서태후] 문의·환불 접수")}&body=${encodeURIComponent("구매 이메일: \n주문번호 또는 결제일: \n문의·환불 사유: \n")}`}
+      >
+        이메일로 접수하기
+      </a>
+      <p className="fine">
+        메일 앱이 열리지 않으면 {business.email} 주소를 복사해 사용하시는
+        메일에서 보내주세요.
+      </p>
       <h2>신청 방법과 처리 기한</h2>
       <p>
         구매 이메일, 주문번호 또는 결제일, 취소·환불 사유를{" "}
@@ -51,8 +65,7 @@ export default function RefundPolicy() {
         >
           {business.email}
         </a>
-        로 보내거나 <a href="/help">구매·환불 요청</a>에서 접수해주세요.
-        카드번호·비밀번호는 보내지 마세요.
+        로 보내주세요. 카드번호·비밀번호는 보내지 마세요.
       </p>
       <p>
         본인·주문 확인 후 처리 결과를 안내합니다. 적법한 디지털콘텐츠 청약철회는

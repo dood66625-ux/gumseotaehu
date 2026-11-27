@@ -1,3 +1,4 @@
+import { reportType } from "./report-type";
 import { readingParagraphs } from "./reading-paragraphs";
 import type { CounselEntry } from "./taehou-counsel";
 import { taehouNarration } from "./taehou-narration";
@@ -129,6 +130,16 @@ export async function reportPdf(
         610,
         { align: "center", width: W - 116, lineGap: 6 },
       );
+    const type = reportType(data.report.chart);
+    doc
+      .font("emphasis")
+      .fontSize(14)
+      .fillColor(ink)
+      .text(`그대의 대표 타입 · ${type.name}`, 58, 575, {
+        align: "center",
+        width: W - 116,
+      });
+    doc.font("book");
     doc.addPage();
     doc.fontSize(9).fillColor(gold).text("THE EMPRESS TO YOU");
     doc

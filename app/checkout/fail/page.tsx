@@ -21,9 +21,6 @@ export default async function Page({
         <Link className="button" href={ownedLink}>
           주문 상태 확인
         </Link>
-        <Link className="button secondary" href="/help">
-          고객센터
-        </Link>
       </div>
     </div>
   );

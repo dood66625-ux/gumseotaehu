@@ -37,7 +37,6 @@ export default function Shell({
           <a href="/recover" className="recover-link">
             <span aria-hidden="true">書</span> 내 운명서 찾기
           </a>
-          <a href="/help">이용 안내</a>
         </nav>
       </header>
       <main id="main">{children}</main>
@@ -64,9 +63,8 @@ export default function Shell({
         <div className="footer-links">
           <a href="/legal/terms">이용약관</a>
           <a href="/legal/privacy">개인정보 처리방침</a>
-          <a href="/legal/refund">환불 및 취소 규정</a>
+          <a href="/legal/refund">환불 정책</a>
           <a href="/legal/content">콘텐츠 안내</a>
-          <a href="/help">구매·환불 요청</a>
           <a href="/admin">관리자</a>
         </div>
         <details className="footer-business">

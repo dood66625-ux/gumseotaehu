@@ -23,3 +23,9 @@ copyFileSync(
   "scripts/private-reader/index.html",
   "public/private-reader/index.html",
 );
+
+for (const weight of ["regular", "bold"])
+  copyFileSync(
+    `public/korean-reading-${weight}.woff2`,
+    `public/private-reader/korean-reading-${weight}.woff2`,
+  );

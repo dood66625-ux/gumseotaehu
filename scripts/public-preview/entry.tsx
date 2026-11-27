@@ -247,14 +247,7 @@ if (screen !== "home") {
         <BusinessInfo />
       </>
     ) : screen === "help" ? (
-      <>
-        <h1>구매·열람 이용 안내</h1>
-        <p className="notice">
-          문의 접수도 브라우저 안의 가상 체험입니다. 실제 상담은 접수되지
-          않습니다.
-        </p>
-        <Help />
-      </>
+      <RefundPolicy />
     ) : (
       <>
         <h1>{screen === "admin" ? "관리자 접근 제한" : "정책·서비스 안내"}</h1>

@@ -54,6 +54,8 @@ const assets: Record<string, { type: string; bytes: Buffer }> = {};
 for (const [file, type] of [
   ["reader.js", "text/javascript; charset=utf-8"],
   ["style.css", "text/css; charset=utf-8"],
+  ["korean-reading-regular.woff2", "font/woff2"],
+  ["korean-reading-bold.woff2", "font/woff2"],
   ["geumseo-logo-v1.webp", "image/webp"],
 ])
   assets["/private-reading/" + file] = {

@@ -1,9 +1,5 @@
-@font-face {
-  font-family: ImperialSerif;
-  src: url("/imperial-serif-v2.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
+@font-face { font-family: KoreanReading; src: url("/korean-reading-regular.woff2") format("woff2"); font-weight: 100 500; font-display: swap; }
+@font-face { font-family: KoreanReading; src: url("/korean-reading-bold.woff2") format("woff2"); font-weight: 501 900; font-display: swap; }
 :root {
   --bg: #100e0c;
   --surface: #191511;
@@ -15,9 +11,8 @@
   --muted: #b8ac98;
   --red: #703b3f;
   --paper: #e9dfcf;
-  --serif: ImperialSerif, "Noto Serif CJK KR", "Nanum Myeongjo", Batang, serif;
-  --sans:
-    "Apple SD Gothic Neo", "Noto Sans CJK KR", "Malgun Gothic", sans-serif;
+  --serif: KoreanReading, "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --sans: KoreanReading, "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -4874,3 +4869,18 @@ body:has(.visitor-admin) > .header,body:has(.visitor-admin) .test-banner,body:ha
 .counsel-question { font-weight: 700; }
 .counsel-meta { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-block: 12px; }
 @media print { .taehou-counsel form { display: none; } }
+.report-type h2 { font-size:clamp(30px,5vw,48px); margin:6px 0; letter-spacing:-.04em; }
+.report-type .type-title { font-size:18px; font-weight:700; margin:8px 0 12px; }
+.type-tags { letter-spacing:.03em; font-weight:700; }
+.type-share-copy { font-size:13px; line-height:1.7; opacity:.88; user-select:text; }
+.report-type.compact { text-align:left; }
+.report-type.compact h2 { font-size:clamp(26px,5vw,38px); }
+.report-type.compact .type-share-copy,.report-type.compact .hint { display:none; }
+.report-type.compact .button { margin-top:8px; font-size:13px; padding:9px 15px; }
+.screen-flow-copy .report-type.compact { padding:0; margin:0; }
+.screen-flow-copy .report-type.compact .eyebrow { display:none; }
+.screen-flow-copy .report-type.compact h2 { font-size:30px;line-height:1.25;margin:0 0 5px; }
+.screen-flow-copy .report-type.compact p { font-size:13px;line-height:1.6;margin:5px 0; }
+.screen-flow-copy .report-type.compact .type-title { font-size:15px;margin:5px 0 8px; }
+.screen-flow-copy .report-type.compact .button { margin:7px 0 0;min-height:44px;padding:8px 12px;font-size:12px; }
+.report-type button { border-radius:999px; }

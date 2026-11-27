@@ -1,4 +1,5 @@
 "use client";
+import ReportType from "./ReportType";
 import { taehouNarration } from "../lib/taehou-narration";
 import ReadableText from "./ReadableText";
 import TaehouCounsel from "./TaehouCounsel";
@@ -152,6 +153,7 @@ export default function ReportReader({
           출생
         </p>
       </div>
+      <ReportType chart={d.report.chart} />
       <ReportFocus key={id} />
       <nav className="report-nav" aria-label="운명서 목차">
         {d.report.chapters.map((c: any, i: number) => (

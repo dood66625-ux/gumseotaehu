@@ -1,3 +1,4 @@
+import { reportType } from "../../lib/report-type";
 import { readingParagraphs } from "../../lib/reading-paragraphs";
 import { taehouNarration } from "../../lib/taehou-narration";
 import { reportFocusTopics } from "../../lib/report-focus";
@@ -370,6 +371,46 @@ function draw(report: any) {
     locale === "zh-TW"
       ? report.intro.replace(/\bfacts\b/g, "命盤依據")
       : taehouNarration(report.intro);
+  let typeCard = document.getElementById("representative-type");
+  if (!typeCard) {
+    typeCard = el("section", undefined, "report-type");
+    typeCard.id = "representative-type";
+    $("intro").before(typeCard);
+  }
+  const type = reportType(report.chart);
+  const share = el("button", "내 타입 친구에게 보여주기") as HTMLButtonElement;
+  const shareStatus = el("p");
+  shareStatus.setAttribute("role", "status");
+  share.type = "button";
+  share.addEventListener("click", async () => {
+    try {
+      if (navigator.share)
+        await navigator.share({
+          title: `금서태후 · ${type.name}`,
+          text: type.shareText,
+          url: type.shareUrl,
+        });
+      else {
+        await navigator.clipboard.writeText(
+          type.shareText + "\n" + type.shareUrl,
+        );
+        shareStatus.textContent = "타입 소개를 복사했느니라.";
+      }
+    } catch (e) {
+      if ((e as Error).name !== "AbortError")
+        shareStatus.textContent = "타입 소개 문장을 길게 눌러 복사해 보거라.";
+    }
+  });
+  typeCard.replaceChildren(
+    el("p", "그대의 대표 타입", "eyebrow"),
+    el("h2", type.name),
+    el("p", type.title),
+    el("p", type.lead),
+    el("p", type.tags.map((t) => "#" + t).join(" ")),
+    share,
+    el("p", type.shareText, "figure-note"),
+    shareStatus,
+  );
   $("pillars").replaceChildren();
   report.chart.pillars.forEach((p: string | null, i: number) => {
     const card = el("div", undefined, "pillar");

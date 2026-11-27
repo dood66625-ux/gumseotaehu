@@ -98,9 +98,6 @@ export default function Recover() {
                       주문·복구 상태 보기
                     </Link>
                   )}
-                  <Link href="/help" className="button secondary">
-                    문의·환불
-                  </Link>
                 </div>
                 {view.canChangeEmail && <EmailChange orderId={o.id} />}
               </article>

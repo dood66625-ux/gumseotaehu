@@ -11,5 +11,5 @@ export const business = {
   email: "mjreview3@gmail.com",
   commerceRegistration: "2022-고양일산서-0241",
   hostingProvider: "주식회사 스마일서브 (iwinv)",
-  supportMode: "web-request",
+  supportMode: "email",
 } as const;

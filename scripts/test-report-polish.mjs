@@ -36,6 +36,14 @@ try {
           }),
         ),
       );
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, "share", {
+          value: async (value) => {
+            window.__sharedType = value;
+          },
+          configurable: true,
+        });
+      });
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.goto(
@@ -45,6 +53,35 @@ try {
       await page
         .getByRole("heading", { name: "태후에게 자문을 구해보세요 (3/3)" })
         .waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      const loadedFonts = await page.evaluate(async () => {
+        const sample = "잘못을 묻지 말고 삶의 힘을 길러 보거라. 값 닭 밟 굵";
+        return {
+          regular: (await document.fonts.load("400 16px KoreanReading", sample))
+            .length,
+          bold: (await document.fonts.load("700 16px KoreanReading", sample))
+            .length,
+          family: getComputedStyle(document.body).fontFamily,
+        };
+      });
+      if (
+        !loadedFonts.regular ||
+        !loadedFonts.bold ||
+        !loadedFonts.family.startsWith("KoreanReading")
+      )
+        throw Error("KOREAN_FONT_NOT_LOADED");
+      if (await page.locator('a[href="/help"]').count())
+        throw Error("REMOVED_CONTACT_LINK_REMAINS");
+      await page
+        .getByRole("button", { name: "내 타입 친구에게 보여주기" })
+        .click();
+      const shared = await page.evaluate(() => window.__sharedType);
+      if (
+        !shared?.text?.includes("형") ||
+        shared.url !== "https://gumseo.kr/?from=type-share" ||
+        /생년|reading=|report\//.test(JSON.stringify(shared))
+      )
+        throw Error("TYPE_SHARE_NOT_PRIVATE");
       const text = await page.locator(".report-reader").innerText();
       if (
         /카카오톡 안에서 PDF|오늘은 어떤 한 걸음|낯선 말이 있었느냐|풀이 근거 살펴보기|계산 기준과 해석의 범위|문의·정정·환불/.test(
@@ -82,11 +119,9 @@ try {
       if ((await input.inputValue()).length !== 50)
         throw Error("QUESTION_LENGTH_NOT_LIMITED");
       await input.fill("내 장점을 어떻게 살리면 좋을까요?");
-      await page
-        .locator(".taehou-counsel")
-        .screenshot({
-          path: `var/report-polish-checks/counsel-${kind}-${width}.png`,
-        });
+      await page.locator(".taehou-counsel").screenshot({
+        path: `var/report-polish-checks/counsel-${kind}-${width}.png`,
+      });
       if (errors.length) throw Error("BROWSER_ERROR_" + errors.join("|"));
       console.log(
         JSON.stringify({

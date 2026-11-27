@@ -78,6 +78,14 @@ const server = createServer(async (req, res) => {
       "public/private-reader/reader.js",
       "text/javascript",
     ],
+    "/private-reading/korean-reading-regular.woff2": [
+      "public/private-reader/korean-reading-regular.woff2",
+      "font/woff2",
+    ],
+    "/private-reading/korean-reading-bold.woff2": [
+      "public/private-reader/korean-reading-bold.woff2",
+      "font/woff2",
+    ],
     "/private-reading/style.css": [
       "public/private-reader/style.css",
       "text/css",
@@ -107,6 +115,30 @@ try {
     });
     await page.goto("http://127.0.0.1:3460/private-reading#reading=" + ids[1]);
     await page.getByText(report(1).intro, { exact: true }).waitFor();
+    {
+      const fonts = await page.evaluate(async () => ({
+        regular: (
+          await document.fonts.load(
+            "400 16px KoreanReading",
+            "받침 잘못을 삶 값 닭",
+          )
+        ).length,
+        bold: (
+          await document.fonts.load(
+            "700 16px KoreanReading",
+            "받침 잘못을 삶 값 닭",
+          )
+        ).length,
+      }));
+      if (!fonts.regular || !fonts.bold)
+        throw Error("PRIVATE_KOREAN_FONT_NOT_LOADED");
+    }
+    if (
+      !(await page.locator("#representative-type h2").textContent()).endsWith(
+        "형",
+      )
+    )
+      throw Error("PRIVATE_TYPE_MISSING");
     if (
       !(await page
         .locator("header .brand-logo")
@@ -165,6 +197,30 @@ try {
     await page.locator("#toc a").nth(3).click();
     await page.reload();
     await page.getByText(report(1).intro, { exact: true }).waitFor();
+    {
+      const fonts = await page.evaluate(async () => ({
+        regular: (
+          await document.fonts.load(
+            "400 16px KoreanReading",
+            "받침 잘못을 삶 값 닭",
+          )
+        ).length,
+        bold: (
+          await document.fonts.load(
+            "700 16px KoreanReading",
+            "받침 잘못을 삶 값 닭",
+          )
+        ).length,
+      }));
+      if (!fonts.regular || !fonts.bold)
+        throw Error("PRIVATE_KOREAN_FONT_NOT_LOADED");
+    }
+    if (
+      !(await page.locator("#representative-type h2").textContent()).endsWith(
+        "형",
+      )
+    )
+      throw Error("PRIVATE_TYPE_MISSING");
     if ((await page.locator("#book-position").textContent()) !== "4 / 19")
       throw Error("BOOK_PAGE_NOT_REMEMBERED");
     if (
@@ -380,6 +436,30 @@ try {
     await waiting;
     await page.locator("#saved-list button").nth(1).click();
     await page.getByText(report(1).intro, { exact: true }).waitFor();
+    {
+      const fonts = await page.evaluate(async () => ({
+        regular: (
+          await document.fonts.load(
+            "400 16px KoreanReading",
+            "받침 잘못을 삶 값 닭",
+          )
+        ).length,
+        bold: (
+          await document.fonts.load(
+            "700 16px KoreanReading",
+            "받침 잘못을 삶 값 닭",
+          )
+        ).length,
+      }));
+      if (!fonts.regular || !fonts.bold)
+        throw Error("PRIVATE_KOREAN_FONT_NOT_LOADED");
+    }
+    if (
+      !(await page.locator("#representative-type h2").textContent()).endsWith(
+        "형",
+      )
+    )
+      throw Error("PRIVATE_TYPE_MISSING");
     if (!release) throw Error("DELAYED_REQUEST_NOT_STARTED");
     release();
     hold = false;

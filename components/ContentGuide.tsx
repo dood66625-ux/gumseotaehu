@@ -42,8 +42,7 @@ export default function ContentGuide() {
         </p>
       </section>
       <p>
-        <a href="/legal/refund">환불 및 취소 규정</a> ·{" "}
-        <a href="/help">문의·이용 안내</a>
+        <a href="/legal/refund">환불 및 취소 규정</a>
       </p>
     </div>
   );

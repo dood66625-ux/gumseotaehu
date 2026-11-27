@@ -453,7 +453,6 @@ export default function Checkout({
       <nav className="birth-policy-links">
         <a href="/legal/refund">환불 규정</a>
         <a href="/legal/business">사업자 정보</a>
-        <a href="/help">구매 문의</a>
       </nav>
     </section>
   );

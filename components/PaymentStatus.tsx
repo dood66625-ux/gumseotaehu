@@ -98,9 +98,6 @@ export default function PaymentStatus({ id }: { id: string }) {
         <Link className="button secondary" href="/recover">
           내 운명서 다시 찾기
         </Link>
-        <Link className="button secondary" href="/help">
-          복구·환불 문의
-        </Link>
       </div>
     </section>
   );

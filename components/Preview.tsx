@@ -1,4 +1,5 @@
 "use client";
+import ReportType from "./ReportType";
 import { useEffect, useRef } from "react";
 import { preload } from "react-dom";
 import { taehouNarration } from "../lib/taehou-narration";
@@ -30,9 +31,7 @@ export default function Preview({ id }: { id: string }) {
         pages={[
           {
             title: `${r.input.name} 님의 기운`,
-            content: (
-              <p className="quote">{taehouNarration(r.preview.intro)}</p>
-            ),
+            content: <ReportType chart={r.chart} compact />,
           },
           {
             title: "그대의 사주 기둥",

@@ -1,3 +1,5 @@
+@font-face {font-family:KoreanReading;src:url("/private-reading/korean-reading-regular.woff2") format("woff2");font-weight:100 500;font-display:swap;}
+@font-face {font-family:KoreanReading;src:url("/private-reading/korean-reading-bold.woff2") format("woff2");font-weight:501 900;font-display:swap;}
 :root {
   color-scheme: dark;
   --gold: #d9ba80;
@@ -14,7 +16,7 @@ body {
     radial-gradient(ellipse at top right, #20372f55, transparent 55%), #100f0d;
   color: var(--ink);
   font:
-    16px/1.9 Georgia,
+    16px/1.9 KoreanReading,
     "Noto Serif CJK TC",
     "Noto Serif CJK KR",
     "Microsoft JhengHei",
@@ -854,3 +856,6 @@ input::-webkit-date-and-time-value {
 .reading-dialog-bar button { background: #f5e7c8; color: #48311b; border: 1px solid #997548; border-radius: 999px; }
 .readable-text p { line-height: 1.95; margin: 0 0 1.25em; word-break: keep-all; overflow-wrap: anywhere; }
 .readable-text strong { font-weight: 750; }
+.report-type { border:1px solid #927448; border-radius:16px; padding:20px; margin:22px 0; background:#251c12; }
+.report-type h2 {font-size:32px;margin:6px 0;color:var(--gold);}
+.report-type button { border-radius:999px; }
