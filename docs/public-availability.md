@@ -36,6 +36,10 @@ gh workflow run public-availability.yml --repo dood66625-ux/gumseotaehu -f test_
 
 5.1.4의 실제 호스트 복구·상시 외부 알림 수신, 5.3.3의 운영 IP/WAF/제한 연결은 별도다. 이번 공개 HTTP 검사로 완료 처리하지 않으며 **44/56(78.6%)·12개 남음**을 유지한다.
 
+## 실제 외부 실행 확인
+
+2026-11-28 KST에 새 커밋6fa900a의 정상 workflow_dispatch(test_alert=false)가 GitHub hosted runner에서 성공했다. [실행46022994301](https://github.com/dood66625-ux/gumseotaehu/actions/runs/46022994301). 로컬 검사와 별개의 외부 실행 성공이며 의도적인 실패 알림 시험은 수행하지 않았다. 알림 수신/백업/내부 worker 검증 완료를 뜻하지 않는다.
+
 ## 이전 기록
 
 2026-11-22에는 심사용 assets metadata와 pay.gumseo.kr/health 두 대상의 정상 응답을 확인했다. 상용 서비스 전환 후에는 이 결과를 실제 판매 경로의 현재 상태로 사용할 수 없다. 과거 알림 전달 시험과 운영자 수신 미확인은 그대로 구분해 보관한다.
