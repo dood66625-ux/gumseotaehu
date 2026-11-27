@@ -139,27 +139,18 @@ try {
     for (let step = 0; step < 5; step++) {
       await page.waitForTimeout(250);
       await page.evaluate(() => scrollTo(0, 0));
-      if (
-        await page
-          .locator(".birth-step-actions")
-          .evaluate((n) => n.getBoundingClientRect().bottom > innerHeight)
-      )
-        throw Error(
-          "BIRTH_ACTION_BELOW_SCREEN_" +
-            width +
-            "_" +
-            step +
-            "_" +
-            (await page
-              .locator(".birth-step-actions")
-              .evaluate((n) => n.getBoundingClientRect().bottom)),
-        );
       const portraitFits = await page.locator(".birth-portrait").evaluate((frame) => {
         const f = frame.getBoundingClientRect();
         const p = frame.querySelector(".empress-expression").getBoundingClientRect();
-        return p.top >= f.top - 1 && p.width <= f.height * 1.25 + 1;
+        const q = document.querySelector(".birth-conversation").getBoundingClientRect();
+        return p.top >= f.top - 1 && Math.abs(p.width - Math.min(innerWidth,560)) < 1
+          && f.height >= p.height * .81 && q.top >= f.bottom - 1;
       });
-      if (!portraitFits) throw Error("BIRTH_FACE_CROPPED_" + width + "_" + step);
+      if (!portraitFits) throw Error("BIRTH_PORTRAIT_SCALE_OR_FORM_OVERLAP_" + width + "_" + step);
+      await page.locator(".birth-step-actions").scrollIntoViewIfNeeded();
+      if (!(await page.getByRole("button", {name:step === 4 ? "무료 사주풀이 펼치기 ↗" : "다음 →"}).isVisible()))
+        throw Error("BIRTH_ACTION_UNREACHABLE");
+      await page.evaluate(() => scrollTo(0,0));
       const contained = await page
         .locator(".birth-wizard fieldset:visible")
         .evaluate((frame) => {
@@ -170,18 +161,6 @@ try {
           });
         });
       if (!contained) throw Error("INPUT_OUTSIDE_FRAME_" + width + "_" + step);
-      const policyBottom = await page
-        .locator(".start-experience > .birth-policy-links")
-        .evaluate((n) => n.getBoundingClientRect().bottom);
-      if (policyBottom > height + 1)
-        throw Error(
-          "BIRTH_POLICY_BELOW_SCREEN_" +
-            width +
-            "_" +
-            step +
-            "_" +
-            Math.ceil(policyBottom),
-        );
       await page.screenshot({
         path: "var/landing-motion/input-" + width + "-" + step + ".png",
       });
@@ -203,7 +182,9 @@ try {
   await nativePage.locator(".book-price").waitFor({ state: "visible" });
   console.log(
     JSON.stringify({
-      oneScreen: true,
+      landingOneScreen: true,
+      inputPortraitOriginalSize: true,
+      inputMayScrollOnShortScreens: true,
       widths: [390, 375, 320, 1440],
       pauseControlRemoved: true,
       reducedMotion: true,

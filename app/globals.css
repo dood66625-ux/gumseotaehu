@@ -4484,7 +4484,6 @@ body:has(.birth-wizard) .page {
   position: relative;
   width: 100%;
   height: 42svh;
-  container-type: size;
   overflow: hidden;
   background: #100e0c;
 }
@@ -4492,8 +4491,8 @@ body:has(.birth-wizard) .page {
   position: absolute;
   left: 50%;
   top: 0;
-  width: min(100vw, 560px, 125cqh);
-  height: min(100vw, 560px, 125cqh);
+  width: min(100vw, 560px);
+  height: min(100vw, 560px);
   mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
   transform: translateX(-50%);
   border: 0;
@@ -4933,3 +4932,6 @@ body:has(.checkout-flow) .checkout-flow { padding-top:56px; }
 body:has(.birth-wizard) .header { right:max(14px,calc((100vw - 520px)/2)); }
 body:has(.immersive-report-stage) .header,body:has(.immersive-report-stage) footer { display:none; }
 .immersive-copy-panel h1,.report-reader > h1 { overflow-wrap:anywhere; }
+
+/* Preserve the original portrait scale; move the form below the complete face. */
+.start-experience .birth-wizard .birth-portrait { height:min(82vw,460px);max-height:none; }
