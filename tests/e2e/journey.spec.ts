@@ -215,6 +215,8 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
     page.getByRole("link", { name: "운명서 전체 읽기" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "운명서 전체 읽기" }).click();
+  await expect(page.locator(".immersive-report-stage")).toBeVisible();
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "가온 님의 종합 운명서" }),
   ).toBeVisible();

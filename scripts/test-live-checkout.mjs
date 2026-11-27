@@ -204,7 +204,10 @@ try {
     await page.goto(
       origin + "/?return=1&paymentKey=synthetic-key-012345&amount=22000",
     );
-    await page.getByText("결제 확인 대기", { exact: true }).waitFor();
+    await page
+      .locator(".status")
+      .filter({ hasText: "결제 확인 대기" })
+      .waitFor();
     if (posts.filter((p) => p.path === "payments/live-return").length !== 1)
       throw Error("RETURN_NOT_CONFIRMED_ONCE");
     if (page.url().includes("paymentKey="))

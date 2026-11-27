@@ -11,7 +11,10 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const slug = (await params).slug;
-  if (slug === "content") return <ContentGuide />;
+  const live =
+    process.env.TOSS_PAYMENT_MODE === "live" &&
+    process.env.LIVE_PAYMENTS_APPROVAL === "live-payments-approved";
+  if (slug === "content") return <ContentGuide live={live} />;
   if (slug === "refund") return <RefundPolicy />;
   if (!policySlugs.includes(slug)) notFound();
   return (
@@ -23,4 +26,22 @@ export default async function Page({
       }
     />
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const live =
+    process.env.TOSS_PAYMENT_MODE === "live" &&
+    process.env.LIVE_PAYMENTS_APPROVAL === "live-payments-approved";
+  const publicPage = policySlugs.includes(slug) || slug === "content";
+  return {
+    robots: { index: live && publicPage, follow: live && publicPage },
+    ...(live && publicPage
+      ? { alternates: { canonical: "https://gumseo.kr/legal/" + slug } }
+      : {}),
+  };
 }

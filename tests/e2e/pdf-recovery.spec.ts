@@ -32,6 +32,7 @@ test("PDF timeout releases the button and a manual retry downloads without anoth
     });
   });
   await page.goto("/report/synthetic-pdf");
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "PDF 다운로드", exact: true }),
   ).toBeVisible();
@@ -71,6 +72,7 @@ test("an HTML response does not download or retain the previous success notice",
     }),
   );
   await page.goto("/report/synthetic-pdf");
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
   await download;
@@ -106,6 +108,7 @@ test("leaving the reader aborts its pending PDF and never downloads on the recov
   });
   await page.route("**/api/orders", (route) => route.fulfill({ json: [] }));
   await page.goto("/report/synthetic-pdf");
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
   await page.getByRole("button", { name: "PDF 다운로드", exact: true }).click();
   await expect.poll(() => !!pending).toBe(true);
   await page
@@ -122,7 +125,8 @@ test("leaving the reader aborts its pending PDF and never downloads on the recov
       body: "%PDF-1.4\nlate synthetic\n%%EOF",
     })
     .catch(() => {});
-  await page.waitForLoadState("networkidle");
+  // The scoped request is already confirmed aborted; unrelated image/prefetch traffic may stay active.
+  await page.waitForTimeout(250);
   expect(downloads).toBe(0);
   await expect(
     page.getByRole("alert").filter({ hasText: "PDF를 가져오지 못했습니다" }),

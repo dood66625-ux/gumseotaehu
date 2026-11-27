@@ -262,60 +262,29 @@ function turnPage(index: number, scroll = true) {
 }
 function addReadingDetails() {
   document.getElementById("reading-detail-dialog")?.remove();
-  const modal = document.createElement("dialog");
-  modal.id = "reading-detail-dialog";
-  modal.className = "reading-detail-dialog";
-  modal.setAttribute("aria-labelledby", "reading-detail-title");
-  const bar = el("div", undefined, "reading-dialog-bar");
-  const title = el("h2");
-  title.id = "reading-detail-title";
-  const close = el("button", "닫기 ×") as HTMLButtonElement;
-  close.type = "button";
-  close.setAttribute("aria-label", "상세 풀이 닫기");
-  close.addEventListener("click", () => modal.close());
-  const content = el("div", undefined, "reading-detail-body");
-  bar.append(title, close);
-  modal.append(bar, content);
-  modal.addEventListener("click", (event) => {
-    if (event.target !== modal) return;
-    const r = modal.getBoundingClientRect();
-    if (
-      event.clientX < r.left ||
-      event.clientX > r.right ||
-      event.clientY < r.top ||
-      event.clientY > r.bottom
-    )
-      modal.close();
-  });
-  document.body.append(modal);
   for (const page of document.querySelectorAll<HTMLElement>(
     "#chapters > article, #book-ending",
   )) {
     page
-      .querySelectorAll(".reading-print-full, .reading-detail-open")
+      .querySelectorAll(
+        ".reading-print-full,.reading-detail-open,.private-reading-expand",
+      )
       .forEach((n) => n.remove());
     const original = page.cloneNode(true) as HTMLElement;
     original.querySelectorAll("[id]").forEach((n) => n.removeAttribute("id"));
     original.removeAttribute("id");
     original
-      .querySelectorAll("details, button, .fine")
+      .querySelectorAll("details,button,.fine")
       .forEach((n) => n.remove());
-    const heading =
-      original.querySelector("h2")?.textContent ?? "금서의 상세 풀이";
-    original.querySelector("h2")?.remove();
-    const full = document.createDocumentFragment();
-    full.append(...original.childNodes);
     for (const p of page.querySelectorAll<HTMLParagraphElement>("p")) {
       if (
-        p.closest("details, .chapter-takeaway") ||
+        p.closest(".chapter-takeaway") ||
         !p.textContent ||
         p.textContent.length < 100
       )
         continue;
       const text = p.textContent;
-      const print = readableElement(text, p.className);
-      print.removeAttribute("id");
-      print.className = p.className + " reading-print-full";
+      const print = readableElement(text, p.className + " reading-print-full");
       p.after(print);
       p.classList.add("reading-brief");
       p.textContent =
@@ -324,27 +293,28 @@ function addReadingDetails() {
             "\n\n그대의 다음 장을 기다리며, 금서태후"
           : readingExcerpt(text, 1);
     }
-    const button = el(
-      "button",
-      "자세히 보기",
-      "reading-detail-open",
-    ) as HTMLButtonElement;
-    button.type = "button";
-    button.setAttribute("aria-haspopup", "dialog");
-    button.addEventListener("click", () => {
-      title.textContent = heading;
-      content.replaceChildren(full.cloneNode(true));
-      content.querySelectorAll("p").forEach((p) => {
-        if ((p.textContent?.length ?? 0) > 100)
-          p.replaceWith(readableElement(p.textContent!, p.className));
-      });
-      modal.showModal();
-      content.scrollTop = 0;
-      modal.scrollTop = 0;
+    const expand = document.createElement("details");
+    expand.className = "private-reading-expand";
+    const summary = el("summary", "글 펼치기");
+    const body = el("div", undefined, "private-reading-body");
+    body.tabIndex = 0;
+    body.append(...original.childNodes);
+    body.querySelectorAll("p").forEach((p) => {
+      if ((p.textContent?.length ?? 0) > 100)
+        p.replaceWith(readableElement(p.textContent!, p.className));
     });
-    const takeaway = page.querySelector(".chapter-takeaway");
-    if (takeaway) takeaway.before(button);
-    else page.append(button);
+    expand.append(summary, body);
+    expand.addEventListener(
+      "toggle",
+      () => (summary.textContent = expand.open ? "글 접기" : "글 펼치기"),
+    );
+    expand.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        expand.open = false;
+        summary.focus();
+      }
+    });
+    page.append(expand);
   }
 }
 $("book-prev").addEventListener("click", () => turnPage(bookPage - 1));

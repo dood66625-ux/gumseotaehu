@@ -164,13 +164,13 @@ try {
       throw Error("BOOK_NOT_SINGLE_PAGE");
     if (
       (await page
-        .locator("#chapters article:visible .chapter-takeaway")
+        .locator("#chapters article:visible > .chapter-takeaway")
         .count()) !== 1
     )
       throw Error("TAKEAWAY_MISSING");
     if (
       (await page
-        .locator("#chapters article:visible .chapter-takeaway span")
+        .locator("#chapters article:visible > .chapter-takeaway span")
         .textContent()) !== "이 장의 한마디"
     )
       throw Error("TAKEAWAY_LOCALE");
@@ -243,7 +243,9 @@ try {
       .locator("#book")
       .screenshot({ path: `var/private-reader/portrait-${width}.png` });
     await page.locator('#toc a[href="#book-figures"]').click();
-    if ((await page.locator("#book-figures .figure-card").count()) !== 3)
+    if (
+      (await page.locator("#book-figures .figure-card:visible").count()) !== 3
+    )
       throw Error("FIGURE_COUNT");
     if (
       !(await page.locator("#book-figures").textContent()).includes("허난설헌")
@@ -270,7 +272,10 @@ try {
         .locator("#toc")
         .getByRole("link", { name: title, exact: true })
         .click();
-      if ((await page.locator("#chapters article:visible h3").count()) !== 3)
+      if (
+        (await page.locator("#chapters article:visible h3:visible").count()) !==
+        3
+      )
         throw Error("TOP3_COUNT");
       if (width === 320) {
         const box = await page
@@ -283,12 +288,12 @@ try {
       }
       await page
         .locator("#chapters article:visible")
-        .getByRole("button", { name: "자세히 보기", exact: true })
+        .locator(".private-reading-expand summary")
         .click();
       if (
         (
           await page
-            .locator("#reading-detail-dialog .reading-detail-body")
+            .locator(".private-reading-expand[open] .private-reading-body")
             .textContent()
         ).length < 800
       )
@@ -299,15 +304,15 @@ try {
         )
       )
         throw Error("DETAIL_DIALOG_OVERFLOW");
-      await page.getByRole("button", { name: "상세 풀이 닫기" }).click();
-      if (await page.locator("#reading-detail-dialog").isVisible())
+      await page.locator(".private-reading-expand[open] summary").click();
+      if (await page.locator(".private-reading-expand[open]").count())
         throw Error("DETAIL_DIALOG_CLOSE_FAILED");
     }
     await page
       .locator("#toc")
       .getByRole("link", { name: "올해 꼭 기억할 세 가지", exact: true })
       .click();
-    if ((await page.locator("#book-year-reminders h3").count()) !== 3)
+    if ((await page.locator("#book-year-reminders h3:visible").count()) !== 3)
       throw Error("YEAR_REMINDERS_COUNT");
     if (!(await page.locator("#book-year-reminders").isVisible()))
       throw Error("YEAR_REMINDERS_NOT_REACHABLE");
@@ -322,18 +327,18 @@ try {
       throw Error("CLOSING_LETTER_MISSING");
     await page
       .locator("#book-ending")
-      .getByRole("button", { name: "자세히 보기", exact: true })
+      .locator(".private-reading-expand summary")
       .click();
     if (
       (
         await page
-          .locator("#reading-detail-dialog .reading-detail-body")
+          .locator(".private-reading-expand[open] .private-reading-body")
           .textContent()
       ).length < 1100
     )
       throw Error("FULL_LETTER_MISSING");
     await page.keyboard.press("Escape");
-    if (await page.locator("#reading-detail-dialog").isVisible())
+    if (await page.locator(".private-reading-expand[open]").count())
       throw Error("DETAIL_ESCAPE_FAILED");
     if (!(await page.locator("#book-next").isDisabled()))
       throw Error("BOOK_END_BOUNDARY");
@@ -406,7 +411,7 @@ try {
     await page.locator("#toc a").first().click();
     if (
       (await page
-        .locator("#chapters article:visible .chapter-takeaway span")
+        .locator("#chapters article:visible > .chapter-takeaway span")
         .textContent()) !== "이 장의 한마디"
     )
       throw Error("KO_TAKEAWAY_LOCALE");
@@ -473,7 +478,7 @@ try {
     JSON.stringify({
       passed: true,
       widths: [320, 390, 1440],
-      fullDetailsDialog: true,
+      inlineUpwardReading: true,
       historySelection: true,
       chapterPaging: true,
       chapterTakeaways: true,

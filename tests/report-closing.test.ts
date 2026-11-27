@@ -57,7 +57,8 @@ it("renders both ending sections and safely escapes a customer name", () => {
   );
   expect(html).toContain("올해 꼭 기억할 세 가지");
   expect(html).toContain("태후가 그대에게 남기는 마지막 편지");
-  expect(html).toContain('aria-haspopup="dialog"');
+  expect(html).not.toContain('aria-haspopup="dialog"');
+  expect(html).toContain("reading-inline-full");
   expect(html.match(/<h3>/g)!.length).toBeGreaterThanOrEqual(3);
   expect(html).not.toContain("<script>");
   expect(html).toContain("&lt;script&gt;");

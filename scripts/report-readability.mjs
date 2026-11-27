@@ -24,11 +24,9 @@ export function measureReportEvidence(articles) {
       ...getComputedStyle(article).backgroundImage.matchAll(/rgba?\([^)]+\)/g),
     ].map((m) => rgb(m[0]));
     if (!backgrounds.length) throw Error("PAPER_BACKGROUND_UNRESOLVED");
-    const targets = article.querySelectorAll(
-      ".reading-detail-open,.reading-brief p",
-    );
-    if (!article.querySelector(".reading-detail-open"))
-      throw Error("REPORT_DETAIL_CONTROL_MISSING");
+    const targets = article.querySelectorAll(".reading-inline-full p");
+    if (!article.querySelector(".reading-inline-full"))
+      throw Error("REPORT_INLINE_READING_MISSING");
     if (article.querySelector(".chapter-evidence"))
       throw Error("REMOVED_EVIDENCE_REMAINS");
     for (const target of targets) {

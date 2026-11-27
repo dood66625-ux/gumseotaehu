@@ -98,6 +98,13 @@ try {
   )
     throw Error("STORED_REPORT_CHANGED");
   await page.goto(origin + "/report/" + orderId);
+  await page.waitForSelector(
+    ".immersive-report-stage,.report-overview:not([hidden])",
+  );
+  if (await page.locator(".immersive-report-stage").count())
+    await page
+      .getByRole("button", { name: "전체 운명서", exact: true })
+      .click();
   await page.getByText("AI 해석 운명서", { exact: false }).waitFor();
   if (
     (await page
@@ -141,6 +148,13 @@ try {
     await chapter.screenshot({ path: join(root, file) });
     screenshots.push(file);
     await page.goto(origin + "/report/" + orderId);
+    await page.waitForSelector(
+      ".immersive-report-stage,.report-overview:not([hidden])",
+    );
+    if (await page.locator(".immersive-report-stage").count())
+      await page
+        .getByRole("button", { name: "전체 운명서", exact: true })
+        .click();
     await page
       .getByRole("button", { name: "PDF 다운로드", exact: true })
       .waitFor();

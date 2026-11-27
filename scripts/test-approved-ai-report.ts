@@ -123,6 +123,13 @@ try {
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto(origin + "/report/" + extendedReviewApproval.orderId);
+    await page.waitForSelector(
+      ".immersive-report-stage,.report-overview:not([hidden])",
+    );
+    if (await page.locator(".immersive-report-stage").count())
+      await page
+        .getByRole("button", { name: "전체 운명서", exact: true })
+        .click();
     await expect(page.locator(".report-chapter")).toHaveCount(9);
     await expect(page.locator(".chapter-illustration img")).toHaveCount(9);
     await expect(

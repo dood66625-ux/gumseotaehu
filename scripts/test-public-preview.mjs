@@ -100,6 +100,8 @@ try {
   await page.getByRole("checkbox", { name: /필수 사항 모두 동의/ }).check();
   await page.getByRole("button", { name: "운명서 펼치기 · 체험 결제" }).click();
   await page.getByRole("link", { name: "운명서 전체 읽기" }).click();
+  await page.locator(".immersive-report-stage").waitFor();
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
   await page.getByRole("heading", { name: "가온 님의 종합 운명서" }).waitFor();
   for (const [label, index] of [
     ["일·직업", 4],
@@ -126,17 +128,18 @@ try {
     });
   if (await page.locator(".chapter-evidence,.report-method").count())
     throw Error("REMOVED_REPORT_APPENDICES_REMAIN");
-  await page
-    .locator(".report-chapter")
-    .first()
-    .getByRole("button", { name: "자세히 보기", exact: true })
-    .click();
-  if (!(await page.locator("dialog[open] .readable-text p").count()))
-    throw Error("READABLE_DETAIL_MISSING");
-  await page
-    .locator("dialog[open]")
-    .getByRole("button", { name: "상세 풀이 닫기" })
-    .click();
+  if (
+    await page.getByRole("button", { name: "자세히 보기", exact: true }).count()
+  )
+    throw Error("REMOVED_DETAILS_BUTTON_REMAINS");
+  if (
+    (await page
+      .locator(".report-chapter")
+      .first()
+      .locator(".readable-text p")
+      .count()) < 2
+  )
+    throw Error("FULL_CHAPTER_NOT_INLINE");
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "PDF 다운로드" }).click();
   await (await download).saveAs("var/public-preview-proof.pdf");

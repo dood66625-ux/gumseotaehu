@@ -1,4 +1,4 @@
-export default function ContentGuide() {
+export default function ContentGuide({ live = false }: { live?: boolean }) {
   return (
     <div className="page legal">
       <p className="eyebrow">ABOUT THE ARCHIVE</p>
@@ -33,12 +33,11 @@ export default function ContentGuide() {
         </p>
       </section>
       <section>
-        <h2>현재 체험 서비스</h2>
+        <h2>{live ? "운명서 이용 안내" : "현재 체험 서비스"}</h2>
         <p>
-          현재 공개 화면은 가상 정보로 둘러보는 체험판입니다. 실제 구매와 고객
-          이메일 발송은 제공하지 않습니다. 심사용 토스 TEST 결제창은 가상
-          주문으로 확인하며 실제 청구가 발생하지 않습니다. 실제 AI 개발 검증
-          결과와 고객용 서비스 활성화는 별개입니다.
+          {live
+            ? "종합 운명서는 22,000원 일회성 상품입니다. 결제 확인 후 AI 해석을 작성하고, 구매 이메일 인증으로 1년간 다시 열람하며 PDF로 저장할 수 있습니다. 운명서마다 태후에게 50자 이내로 세 번 자문할 수 있으며, 답변은 이후 내려받는 PDF에도 함께 담깁니다. 문의·정정·환불은 하단 환불 정책의 이메일로 접수해주세요."
+            : "현재 공개 화면은 가상 정보로 둘러보는 체험판입니다. 심사용 TEST 결제창은 별도 경로에서 확인하며 실제 청구가 발생하지 않습니다."}
         </p>
       </section>
       <p>
