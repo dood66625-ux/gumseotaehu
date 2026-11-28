@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { chapterArt } from "../lib/report-art";
 import {
   PRODUCT_PRICE_TEXT,
+  PRODUCT_REGULAR_PRICE_TEXT,
   REPORT_WEB_PAGE_COUNT,
   REPORT_WEB_PAGE_NOTE,
 } from "../lib/product";
@@ -93,7 +94,9 @@ export default function Landing({
             <i aria-hidden="true">壹</i> 전통 명리학의 계산
           </span>
           <span>
-            <i aria-hidden="true">貳</i> {PRODUCT_PRICE_TEXT}원 한 번의 결제
+            <i aria-hidden="true">貳</i>{" "}
+            <del>{PRODUCT_REGULAR_PRICE_TEXT}원</del> {PRODUCT_PRICE_TEXT}원 한
+            번의 결제
           </span>
           <span>
             <i aria-hidden="true">參</i> 1년 무료 재열람
@@ -256,7 +259,10 @@ export default function Landing({
               </li>
             </ol>
             <div className="book-price">
-              <strong>
+              <strong className="sale-price">
+                <del className="regular-price" aria-label="정상가 44,000원">
+                  {PRODUCT_REGULAR_PRICE_TEXT}원
+                </del>
                 {PRODUCT_PRICE_TEXT}
                 <span>원</span>
               </strong>

@@ -5071,3 +5071,9 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 .access-read-confirmed {color:#95d3aa;}
 .access-read-unconfirmed {color:#d4bf8b;}
 .admin-order-access .access-issue {color:#efb1a4;}
+.sale-price {position:relative;}
+.sale-price .regular-price {position:absolute;right:0;bottom:100%;color:#a69a83;font-size:11px;line-height:1.3;font-weight:400;white-space:nowrap;}
+.discount-comparison {display:flex;align-items:baseline;justify-content:center;gap:12px;margin:4px 0 8px;}
+.discount-comparison del {color:#a69a83;font-size:13px;}
+.discount-comparison strong {color:var(--gold);font-size:22px;}
+.preview-discount .button {width:100%;}

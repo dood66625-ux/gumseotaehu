@@ -155,7 +155,7 @@ try {
         );
         throw error;
       });
-    const pay = page.getByRole("button", { name: "카드로 결제하기" });
+    const pay = page.getByRole("button", { name: "22,000원 할인 결제하기" });
     if (await pay.isDisabled()) throw Error("WIDGET_EVENT_LOCKED_PAYMENT");
     await pay.click();
     await page
@@ -189,7 +189,7 @@ try {
     await advanceCheckout();
     await page.getByRole("button", { name: "카드 결제 수단 선택" }).click();
     const missedEventPay = page.getByRole("button", {
-      name: "카드로 결제하기",
+      name: "22,000원 할인 결제하기",
     });
     await missedEventPay.waitFor();
     if (await missedEventPay.isDisabled())

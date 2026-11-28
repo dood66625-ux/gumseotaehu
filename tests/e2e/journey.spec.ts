@@ -179,12 +179,12 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.locator(".screen-flow").waitFor();
   while (
     !(await page
-      .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
+      .getByRole("link", { name: "22,000원 할인 결제하기" })
       .isVisible())
   )
     await page.locator(".screen-flow-controls button").last().click();
   await page
-    .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
+    .getByRole("link", { name: "22,000원 할인 결제하기" })
     .click();
   await page.locator(".checkout-flow").waitFor();
   await expect(page.locator(".price")).toContainText("22,000원");

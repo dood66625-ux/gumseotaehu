@@ -113,7 +113,7 @@ try {
           if (
             screen === "preview" &&
             !(await page
-              .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
+              .getByRole("link", { name: "22,000원 할인 결제하기" })
               .isVisible())
           )
             throw Error("PURCHASE_MUST_BE_LAST");
@@ -134,7 +134,7 @@ try {
               .locator(".preview-invitation")
               .boundingBox();
             const purchase = await page
-              .getByRole("link", { name: "22,000원 결제 후 운명서 펼쳐보기" })
+              .getByRole("link", { name: "22,000원 할인 결제하기" })
               .boundingBox();
             if (
               !invitation ||

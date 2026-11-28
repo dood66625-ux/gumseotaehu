@@ -5,6 +5,7 @@ import { preload } from "react-dom";
 import { taehouNarration } from "../lib/taehou-narration";
 import {
   PRODUCT_PRICE_TEXT,
+  PRODUCT_REGULAR_PRICE_TEXT,
   REPORT_WEB_PAGE_COUNT,
   REPORT_WEB_PAGE_NOTE,
 } from "../lib/product";
@@ -88,9 +89,15 @@ export default function Preview({ id }: { id: string }) {
                 {r.purchaseEligible !== false &&
                 r.input.age !== "14-18" &&
                 r.input.age !== "under14" ? (
-                  <Link className="button" href={"/checkout?id=" + id}>
-                    {PRODUCT_PRICE_TEXT}원 결제 후 운명서 펼쳐보기
-                  </Link>
+                  <div className="preview-discount">
+                    <p className="discount-comparison">
+                      <del>{PRODUCT_REGULAR_PRICE_TEXT}원</del>
+                      <strong>{PRODUCT_PRICE_TEXT}원</strong>
+                    </p>
+                    <Link className="button" href={"/checkout?id=" + id}>
+                      {PRODUCT_PRICE_TEXT}원 할인 결제하기
+                    </Link>
+                  </div>
                 ) : (
                   <p className="notice">
                     만 14~18세 유료 구매는 보호자 확인 절차 준비 전까지 제한하고
