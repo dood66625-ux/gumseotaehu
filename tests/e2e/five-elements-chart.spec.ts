@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-test("five elements render exact counts, an empty zero bar, and fit the reading panel", async ({
+test("five elements render exact counts, a zero point at the center, and fit the reading panel", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 740 });
@@ -41,12 +41,9 @@ test("five elements render exact counts, an empty zero bar, and fit the reading 
     "2개",
   ]);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(
-    await chart
-      .locator(".five-elements-fill")
-      .nth(1)
-      .evaluate((el) => el.getBoundingClientRect().height),
-  ).toBe(0);
+  const zero = chart.locator(".sigil-point").nth(1);
+  await expect(zero).toHaveAttribute("cx", "240");
+  await expect(zero).toHaveAttribute("cy", "113");
   const rect = await chart.boundingBox();
   expect(rect!.x).toBeGreaterThanOrEqual(0);
   expect(rect!.x + rect!.width).toBeLessThanOrEqual(360);

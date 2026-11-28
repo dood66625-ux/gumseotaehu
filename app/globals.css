@@ -5075,14 +5075,20 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 
 .discount-button-copy {display:inline-flex;align-items:center;justify-content:center;gap:10px;max-width:100%;white-space:nowrap;font-size:clamp(14px,3.8vw,16px);line-height:1.5;}
 .discount-button-copy del {font-size:.75em;font-weight:400;opacity:.65;}
-.five-elements-chart {height:126px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:8px 12px;margin:10px 0 12px;border:1px solid #c6a66b35;border-radius:12px;background:radial-gradient(ellipse at 50% 110%,#b28a3b16,transparent 75%),linear-gradient(135deg,#ffffff03,#00000026);box-shadow:inset 0 1px #e8cf9620;}
-.five-elements-column {display:grid;grid-template-rows:22px minmax(0,1fr) 23px;justify-items:center;gap:4px;min-width:0;}
-.five-elements-count {font:600 19px/22px var(--sans);color:#f0e4cb;font-variant-numeric:tabular-nums;}
-.five-elements-count small {margin-left:3px;font-size:9px;font-weight:400;color:#a99a80;}
-.five-elements-track {position:relative;align-self:stretch;width:26px;max-width:80%;border-radius:7px 7px 2px 2px;background:linear-gradient(90deg,#0005,#fff03,#0005);border-bottom:1px solid #bda16a66;}
-.five-elements-fill {position:absolute;bottom:0;left:0;width:100%;height:var(--element-fill);border-radius:6px 6px 1px 1px;background:var(--element-color);background:linear-gradient(90deg,#0003,transparent 35%,#fff3 48%,transparent 62%,#0002),linear-gradient(0deg,color-mix(in srgb,var(--element-color) 42%,#15110c),var(--element-color));box-shadow:inset 0 1px 0 #fff8,inset 1px 0 #fff2,0 0 12px color-mix(in srgb,var(--element-color) 18%,transparent);transform-origin:bottom;animation:elements-rise .8s var(--element-delay) cubic-bezier(.2,.7,.2,1) both;}
-.five-elements-label {display:flex;align-items:center;gap:5px;color:#d7c8ab;font:400 11px/23px var(--sans);}
-.five-elements-label b {font-size:15px;font-weight:500;color:var(--element-color);}
-@keyframes elements-rise {from{transform:scaleY(0);opacity:.3;}to{transform:scaleY(1);opacity:1;}}
-@media(max-height:700px){.five-elements-chart{height:102px;margin:6px 0 8px;padding:6px 10px;}.five-elements-column{grid-template-rows:19px minmax(0,1fr) 21px;gap:3px;}.five-elements-count{font-size:17px;line-height:19px;}.five-elements-track{width:23px;}}
-@media(prefers-reduced-motion:reduce){.five-elements-fill{animation:none;}}
+/* Five elements: a gold-etched sigil, with the original counts preserved. */
+.five-elements-chart{height:156px;margin:9px 0 10px;position:relative;isolation:isolate;border:1px solid #bc97583d;border-radius:4px;background:radial-gradient(ellipse at 50% 48%,#b78a2720,transparent 60%),#100e0b;box-shadow:inset 0 0 26px #0008;}
+.five-elements-chart:before,.five-elements-chart:after{content:"";position:absolute;width:20px;height:20px;border-color:#d8b574;border-style:solid;pointer-events:none;}
+.five-elements-chart:before{top:-1px;left:-1px;border-width:1px 0 0 1px;}.five-elements-chart:after{bottom:-1px;right:-1px;border-width:0 1px 1px 0;}
+.elements-sigil{display:block;width:100%;height:100%;overflow:visible;}
+.sigil-orbit{fill:none;stroke:#b797564a;stroke-width:.8;stroke-dasharray:2 7;}.sigil-orbit.inner{stroke-dasharray:none;stroke:#b7975628;}
+.sigil-grid{fill:none;stroke:#d3af6838;stroke-width:.7;}
+.sigil-aura{fill:#d7ae4f17;stroke:#e9bf65;stroke-width:7;opacity:.15;}
+.sigil-shape{fill:#d7ae4f24;stroke:#edcd87;stroke-width:1.6;stroke-linejoin:round;stroke-dasharray:600;animation:sigil-reveal 1.5s ease-out both;}
+.sigil-point{fill:currentColor;stroke:#f5e4b8;stroke-width:1;}.sigil-center{fill:#e5c784;}
+.sigil-element{animation:sigil-arrive .7s ease-out both;}.sigil-medallion{fill:#15120e;stroke:currentColor;stroke-opacity:.45;stroke-width:.7;}.dominant .sigil-medallion{stroke-opacity:1;stroke-width:1.3;filter:drop-shadow(0 0 4px #d3ac5160);}
+.sigil-icon{fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+.sigil-name{fill:currentColor;font:500 13px var(--sans);}.five-elements-count{fill:#f2e5c9;font:600 18px var(--sans);font-variant-numeric:tabular-nums;}.sigil-unit{fill:#ae9b79;font-size:10px;font-weight:400;}.sigil-caption{fill:#cbb080;font:400 11px var(--sans);letter-spacing:1px;}
+@keyframes sigil-reveal{from{stroke-dashoffset:600;fill-opacity:0;}to{stroke-dashoffset:0;fill-opacity:1;}}
+@keyframes sigil-arrive{from{opacity:0;}to{opacity:1;}}
+@media(max-height:700px){.five-elements-chart{height:120px;margin:6px 0 8px;}}
+@media(prefers-reduced-motion:reduce){.sigil-shape,.sigil-element{animation:none;}}
