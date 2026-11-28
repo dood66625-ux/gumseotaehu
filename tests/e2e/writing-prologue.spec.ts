@@ -13,9 +13,13 @@ test("writing story advances into the breathing wait without API requests", asyn
   await expect(page.getByLabel("운명서를 여는 이야기")).toBeVisible();
   await page.clock.runFor(3001);
   await expect(page.locator(".writing-scene.active figcaption")).toContainText(
+    "갑목은 곧 큰 나무",
+  );
+  await page.clock.runFor(1000);
+  await expect(page.locator(".writing-scene.active figcaption")).toContainText(
     "목의 글자가 눈에 띄는구나",
   );
-  await page.clock.runFor(6001);
+  await page.clock.runFor(8001);
   await expect(
     page.getByRole("heading", { name: "운명서 펼치는 중…" }),
   ).toBeVisible();
@@ -27,7 +31,7 @@ test("writing story advances into the breathing wait without API requests", asyn
   expect(apiCalls).toBe(0);
 });
 
-test("ready order continues polling during the story and opens immediately after skip", async ({
+test("ready order interrupts the story immediately without waiting for skip or the next scene", async ({
   page,
 }) => {
   let reads = 0;
@@ -55,10 +59,7 @@ test("ready order continues polling during the story and opens immediately after
   );
   await page.clock.runFor(1100);
   await expect.poll(() => reads).toBe(2);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "이야기 건너뛰고 작성 화면으로" })
-    .click();
+  await expect(page.locator(".writing-prologue")).toHaveCount(0);
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "운명서가 펼쳐졌느니라." }),

@@ -62,12 +62,16 @@ export default function ReportUnsealing({
   }, [id, preview]);
   useEffect(() => {
     if (!intro) return;
+    if (ready) {
+      finishIntro();
+      return;
+    }
     const timer = setTimeout(() => {
       if (scene < writingScenes.length - 1) setScene(scene + 1);
       else finishIntro();
-    }, 3000);
+    }, 4000);
     return () => clearTimeout(timer);
-  }, [intro, scene, id, preview]);
+  }, [intro, scene, id, preview, ready]);
   useEffect(() => {
     if (ready && !intro && !dialog.current?.open) dialog.current?.showModal();
   }, [ready, intro]);
