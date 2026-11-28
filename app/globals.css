@@ -4940,7 +4940,8 @@ body:has(.immersive-report-stage:not([hidden])) .header,body:has(.immersive-repo
 body:has(.report-unsealing) .header,body:has(.report-unsealing) footer,body:has(.report-unsealing) .test-banner {display:none;}
 body:has(.report-unsealing) .page {margin:0;padding:0;max-width:none;}
 .report-unsealing {min-height:100svh;background:#050505;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px;color:#ead9b8;}
-.unsealing-mark {width:140px;height:140px;margin-bottom:28px;animation:unseal-breathe 3s ease-in-out infinite;filter:drop-shadow(0 0 18px #b48b3833);}
+.unsealing-mark {width:140px;height:140px;margin-bottom:28px;overflow:visible;transform-origin:center;animation:unseal-breathe 3.2s ease-in-out infinite;}
+.unsealing-rim {filter:drop-shadow(0 0 4px #d8b66e99) drop-shadow(0 0 10px #c99d4e55);}
 .unsealing-mark.complete {animation:none;}
 .report-unsealing h1 {font:500 23px/1.6 var(--sans);margin:0 0 12px;}
 .report-unsealing p {font-size:14px;line-height:1.9;color:#b8aa91;}
@@ -4951,7 +4952,7 @@ body:has(.report-unsealing) .page {margin:0;padding:0;max-width:none;}
 .unsealing-dialog h2 {font:600 23px/1.7 var(--sans);}
 .unsealing-dialog .button {display:flex;justify-content:center;margin-top:24px;}
 .unsealing-later {border:0;background:none;color:#b8aa91;padding:18px;font:inherit;font-size:12px;cursor:pointer;}
-@keyframes unseal-breathe {0%,100% {transform:scale(.94);opacity:.72;}50% {transform:scale(1.06);opacity:1;}}
+@keyframes unseal-breathe {0%,100% {transform:scale(.88);opacity:.88;}50% {transform:scale(1.12);opacity:1;}}
 .immersive-report-stage[hidden] {display:none;}
 .immersive-scene-text .taehou-counsel {padding:0;margin:0;background:none;border:0;box-shadow:none;}
 .immersive-scene-text .taehou-counsel:before {display:none;}

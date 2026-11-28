@@ -23,18 +23,33 @@ export default function ReportUnsealing({
         viewBox="0 0 200 200"
         aria-hidden="true"
       >
-        <circle cx="100" cy="100" r="80" fill="#32587a" />
+        <defs>
+          <linearGradient id="unsealing-gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#f2dfaa" />
+            <stop offset="48%" stopColor="#d0aa60" />
+            <stop offset="100%" stopColor="#a8782f" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx="100"
+          cy="100"
+          r="80"
+          fill="#050505"
+          stroke="#caa35b"
+          strokeWidth="1"
+        />
         <path
           d="M20 100a80 80 0 0 1 160 0a40 40 0 0 1-80 0a40 40 0 0 0-80 0"
-          fill="#a6423b"
+          fill="url(#unsealing-gold)"
         />
         <circle
           cx="100"
           cy="100"
           r="94"
+          className="unsealing-rim"
           fill="none"
-          stroke="#b99555"
-          strokeWidth=".8"
+          stroke="#ddbd7a"
+          strokeWidth="1.2"
         />
       </svg>
       <h1 aria-live="polite">
