@@ -105,8 +105,9 @@ export default function ReportUnsealing({
       >
         <defs>
           <radialGradient id="unsealing-halo">
-            <stop offset="0%" stopColor="#dfbc77" stopOpacity=".22" />
-            <stop offset="45%" stopColor="#c99d4e" stopOpacity=".13" />
+            <stop offset="0%" stopColor="#f1d28e" stopOpacity=".48" />
+            <stop offset="48%" stopColor="#dfb45f" stopOpacity=".33" />
+            <stop offset="75%" stopColor="#c9963e" stopOpacity=".12" />
             <stop offset="100%" stopColor="#b88735" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="unsealing-gold" x1="0" y1="0" x2="1" y2="1">
@@ -119,7 +120,7 @@ export default function ReportUnsealing({
           className="unsealing-halo"
           cx="100"
           cy="100"
-          r="155"
+          r="170"
           fill="url(#unsealing-halo)"
         />
         <circle
