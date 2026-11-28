@@ -5,10 +5,12 @@ export default function ReportUnsealing({
   id,
   ready,
   children,
+  preview = false,
 }: {
   id: string;
   ready: boolean;
   children?: ReactNode;
+  preview?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function ReportUnsealing({
           ? "이제 그대의 이야기를 만나 보거라."
           : "그대의 기운을 한 장씩 금서에 담고 있느니라."}
       </p>
-      {!ready && (
+      {!ready && !preview && (
         <p className="unsealing-recovery">
           창을 닫아도 작성은 계속되느니라.
           <br />
