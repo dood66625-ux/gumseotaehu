@@ -9,3 +9,5 @@
 배포 확인: 구현 커밋 `6e3e836`의 [Local verification](https://github.com/dood66625-ux/gumseotaehu/actions/runs/46135415889)과 [runtime build](https://github.com/dood66625-ux/gumseotaehu/actions/runs/46135415854)가 성공했다. 실제 도메인 메인 HTML에서44,000원 취소선을, 결제 번들에서 정상가 라벨과 할인 결제 문구를 확인했다. 공개 접속·접근 차단7개 점검도 통과했다. 실제 결제·환불·고객 주문 조회는 하지 않았다.
 
 위치 수정: 사용자가 가격 비교를 버튼 내부에 넣으라고 명확히 하여 공통 버튼 내용 컴포넌트로 통일했다.320×568에서도 한 줄로 들어가는 실제 브라우저 화면을 확인했다. 접근성 이름은22,000원 결제 문구를 유지하고 설명으로 정상가를 제공한다. 관련 브라우저6건과 상용 빌드/비밀값 검사 통과. 확인용 버튼 캡처는 합성 입력 화면에서 생성했으며 고객 정보는 포함하지 않는다.
+
+버튼 내부 배포 확인: 구현 커밋 `a999ae7`의 [Local verification](https://github.com/dood66625-ux/gumseotaehu/actions/runs/46136443894)과 [runtime build](https://github.com/dood66625-ux/gumseotaehu/actions/runs/46136443926)가 성공했다. 실제 메인 상품 구매 링크 안의 취소선/판매가와 바깥 정상가 제거를 확인했고, 결제 번들에도 공통 버튼 내용이 반영됐다. 공개 접속·접근 차단7개 점검 통과. 실제 결제나 고객 주문 조회는 하지 않았다.
