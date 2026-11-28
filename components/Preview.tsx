@@ -1,4 +1,5 @@
 "use client";
+import FiveElementsChart from "./FiveElementsChart";
 import DiscountCheckoutLabel from "./DiscountCheckoutLabel";
 import ReportType from "./ReportType";
 import { useEffect, useRef } from "react";
@@ -59,18 +60,7 @@ export default function Preview({ id }: { id: string }) {
             title: "그대의 오행",
             content: (
               <section className="preview-explained">
-                <div className="element-bars">
-                  {Object.entries(r.chart.counts).map(([k, v]) => (
-                    <div className="element-bar" key={k}>
-                      <i
-                        style={{ height: Math.min(88, Number(v) * 12) + "px" }}
-                      />
-                      <span>
-                        {k} · {String(v)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <FiveElementsChart counts={r.chart.counts} />
                 <p className="preview-explanation">{explanation.elements}</p>
               </section>
             ),

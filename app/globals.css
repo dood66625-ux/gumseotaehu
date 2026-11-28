@@ -5075,3 +5075,14 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 
 .discount-button-copy {display:inline-flex;align-items:center;justify-content:center;gap:10px;max-width:100%;white-space:nowrap;font-size:clamp(14px,3.8vw,16px);line-height:1.5;}
 .discount-button-copy del {font-size:.75em;font-weight:400;opacity:.65;}
+.five-elements-chart {height:126px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:8px 12px;margin:10px 0 12px;border:1px solid #c6a66b35;border-radius:12px;background:radial-gradient(ellipse at 50% 110%,#b28a3b16,transparent 75%),linear-gradient(135deg,#ffffff03,#00000026);box-shadow:inset 0 1px #e8cf9620;}
+.five-elements-column {display:grid;grid-template-rows:22px minmax(0,1fr) 23px;justify-items:center;gap:4px;min-width:0;}
+.five-elements-count {font:600 19px/22px var(--sans);color:#f0e4cb;font-variant-numeric:tabular-nums;}
+.five-elements-count small {margin-left:3px;font-size:9px;font-weight:400;color:#a99a80;}
+.five-elements-track {position:relative;align-self:stretch;width:26px;max-width:80%;border-radius:7px 7px 2px 2px;background:linear-gradient(90deg,#0005,#fff03,#0005);border-bottom:1px solid #bda16a66;}
+.five-elements-fill {position:absolute;bottom:0;left:0;width:100%;height:var(--element-fill);border-radius:6px 6px 1px 1px;background:var(--element-color);background:linear-gradient(90deg,#0003,transparent 35%,#fff3 48%,transparent 62%,#0002),linear-gradient(0deg,color-mix(in srgb,var(--element-color) 42%,#15110c),var(--element-color));box-shadow:inset 0 1px 0 #fff8,inset 1px 0 #fff2,0 0 12px color-mix(in srgb,var(--element-color) 18%,transparent);transform-origin:bottom;animation:elements-rise .8s var(--element-delay) cubic-bezier(.2,.7,.2,1) both;}
+.five-elements-label {display:flex;align-items:center;gap:5px;color:#d7c8ab;font:400 11px/23px var(--sans);}
+.five-elements-label b {font-size:15px;font-weight:500;color:var(--element-color);}
+@keyframes elements-rise {from{transform:scaleY(0);opacity:.3;}to{transform:scaleY(1);opacity:1;}}
+@media(max-height:700px){.five-elements-chart{height:102px;margin:6px 0 8px;padding:6px 10px;}.five-elements-column{grid-template-rows:19px minmax(0,1fr) 21px;gap:3px;}.five-elements-count{font-size:17px;line-height:19px;}.five-elements-track{width:23px;}}
+@media(prefers-reduced-motion:reduce){.five-elements-fill{animation:none;}}
