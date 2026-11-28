@@ -1,3 +1,4 @@
+import { recordReportAccess, orderAccessSummary } from "./report-access";
 import { writingLinesForChart } from "./writing-lines";
 import { validAdminToken } from "./admin-token";
 import { requireMockPayment, isLiveTossOrder } from "./toss-mode";
@@ -760,6 +761,61 @@ export function getReport(s: Session, oid: string) {
     report: open<Report>(r.payload),
   };
 }
+export function acknowledgeReportAccess(
+  s: Session,
+  oid: string,
+  requestId: string,
+  failed = false,
+) {
+  const o = ownOrder(s, oid);
+  if (
+    o.payment_status !== "paid" ||
+    o.content_deleted ||
+    !o.expires ||
+    o.expires <= Date.now()
+  )
+    throw new Fault("열람 가능한 주문만 확인할 수 있습니다.", 403);
+  if (
+    !failed &&
+    (o.fulfillment !== "ready" ||
+      !one(
+        "SELECT 1 FROM reports WHERE order_id=? AND version=?",
+        oid,
+        o.version,
+      ))
+  )
+    throw new Fault("운명서가 아직 준비되지 않았습니다.", 409);
+  recordReportAccess(
+    oid,
+    failed ? "client_error" : "viewed",
+    failed ? "BROWSER_LOAD_FAILED" : null,
+    requestId,
+  );
+}
+export function customerReport(
+  s: Session,
+  oid: string,
+  kind: "web" | "pdf" = "web",
+) {
+  ownOrder(s, oid);
+  try {
+    return getReport(s, oid);
+  } catch (error) {
+    try {
+      const status = error instanceof Fault ? error.status : 500;
+      recordReportAccess(
+        oid,
+        status < 500 ? "blocked" : kind === "pdf" ? "pdf_error" : "web_error",
+        `${kind.toUpperCase()}_HTTP_${status}`,
+      );
+    } catch {}
+    throw error;
+  }
+}
+export function reportPdfFailure(s: Session, oid: string) {
+  ownOrder(s, oid);
+  recordReportAccess(oid, "pdf_error", "PDF_RENDER_FAILED");
+}
 export function resend(s: Session, oid: string) {
   const o = ownOrder(s, oid);
   limit("mail:" + oid, 3, 3600000);
@@ -844,6 +900,7 @@ export function adminOverview(s: Session, query = "") {
     ...orderView(o),
     email: `${o.email_hash.slice(0, 8)}…`,
     corrections: o.corrections,
+    access: orderAccessSummary(o),
   }));
   return {
     orders,
@@ -1190,6 +1247,10 @@ function wipeContent(oid: string) {
 export function purgeExpired() {
   const now = Date.now();
   tx(() => {
+    run(
+      "DELETE FROM report_access_events WHERE created<?",
+      now - 30 * 86400000,
+    );
     run("DELETE FROM visits WHERE first_seen<?", now - 30 * 86400000);
     run("DELETE FROM visit_exclusions WHERE expires<?", now);
     for (const o of all(

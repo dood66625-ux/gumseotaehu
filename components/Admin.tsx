@@ -1,4 +1,5 @@
 "use client";
+import AdminOrderAccess from "./AdminOrderAccess";
 import AdminPasswordForm from "./AdminPasswordForm";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, ErrorBox, Loading } from "./client";
@@ -353,6 +354,7 @@ export default function Admin() {
               <th>금액</th>
               <th>결제</th>
               <th>제공</th>
+              <th>고객 열람·오류</th>
               <th>열람기한</th>
               <th>선택</th>
             </tr>
@@ -368,6 +370,9 @@ export default function Admin() {
                   {o.payment}
                 </td>
                 <td>{o.fulfillment}</td>
+                <td>
+                  <AdminOrderAccess access={o.access} />
+                </td>
                 <td>
                   {o.expires
                     ? new Date(o.expires).toLocaleDateString("ko-KR")
@@ -398,6 +403,12 @@ export default function Admin() {
           </tbody>
         </table>
       </div>
+      <p className="hint">
+        열람 정보는 최근 30일 기준입니다. 화면 표시 신호이며 완독을 뜻하지
+        않습니다. 기록이 없으면 미열람으로 단정할 수 없고, 과거 자료 응답 기록은
+        PDF 준비 요청도 포함할 수 있습니다. 환불은 주문·제공 상태와 문의 내용을
+        함께 확인해주세요.
+      </p>
       {!data.orders.length && (
         <p className="muted">
           주문이 없습니다. 고객 여정으로 모의 주문을 만들어 주세요.

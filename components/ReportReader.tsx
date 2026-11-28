@@ -15,7 +15,7 @@ import Link from "next/link";
 import { chapterArt } from "../lib/report-art";
 import { readingGuide } from "../lib/report-reading-guide";
 import { reportDisclosure } from "../lib/report-disclosure";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { reportDownload } from "../lib/report-download";
 import { reportFigures } from "../lib/report-figures";
 import CourtPortrait from "./CourtPortrait";
@@ -66,6 +66,28 @@ export default function ReportReader({
       pendingPdf.current = null;
     };
   }, [id]);
+  const viewSignal = useRef<{ id: string; state: string } | null>(null);
+  useEffect(() => {
+    if (!d && !loadError) return;
+    const state = loadError ? "load_error" : "viewed";
+    if (viewSignal.current?.id === id && viewSignal.current.state === state)
+      return;
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        if (typeof crypto.randomUUID !== "function") return;
+        viewSignal.current = { id, state };
+        void api("reports/" + id + "/view-status", {
+          requestId: crypto.randomUUID(),
+          state,
+        }).catch(() => {});
+      });
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [id, d, loadError]);
   async function preparePdf() {
     if (!canSharePdf()) return;
     pendingPdf.current?.abort();

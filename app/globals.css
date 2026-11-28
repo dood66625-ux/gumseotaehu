@@ -5066,3 +5066,8 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 @media (max-height:650px) {
   .checkout-flow .checkout-consent-details {padding:4px 0;}
 }
+.admin-order-access {min-width:200px;max-width:290px;white-space:normal;line-height:1.55;}
+.admin-order-access p {margin:4px 0;font-size:12px;overflow-wrap:anywhere;}
+.access-read-confirmed {color:#95d3aa;}
+.access-read-unconfirmed {color:#d4bf8b;}
+.admin-order-access .access-issue {color:#efb1a4;}

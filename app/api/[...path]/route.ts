@@ -164,8 +164,16 @@ async function handler(
       if (/^reports\/[^/]+\/pdf$/.test(p)) {
         const oid = p.split("/")[1];
         limit("pdf:" + s.id, 15);
-        const report = svc.getReport(s, oid),
+        const report = svc.customerReport(s, oid, "pdf");
+        let buf: Buffer;
+        try {
           buf = await reportPdf({ ...report, counsel: counselEntries(oid) });
+        } catch (error) {
+          try {
+            svc.reportPdfFailure(s, oid);
+          } catch {}
+          throw error;
+        }
         audit(s.id, "pdf_download", oid);
         return new NextResponse(new Uint8Array(buf), {
           headers: {
@@ -178,7 +186,7 @@ async function handler(
       if (/^reports\/[^/]+\/counsel$/.test(p))
         return json(readCounsel(s, z.string().uuid().parse(p.split("/")[1])));
       if (/^reports\/[^/]+$/.test(p))
-        return json(svc.getReport(s, p.split("/")[1]));
+        return json(svc.customerReport(s, p.split("/")[1]));
       if (p.startsWith("local-mail/"))
         return json(svc.localOtp(s, p.split("/")[1]));
       if (p === "tickets") return json(svc.getTickets(s));
@@ -255,6 +263,23 @@ async function handler(
         /* Optional analytics must never fail a customer's completed calculation. */
       }
       return json({ id }, 201);
+    }
+    if (/^reports\/[^/]+\/view-status$/.test(p)) {
+      const oid = z.string().uuid().parse(p.split("/")[1]);
+      const body = z
+        .object({
+          requestId: z.string().uuid(),
+          state: z.enum(["viewed", "load_error"]),
+        })
+        .parse(b);
+      limit("report-view:" + s.id + ":" + oid, 60, 3600000);
+      svc.acknowledgeReportAccess(
+        s,
+        oid,
+        body.requestId,
+        body.state === "load_error",
+      );
+      return json({ ok: true });
     }
     if (p === "auth/request")
       return json({

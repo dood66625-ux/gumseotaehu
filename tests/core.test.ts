@@ -13,7 +13,7 @@ import { rmSync, readFileSync } from "node:fs";
 import { calculate, tenGod, type Birth } from "../lib/astrology";
 import { config } from "../lib/config";
 import { db, all, one, run, closeDb } from "../lib/db";
-import { hash, open, seal, totp, verifyTotp } from "../lib/security";
+import { hash, open, seal, totp, verifyTotp, id } from "../lib/security";
 import { generate, preview, validateReport } from "../lib/interpretation";
 import * as svc from "../lib/service";
 import {
@@ -1191,4 +1191,80 @@ it("personal writing narration is restricted to the owned valid paid order", () 
   expect(svc.orderStatusView(o.s, o.oid)).not.toHaveProperty("writingLines");
   run("UPDATE orders SET content_deleted=0,expires=1 WHERE id=?", o.oid);
   expect(svc.orderStatusView(o.s, o.oid)).not.toHaveProperty("writingLines");
+});
+
+it("separates delivered report data from idempotent displayed views and preserves refund history", () => {
+  const o = paid();
+  svc.workOnce();
+  svc.customerReport(o.s, o.oid);
+  let summary = svc
+    .adminOverview(admin())
+    .orders.find((row) => row.id === o.oid)!.access;
+  expect(summary.viewCount).toBe(0);
+  expect(summary.legacyResponseAt).toBeTruthy();
+  const viewId = id();
+  svc.acknowledgeReportAccess(o.s, o.oid, viewId);
+  svc.acknowledgeReportAccess(o.s, o.oid, viewId);
+  svc.acknowledgeReportAccess(o.s, o.oid, id());
+  summary = svc
+    .adminOverview(admin())
+    .orders.find((row) => row.id === o.oid)!.access;
+  expect(summary.viewCount).toBe(2);
+  expect(summary.firstViewedAt).toBeTruthy();
+  const stranger = verified("stranger-views@example.invalid");
+  expect(() => svc.acknowledgeReportAccess(stranger, o.oid, id())).toThrow();
+  expect(() => svc.customerReport(stranger, o.oid)).toThrow();
+  run("UPDATE orders SET payment_status='refunded' WHERE id=?", o.oid);
+  expect(() => svc.acknowledgeReportAccess(o.s, o.oid, id())).toThrow();
+  summary = svc
+    .adminOverview(admin())
+    .orders.find((row) => row.id === o.oid)!.access;
+  expect(summary.viewCount).toBe(2);
+  expect(summary.availability).toContain("환불 완료");
+  expect(() => svc.adminOverview(o.s)).toThrow();
+});
+it("surfaces missing-report errors and current generation failure without granting access", () => {
+  const o = paid();
+  svc.workOnce();
+  run("DELETE FROM reports WHERE order_id=?", o.oid);
+  expect(() => svc.customerReport(o.s, o.oid)).toThrow();
+  expect(() => svc.acknowledgeReportAccess(o.s, o.oid, id())).toThrow();
+  let summary = svc
+    .adminOverview(admin())
+    .orders.find((row) => row.id === o.oid)!.access;
+  expect(summary.viewCount).toBe(0);
+  expect(summary.errorCount).toBe(1);
+  expect(summary.lastIssue?.code).toBe("WEB_HTTP_503");
+  expect(summary.availability).toContain("원문 확인 오류");
+  run("UPDATE orders SET fulfillment='failed' WHERE id=?", o.oid);
+  run(
+    "UPDATE jobs SET state='failed',error='AI_TIMEOUT',attempts=4 WHERE order_id=?",
+    o.oid,
+  );
+  summary = svc
+    .adminOverview(admin())
+    .orders.find((row) => row.id === o.oid)!.access;
+  expect(summary.availability).toContain("작성 실패");
+  expect(summary.generationIssue?.code).toBe("AI_TIMEOUT");
+});
+it("keeps read observations within the thirty-day window and cleans expired metadata", () => {
+  const o = paid();
+  svc.workOnce();
+  svc.acknowledgeReportAccess(o.s, o.oid, id());
+  run(
+    "UPDATE report_access_events SET created=? WHERE order_id=?",
+    Date.now() - 31 * 86400000,
+    o.oid,
+  );
+  expect(
+    svc.adminOverview(admin()).orders.find((row) => row.id === o.oid)!.access
+      .viewCount,
+  ).toBe(0);
+  svc.purgeExpired();
+  expect(
+    one(
+      "SELECT COUNT(*) AS n FROM report_access_events WHERE order_id=?",
+      o.oid,
+    )?.n,
+  ).toBe(0);
 });
