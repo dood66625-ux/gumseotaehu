@@ -5,6 +5,18 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function Page() {
-  return <ReportUnsealing id="" ready={false} preview />;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ stage?: string }>;
+}) {
+  const params = await searchParams;
+  return (
+    <ReportUnsealing
+      id=""
+      ready={false}
+      preview
+      skipIntro={params.stage === "wait"}
+    />
+  );
 }

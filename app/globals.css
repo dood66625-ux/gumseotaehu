@@ -4940,7 +4940,7 @@ body:has(.immersive-report-stage:not([hidden])) .header,body:has(.immersive-repo
 body:has(.report-unsealing) .header,body:has(.report-unsealing) footer,body:has(.report-unsealing) .test-banner {display:none;}
 body:has(.report-unsealing) .page {margin:0;padding:0;max-width:none;}
 .report-unsealing {min-height:100svh;background:#050505;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px;color:#ead9b8;}
-.unsealing-mark {width:140px;height:140px;margin-bottom:28px;overflow:visible;transform-origin:center;animation:unseal-breathe 3.2s ease-in-out infinite;}
+.unsealing-mark {width:140px;height:140px;margin-bottom:28px;overflow:visible;transform-origin:center;animation:unseal-breathe 4s ease-in-out infinite;}
 .unsealing-rim {filter:drop-shadow(0 0 4px #d8b66e99) drop-shadow(0 0 10px #c99d4e55);}
 .unsealing-mark.complete {animation:none;}
 .report-unsealing h1 {font:500 23px/1.6 var(--sans);margin:0 0 12px;}
@@ -5027,3 +5027,20 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 @media print {.report-bottom-actions,.counsel-leave-dialog {display:none!important;}}
 
 .support-email {user-select:text;-webkit-user-select:text;overflow-wrap:anywhere;}
+
+/* Writing prologue runs alongside the existing order polling. */
+.writing-prologue {position:relative;padding:0;overflow:hidden;}
+.writing-scenes {position:relative;width:min(100%,640px);height:100svh;min-height:420px;}
+.writing-scene {position:absolute;inset:0;margin:0;opacity:0;visibility:hidden;}
+.writing-scene.active {opacity:1;visibility:visible;}
+.writing-scene img {width:100%;height:80%;object-fit:cover;object-position:center 28%;mask-image:linear-gradient(#000 55%,transparent 100%);}
+.writing-scene.active img {animation:writing-image-in 1s ease-out both;}
+.writing-scene figcaption {position:absolute;left:9%;right:9%;bottom:19%;color:#ead9b8;font:500 clamp(19px,4.8vw,25px)/1.8 var(--sans);text-wrap:balance;text-align:center;}
+.writing-scene.active figcaption {animation:writing-caption-in .65s .7s ease-out both;}
+.writing-skip {position:absolute;right:max(24px,calc((100vw - 640px)/2 + 24px));bottom:max(32px,env(safe-area-inset-bottom));border:0;background:transparent;color:#c8b58f;padding:12px;font:400 12px/1.5 var(--sans);letter-spacing:.12em;cursor:pointer;}
+.unsealing-orbit {transform-origin:100px 100px;filter:drop-shadow(0 0 4px #ffe1a9) drop-shadow(0 0 9px #e3b85e99);animation:unseal-orbit 8s linear infinite;}
+.unsealing-mark.complete .unsealing-orbit {animation:none;}
+@keyframes unseal-orbit {to {transform:rotate(360deg);}}
+@keyframes writing-image-in {from {opacity:0;transform:translateY(24px);}to {opacity:1;transform:translateY(0);}}
+@keyframes writing-caption-in {from {opacity:0;transform:translateY(8px);}to {opacity:1;transform:translateY(0);}}
+@media(prefers-reduced-motion:reduce) {.writing-scene.active img,.writing-scene.active figcaption,.unsealing-orbit {animation:none;}}

@@ -1,21 +1,101 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+const writingScenes = [
+  {
+    image: "/empress-royal-v2.webp",
+    alt: "금서를 살피는 금서태후",
+    caption: "그대가 태어난 순간의 기운을 살피고 있느니라.",
+  },
+  {
+    image: "/story/scene-4.webp",
+    alt: "금서를 조심스럽게 펼치는 태후",
+    caption: "흩어진 이야기를 모아, 그대만의 금서를 적고 있느니라.",
+  },
+  {
+    image: "/story/scene-5.webp",
+    alt: "어둠 속에서 금빛을 머금은 금서",
+    caption: "잠시 기다리거라. 그대의 이야기를 곧 펼쳐 주마.",
+  },
+];
 export default function ReportUnsealing({
   id,
   ready,
   children,
   preview = false,
+  skipIntro = false,
 }: {
   id: string;
   ready: boolean;
   children?: ReactNode;
   preview?: boolean;
+  skipIntro?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [intro, setIntro] = useState(!ready && !skipIntro);
+  const [scene, setScene] = useState(0);
+  function finishIntro() {
+    setIntro(false);
+    if (!preview) {
+      try {
+        sessionStorage.setItem("gumseo-writing-intro:" + id, "seen");
+      } catch {}
+    }
+  }
   useEffect(() => {
-    if (ready && !dialog.current?.open) dialog.current?.showModal();
-  }, [ready]);
+    if (!preview) {
+      try {
+        if (sessionStorage.getItem("gumseo-writing-intro:" + id) === "seen")
+          setIntro(false);
+      } catch {}
+    }
+  }, [id, preview]);
+  useEffect(() => {
+    if (!intro) return;
+    const timer = setTimeout(() => {
+      if (scene < writingScenes.length - 1) setScene(scene + 1);
+      else finishIntro();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [intro, scene, id, preview]);
+  useEffect(() => {
+    if (ready && !intro && !dialog.current?.open) dialog.current?.showModal();
+  }, [ready, intro]);
+  if (intro)
+    return (
+      <section
+        className="report-unsealing writing-prologue"
+        aria-label="운명서를 여는 이야기"
+      >
+        <div className="writing-scenes" aria-live="polite" aria-atomic="true">
+          {writingScenes.map((item, index) => (
+            <figure
+              key={item.image}
+              className={
+                index === scene ? "writing-scene active" : "writing-scene"
+              }
+              aria-hidden={index !== scene}
+            >
+              <img
+                src={item.image}
+                alt={item.alt}
+                width="800"
+                height="1200"
+                decoding="async"
+              />
+              <figcaption>{item.caption}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <button
+          className="writing-skip"
+          onClick={finishIntro}
+          aria-label="이야기 건너뛰고 작성 화면으로"
+        >
+          SKIP &gt;
+        </button>
+      </section>
+    );
   return (
     <section className="report-unsealing" aria-label="운명서 펼치기">
       <svg
@@ -50,6 +130,17 @@ export default function ReportUnsealing({
           fill="none"
           stroke="#ddbd7a"
           strokeWidth="1.2"
+        />
+        <circle
+          className="unsealing-orbit"
+          cx="100"
+          cy="100"
+          r="94"
+          fill="none"
+          stroke="#ffe7a5"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeDasharray="55 536"
         />
       </svg>
       <h1 aria-live="polite">
