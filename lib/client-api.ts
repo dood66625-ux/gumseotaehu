@@ -42,13 +42,24 @@ export async function api<T = any>(path: string, body?: unknown): Promise<T> {
       );
     }
     if (controller.signal.aborted) throw timeout;
-    if (!response.ok)
-      throw new ApiError(
+    if (!response.ok) {
+      const message =
         typeof value?.error === "string"
           ? value.error
-          : "요청을 처리하지 못했습니다.",
+          : "요청을 처리하지 못했습니다.";
+      const internalCode = /^[A-Z][A-Z0-9_]*$/.test(message);
+      const adminRequest = path === "admin" || path.startsWith("admin/");
+      const customerMessage =
+        response.status === 401
+          ? "인증이 필요합니다. 다시 로그인하거나 구매 이메일로 인증해주세요."
+          : response.status === 429
+            ? "요청이 많습니다. 잠시 후 다시 시도해주세요."
+            : "요청을 처리하지 못했습니다. 잠시 후 다시 확인해주세요.";
+      throw new ApiError(
+        internalCode && !adminRequest ? customerMessage : message,
         response.status,
       );
+    }
     return value;
   }
   async function perform() {

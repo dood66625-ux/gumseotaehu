@@ -56,6 +56,7 @@ export function Loading() {
   );
 }
 export function EmailAuth({ onVerified }: { onVerified: () => void }) {
+  const [demoMail, setDemoMail] = useState(false);
   const [email, setEmail] = useState(""),
     [challenge, setChallenge] = useState(""),
     [code, setCode] = useState(""),
@@ -81,6 +82,7 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
     try {
       const r = await api("auth/request", { email });
       setChallenge(r.challengeId);
+      setDemoMail(r.demoMail === true);
       const time = Date.now();
       setRequestedAt(time);
       setNow(time);
@@ -109,8 +111,8 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
     <div className="card">
       <h2>이메일로 안전하게 인증</h2>
       <p className="hint">
-        운명서를 다시 찾을 때 사용할 주소입니다. 현재 체험판에서는 실제 이메일을
-        발송하지 않습니다.
+        구매할 때 사용한 이메일로 인증번호를 받아 운명서를 다시 열람할 수
+        있습니다.
       </p>
       <form onSubmit={request}>
         <div className="field">
@@ -164,20 +166,22 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
           >
             이메일 주소 수정
           </button>
-          <button
-            className="text-button"
-            type="button"
-            onClick={async () => {
-              try {
-                const r = await api("local-mail/" + challenge);
-                setLocal(r.code);
-              } catch (e) {
-                setError((e as Error).message);
-              }
-            }}
-          >
-            체험용 인증번호 확인
-          </button>
+          {demoMail && (
+            <button
+              className="text-button"
+              type="button"
+              onClick={async () => {
+                try {
+                  const r = await api("local-mail/" + challenge);
+                  setLocal(r.code);
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }}
+            >
+              체험용 인증번호 확인
+            </button>
+          )}
           {local && (
             <div className="notice">
               실제 발송 없이 확인하는 체험용 인증번호

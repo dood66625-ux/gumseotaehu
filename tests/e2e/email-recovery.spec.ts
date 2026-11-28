@@ -89,7 +89,7 @@ test("email change shows destination, clears old code after edit, and blocks exp
   await page.route("**/api/email-change/request", (route) => {
     requestCount++;
     return route.fulfill({
-      json: { changeId: `synthetic-change-${requestCount}` },
+      json: { changeId: `synthetic-change-${requestCount}`, demoMail: true },
     });
   });
   await page.route("**/api/email-change/local-code", (route) =>

@@ -1,7 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, ApiError, EmailAuth, ErrorBox, Loading } from "./client";
+import { customerOrderState } from "../lib/customer-order-state";
 import SupportGuide from "./SupportGuide";
+const categoryLabels: Record<string, string> = {
+  refund: "환불 문의",
+  correction: "출생정보 정정",
+  email: "이메일 문의",
+  privacy: "개인정보 요청",
+  guardian: "법정대리인 요청",
+  other: "기타 문의",
+};
 export default function Help() {
   const [verified, setVerified] = useState(false),
     [orders, setOrders] = useState<any[]>([]),
@@ -83,8 +92,7 @@ export default function Help() {
             <h2>구매·환불·개인정보 요청</h2>
             <p className="hint">
               환불은 사유와 법적 요건을 확인해 처리합니다. 카드번호·신분증 원본
-              등은 입력하지 마세요. 현재는 체험판이며 실제 접수 채널은 운영 설정
-              후 개통됩니다.
+              등은 입력하지 마세요.
             </p>
             <div className="field">
               <label htmlFor="help-order">관련 주문</label>
@@ -92,7 +100,7 @@ export default function Help() {
                 <option value="">주문 없음 / 일반 문의</option>
                 {orders.map((o) => (
                   <option key={o.id} value={o.id}>
-                    {o.id.slice(0, 8)} · {o.payment} · {o.fulfillment}
+                    {o.id.slice(0, 8)} · {customerOrderState(o).label}
                   </option>
                 ))}
               </select>
@@ -134,9 +142,11 @@ export default function Help() {
           )}
           {tickets.map((t) => (
             <article className="card" key={t.id}>
-              <span className="status">{t.status}</span>
+              <span className="status">
+                {t.answer ? "답변 완료" : "접수 완료"}
+              </span>
               <p className="hint">
-                {t.id} · {t.category}
+                접수번호 {t.id} · {categoryLabels[t.category] ?? "문의"}
                 <br />
                 처리 검토 기준일{" "}
                 {new Date(t.due).toLocaleDateString("ko-KR", {
@@ -145,9 +155,7 @@ export default function Help() {
                 · 법정기한은 사안별 별도 검토
               </p>
               <p>{t.message}</p>
-              {t.answer && (
-                <div className="notice">운영자 답변: {t.answer}</div>
-              )}
+              {t.answer && <div className="notice">답변: {t.answer}</div>}
             </article>
           ))}
         </>

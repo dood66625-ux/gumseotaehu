@@ -1,5 +1,8 @@
 import { expect, it } from "vitest";
-import { customerOrderState } from "../lib/customer-order-state";
+import {
+  customerOrderState,
+  customerPaymentLabel,
+} from "../lib/customer-order-state";
 const now = 1800000000000;
 const paid = {
   payment: "paid",
@@ -47,4 +50,14 @@ it("payment cancellation and deletion override stale ready fulfillment", () => {
   expect(customerOrderState({ ...paid, expires: now - 1 }, now).terminal).toBe(
     true,
   );
+});
+
+it.each([
+  ["paid", "결제 완료"],
+  ["pending", "결제 확인 중"],
+  ["refund_pending", "취소 확인 중"],
+  ["refunded", "전액 취소 완료"],
+  ["unexpected-internal-state", "확인 필요"],
+])("presents payment %s without exposing internal values", (value, label) => {
+  expect(customerPaymentLabel(value)).toBe(label);
 });

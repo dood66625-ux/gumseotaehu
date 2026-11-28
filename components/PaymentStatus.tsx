@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { api, ErrorBox, Loading } from "./client";
 import ReportUnsealing from "./ReportUnsealing";
 import PaymentReceipt from "./PaymentReceipt";
-import { customerOrderState } from "../lib/customer-order-state";
+import {
+  customerOrderState,
+  customerPaymentLabel,
+} from "../lib/customer-order-state";
 export default function PaymentStatus({ id }: { id: string }) {
   const [o, setO] = useState<any>(),
     [error, setError] = useState("");
@@ -66,12 +69,12 @@ export default function PaymentStatus({ id }: { id: string }) {
         <p className="quote">{view.description}</p>
         <dl className="data-list">
           <div>
-            <dt>주문</dt>
+            <dt>주문번호</dt>
             <dd>{o.id}</dd>
           </div>
           <div>
             <dt>결제 상태</dt>
-            <dd>{o.payment}</dd>
+            <dd>{customerPaymentLabel(o.payment)}</dd>
           </div>
           <div>
             <dt>운명서 상태</dt>
@@ -85,8 +88,8 @@ export default function PaymentStatus({ id }: { id: string }) {
         ) : (
           <p className="notice">
             {view.terminal
-              ? "이 주문의 이용은 종료됐습니다. 기록 확인이나 이의가 있으면 아래 문의 경로를 이용해주세요."
-              : "추가 결제 없이 저장된 주문 상태를 확인하고 있습니다. 오래 지연되면 아래 문의 경로를 이용해주세요."}
+              ? "이 주문의 이용은 종료됐습니다. 기록 확인이나 이의가 있으면 환불 정책에 안내된 이메일로 문의해주세요."
+              : "추가 결제 없이 저장된 주문 상태를 확인하고 있습니다. 오래 지연되면 환불 정책에 안내된 이메일로 문의해주세요."}
           </p>
         )}
       </div>

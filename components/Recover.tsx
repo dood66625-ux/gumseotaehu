@@ -96,7 +96,7 @@ export default function Recover() {
                       href={"/checkout/success?orderId=" + o.id}
                       className="button secondary"
                     >
-                      주문·복구 상태 보기
+                      주문 상태 보기
                     </Link>
                   )}
                 </div>

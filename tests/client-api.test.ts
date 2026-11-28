@@ -46,9 +46,7 @@ describe("browser API deadlines without automatic mutation retries", () => {
       (e) => e,
     );
     await vi.advanceTimersByTimeAsync(20000);
-    expect((await result).message).toContain(
-      "결제·접수 내역",
-    );
+    expect((await result).message).toContain("결제·접수 내역");
     finish(Response.json({ ok: true }));
     await vi.advanceTimersByTimeAsync(1);
     expect(fetcher).toHaveBeenCalledTimes(1);
@@ -98,5 +96,22 @@ describe("browser API deadlines without automatic mutation retries", () => {
     });
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+it("hides internal customer error codes while preserving status and protected admin diagnostics", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      Response.json({ error: "GENERATION_UNAVAILABLE" }, { status: 503 }),
+    ),
+  );
+  await expect(api("orders/synthetic")).rejects.toMatchObject({
+    status: 503,
+    message: "요청을 처리하지 못했습니다. 잠시 후 다시 확인해주세요.",
+  });
+  await expect(api("admin/orders")).rejects.toMatchObject({
+    status: 503,
+    message: "GENERATION_UNAVAILABLE",
   });
 });

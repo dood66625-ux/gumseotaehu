@@ -21,19 +21,19 @@ const copy = {
   working: {
     label: "운명서 작성 중",
     heading: "운명서를 작성하고 있습니다.",
-    description: "창을 닫아도 서버의 작성 작업은 계속됩니다.",
+    description: "창을 닫아도 운명서 작성은 계속됩니다.",
   },
   held: {
     label: "작성 결과 확인 중",
     heading: "운명서 작성 결과를 확인하고 있습니다.",
     description:
-      "중복 생성과 추가 비용을 막기 위해 자동 재호출을 보류했습니다. 추가 결제 없이 이 주문의 복구 확인을 요청해주세요.",
+      "운명서가 아직 준비되지 않았습니다. 다시 결제하지 마시고, 지연이 계속되면 주문번호와 함께 문의해주세요.",
   },
   failed: {
-    label: "작성 복구 필요",
-    heading: "운명서 복구 확인이 필요합니다.",
+    label: "작성 확인 필요",
+    heading: "운명서를 완성하지 못했습니다.",
     description:
-      "작성에 실패했습니다. 추가 결제 없이 복구 또는 환불 검토를 요청할 수 있습니다.",
+      "다시 결제하지 마시고, 주문번호와 함께 재작성 또는 환불을 문의해주세요.",
   },
   refund_pending: {
     label: "취소 확인 중",
@@ -110,4 +110,19 @@ export function customerOrderState(order: Order, now = Date.now()) {
     canChangeEmail: permitted,
     terminal: ["refunded", "deleted", "expired"].includes(state),
   };
+}
+
+export function customerPaymentLabel(payment: unknown) {
+  switch (payment) {
+    case "paid":
+      return "결제 완료";
+    case "pending":
+      return "결제 확인 중";
+    case "refund_pending":
+      return "취소 확인 중";
+    case "refunded":
+      return "전액 취소 완료";
+    default:
+      return "확인 필요";
+  }
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, ErrorBox } from "./client";
 export default function EmailChange({ orderId }: { orderId: string }) {
+  const [demoMail, setDemoMail] = useState(false);
   const [changeId, setChangeId] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -52,6 +53,7 @@ export default function EmailChange({ orderId }: { orderId: string }) {
                 });
                 setTargetEmail(String(f.get("newEmail")).trim().toLowerCase());
                 setChangeId(r.changeId);
+                setDemoMail(r.demoMail === true);
                 const time = Date.now();
                 setRequestedAt(time);
                 setNow(time);
@@ -112,29 +114,31 @@ export default function EmailChange({ orderId }: { orderId: string }) {
                 새 이메일 수정 · 다시 요청
               </button>
               <p className="notice">
-                로컬 검증판은 실제 이메일을 발송하지 않습니다.
+                새 이메일로 받은 인증번호를 입력해주세요.
               </p>
-              <button
-                type="button"
-                className="text-button"
-                disabled={busy || expired}
-                onClick={async () => {
-                  setBusy(true);
-                  setError("");
-                  try {
-                    const r = await api("email-change/local-code", {
-                      changeId,
-                    });
-                    setCode(r.code);
-                  } catch (e) {
-                    setError((e as Error).message);
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                변경용 체험 인증번호 확인
-              </button>
+              {demoMail && (
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={busy || expired}
+                  onClick={async () => {
+                    setBusy(true);
+                    setError("");
+                    try {
+                      const r = await api("email-change/local-code", {
+                        changeId,
+                      });
+                      setCode(r.code);
+                    } catch (e) {
+                      setError((e as Error).message);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  변경용 체험 인증번호 확인
+                </button>
+              )}
               {code && (
                 <p className="hint">
                   체험 인증번호 <span data-testid="change-otp">{code}</span>

@@ -42,7 +42,7 @@ for (const scenario of [
       page.getByRole("link", { name: "운명서 전체 읽기" }),
     ).toHaveCount(0);
     await expect(
-      page.getByText("창을 닫아도 서버의 작성 작업은 계속됩니다.", {
+      page.getByText("창을 닫아도 운명서 작성은 계속됩니다.", {
         exact: true,
       }),
     ).toHaveCount(0);

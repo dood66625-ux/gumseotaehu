@@ -259,8 +259,10 @@ async function handler(
     if (p === "auth/request")
       return json({
         challengeId: svc.requestOtp(s, b.email),
-        message:
-          "주소가 올바르다면 인증 안내가 준비됩니다. 로컬에서는 시험 수신함을 확인하세요.",
+        demoMail:
+          !process.env.MAIL_WORKER_MODE ||
+          process.env.MAIL_WORKER_MODE === "disabled",
+        message: "주소가 올바르다면 인증 안내가 준비됩니다.",
       });
     if (p === "auth/verify") {
       const token = svc.verifyOtp(
@@ -345,11 +347,14 @@ async function handler(
       svc.resend(s, z.string().uuid().parse(b.orderId));
       return json({
         message:
-          "로컬 발송함에 재열람 안내를 저장했습니다. 실제 발송은 하지 않았습니다.",
+          "재열람 안내를 요청했습니다. 구매 이메일의 받은편지함과 스팸함을 확인해주세요.",
       });
     }
     if (p === "email-change/request")
       return json({
+        demoMail:
+          !process.env.MAIL_WORKER_MODE ||
+          process.env.MAIL_WORKER_MODE === "disabled",
         changeId: requestEmailChange(
           s,
           z.string().uuid().parse(b.orderId),

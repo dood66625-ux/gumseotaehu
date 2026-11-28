@@ -226,7 +226,7 @@ export default function ReportReader({
           종합 운명서
         </h1>
         <p className="page-intro">
-          {d.report.year}년 흐름 포함 · 버전 {d.order.version}
+          {d.report.year}년 흐름 포함
           <br />
           무료 재열람:{" "}
           {new Date(d.order.expires).toLocaleDateString("ko-KR", {
