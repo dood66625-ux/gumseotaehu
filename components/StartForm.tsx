@@ -6,6 +6,14 @@ import {
   formatBirthDateInput,
   birthDateInputError,
 } from "../lib/birth-date-input";
+const birthTimes = Array.from({ length: 48 }, (_, index) => {
+  const hour = Math.floor(index / 2);
+  const minute = index % 2 ? "30" : "00";
+  return {
+    value: `${String(hour).padStart(2, "0")}:${minute}`,
+    label: `${hour < 12 ? "오전" : "오후"} ${hour % 12 || 12}:${minute}${index === 0 ? " (자정)" : index === 24 ? " (정오)" : ""}`,
+  };
+});
 const questions = [
   "너를 어떻게 불러주면 되겠느냐?",
   "네가 태어난 날은 언제이느냐?",
@@ -188,13 +196,22 @@ export default function StartForm() {
           <legend className="sr-only">태어난 시각과 대운 계산</legend>
           <div className="field">
             <label htmlFor="time">출생시간</label>
-            <input
+            <select
               id="time"
               name="time"
-              type="time"
+              defaultValue=""
               required={!unknown}
               disabled={unknown}
-            />
+            >
+              <option value="" disabled>
+                태어난 시각을 골라보거라
+              </option>
+              {birthTimes.map((time) => (
+                <option key={time.value} value={time.value}>
+                  {time.label}
+                </option>
+              ))}
+            </select>
           </div>
           <label className="check">
             <input

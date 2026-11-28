@@ -119,7 +119,7 @@ try {
             throw Error("PURCHASE_MUST_BE_LAST");
           if (screen === "preview") {
             await page
-              .getByRole("button", { name: "아홉 장에 담긴 금기 목록" })
+              .getByRole("button", { name: "운명서 구성 살펴보기" })
               .click();
             const dialog = page.getByRole("dialog");
             await dialog.waitFor();

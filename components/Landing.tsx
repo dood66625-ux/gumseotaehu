@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { chapterArt } from "../lib/report-art";
-import { PRODUCT_PRICE_TEXT } from "../lib/product";
+import {
+  PRODUCT_PRICE_TEXT,
+  REPORT_WEB_PAGE_COUNT,
+  REPORT_WEB_PAGE_NOTE,
+} from "../lib/product";
 import Intro from "@/components/Intro";
 import MobilePrologue from "./MobilePrologue";
 export default function Landing({
@@ -17,10 +21,7 @@ export default function Landing({
               media="(min-width:901px)"
               srcSet="/empress-royal-distant.webp"
             />
-            <source
-              media="(max-width:600px)"
-              srcSet="/empress-royal-v2.webp"
-            />
+            <source media="(max-width:600px)" srcSet="/empress-royal-v2.webp" />
             <img
               src="/empress-royal-v2.webp"
               width="1200"
@@ -164,7 +165,7 @@ export default function Landing({
         >
           <div className="archive-gallery-heading">
             <div>
-              <p className="eyebrow">NINE CHAPTERS, ONE PERSONAL STORY</p>
+              <p className="eyebrow">ONE BOOK, YOUR PERSONAL STORY</p>
               <h2 id="illustrated-archive-title">
                 읽는 순간도,
                 <br />
@@ -172,7 +173,7 @@ export default function Landing({
               </h2>
             </div>
             <p>
-              나를 이해하는 아홉 장의 이야기.
+              나를 이해하는 {REPORT_WEB_PAGE_COUNT}페이지의 이야기.
               <br />
               그림을 따라 천천히 읽어 보거라. 쉬운 말로 그대의 마음에 남겨
               주겠노라.
@@ -231,7 +232,7 @@ export default function Landing({
           <div className="book-copy">
             <p className="eyebrow">A PRIVATE ARCHIVE OF YOUR OWN</p>
             <h2>
-              봉인된 아홉 장.
+              {REPORT_WEB_PAGE_COUNT}페이지에 담긴 이야기.
               <br />
               오직 그대를 위한 운명서.
             </h2>
@@ -270,6 +271,8 @@ export default function Landing({
             </a>
             <p className="fine">
               웹 전체 열람 · 그림이 담긴 PDF · 쉬운 풀이 · 1년 무료 재열람
+              <br />
+              {REPORT_WEB_PAGE_NOTE}
               <br />
               출생시간 미상·대운 계산 구분 미선택 시 관련 분석은 제한됩니다.
             </p>

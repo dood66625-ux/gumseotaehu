@@ -162,7 +162,7 @@ test("complete mobile UI journey: birth, preview, verified checkout, report, PDF
   await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByLabel("생년월일").fill("1995-05-15");
   await page.getByRole("button", { name: "다음 →" }).click();
-  await page.getByLabel("출생시간", { exact: true }).fill("10:30");
+  await page.getByLabel("출생시간", { exact: true }).selectOption("10:30");
   await page.getByRole("button", { name: "다음 →" }).click();
   await page.getByLabel("전통 대운 계산 구분").selectOption("female");
   await page.getByRole("button", { name: "다음 →" }).click();
@@ -639,7 +639,7 @@ test("birth steps validate before advancing and preserve entries when going back
   await expect(page.getByLabel("생년월일")).toHaveValue("1995-05-15");
   await page.getByRole("button", { name: "다음 →" }).click();
   await expect(page.locator(".birth-step")).toContainText("3 / 5");
-  await page.getByLabel("출생시간", { exact: true }).fill("10:30");
+  await page.getByLabel("출생시간", { exact: true }).selectOption("10:30");
   await page.getByRole("button", { name: "다음 →" }).click();
   await expect(page.locator(".birth-step")).toContainText("4 / 5");
   await page.getByRole("button", { name: "다음 →" }).click();
@@ -672,6 +672,18 @@ test("single checkout has no next steps and fits a small screen before and after
     await page.evaluate(() => document.documentElement.scrollHeight),
   ).toBeLessThanOrEqual(568);
   await expect(page.getByRole("button", { name: "다음 →" })).toHaveCount(0);
+  await expect(page.locator(".checkout-page-count")).toHaveText(
+    "24페이지 구성",
+  );
+  await page
+    .locator(".test-banner")
+    .evaluateAll((nodes) => nodes.forEach((node) => node.remove()));
+  expect(
+    await page.evaluate(() => document.documentElement.scrollHeight),
+  ).toBeLessThanOrEqual(568);
+  const recover = await page.locator(".header .recover-link").boundingBox();
+  const top = await page.locator(".checkout-eyebrow").boundingBox();
+  expect(recover!.y + recover!.height).toBeLessThanOrEqual(top!.y);
   await auth(page, "single-checkout@example.invalid");
   await page.reload();
   await expect(

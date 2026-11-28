@@ -3,7 +3,11 @@ import ReportType from "./ReportType";
 import { useEffect, useRef } from "react";
 import { preload } from "react-dom";
 import { taehouNarration } from "../lib/taehou-narration";
-import { PRODUCT_PRICE_TEXT } from "../lib/product";
+import {
+  PRODUCT_PRICE_TEXT,
+  REPORT_WEB_PAGE_COUNT,
+  REPORT_WEB_PAGE_NOTE,
+} from "../lib/product";
 import Link from "next/link";
 import { previewExplanations } from "../lib/preview-explanations";
 import ScreenFlow from "./ScreenFlow";
@@ -75,7 +79,7 @@ export default function Preview({ id }: { id: string }) {
             content: <p>{taehouNarration(card.text)}</p>,
           })),
           {
-            title: "금서에 담긴 아홉 장",
+            title: `금서에 담긴 ${REPORT_WEB_PAGE_COUNT}페이지`,
             content: (
               <section className="preview-purchase">
                 <p className="quote preview-invitation">
@@ -98,10 +102,10 @@ export default function Preview({ id }: { id: string }) {
                   className="chapter-list-trigger"
                   onClick={() => list.current?.showModal()}
                 >
-                  아홉 장에 담긴 금기 목록 ↗
+                  운명서 구성 살펴보기 ↗
                 </button>
                 <p className="hint">
-                  현재 체험은 실제 청구가 없느니라. 웹·PDF · 1년 재열람 ·{" "}
+                  웹·PDF · 1년 재열람 ·{" "}
                   <Link href="/legal/refund">환불 규정</Link>
                 </p>
               </section>
@@ -134,14 +138,21 @@ export default function Preview({ id }: { id: string }) {
         >
           ×
         </button>
-        <p className="eyebrow">禁書 · 아홉 장의 기록</p>
-        <h2 id="chapter-dialog-title">아홉 장에 담긴 금기 목록</h2>
+        <p className="eyebrow">禁書 · 한 사람을 위한 한 권</p>
+        <h2 id="chapter-dialog-title">
+          {REPORT_WEB_PAGE_COUNT}페이지의 운명서 구성
+        </h2>
+        <p>
+          핵심 풀이 9개 주제에 대표 타입, 직업·관계 TOP3, 장단점, 태후의 편지와
+          자문, 전체보기를 더했느니라.
+        </p>
         <ol>
           {chapterTitles.map((title) => (
             <li key={title}>{title}</li>
           ))}
         </ol>
         <p>그대를 이해하고, 앞으로의 선택을 돌아보는 한 권이니라.</p>
+        <p className="hint">{REPORT_WEB_PAGE_NOTE}</p>
       </dialog>
     </>
   );

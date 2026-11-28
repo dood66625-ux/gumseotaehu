@@ -43,7 +43,7 @@ export function reportScenes(report: Report, name: string): ReportScene[] {
     result.push({
       key: "chapter-" + i,
       title: c.title,
-      eyebrow: `아홉 장 중 ${i + 1}장`,
+      eyebrow: `핵심 풀이 ${i + 1} / ${report.chapters.length}`,
       text: [
         book.chapters[i].text,
         book.chapters[i].practice &&

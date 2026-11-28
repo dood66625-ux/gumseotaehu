@@ -1,3 +1,4 @@
+import { REPORT_WEB_PAGE_COUNT } from "../lib/product";
 import { expect, it } from "vitest";
 import { reportScenes } from "../lib/report-scenes";
 import { generate } from "../lib/interpretation";
@@ -10,6 +11,7 @@ it.each(["known", "unknown"] as const)(
       before = JSON.stringify(report),
       book = reportBook(report);
     const scenes = reportScenes(report, "가온");
+    expect(scenes.length + 2).toBe(REPORT_WEB_PAGE_COUNT);
     expect(scenes[0].key).toBe("welcome");
     expect(scenes[1].key).toBe("type");
     expect(scenes.at(-1)?.key).toBe("letter");

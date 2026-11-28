@@ -83,3 +83,29 @@ test("overview has one focus heading, centered chapter navigation and a single f
     "open",
   );
 });
+
+test("internal reader-age instructions stay out of immersive prose and the complete overview", async ({
+  page,
+}) => {
+  const copy = structuredClone(report);
+  copy.report.intro =
+    "12살 아이도 알아듣기 쉽게 설명하면, " + copy.report.intro;
+  copy.report.chapters[0].text =
+    "12살 독자도 이해하기 쉽게 설명하자면, " + copy.report.chapters[0].text;
+  await page.route("**/api/reports/synthetic-clean-copy", (route) =>
+    route.fulfill({ json: copy }),
+  );
+  await page.route("**/api/reports/synthetic-clean-copy/counsel", (route) =>
+    route.fulfill({ json: { entries: [], remaining: 3, total: 3 } }),
+  );
+  await page.goto("/report/synthetic-clean-copy");
+  await expect(page.locator(".immersive-scene-text")).toContainText(
+    "쉽게 설명하자면",
+  );
+  await expect(page.locator(".immersive-scene-text")).not.toContainText("12살");
+  await page.getByRole("button", { name: "전체 운명서", exact: true }).click();
+  await expect(page.locator(".report-overview")).toContainText(
+    "쉽게 설명하자면",
+  );
+  await expect(page.locator(".report-overview")).not.toContainText("12살");
+});

@@ -1,5 +1,5 @@
 "use client";
-import { PRODUCT_PRICE_TEXT } from "../lib/product";
+import { PRODUCT_PRICE_TEXT, REPORT_WEB_PAGE_COUNT } from "../lib/product";
 import Link from "next/link";
 import { openLiveWidget, type LiveWidget } from "../lib/toss-widget-client";
 import { useEffect, useRef, useState } from "react";
@@ -201,10 +201,18 @@ export default function Checkout({
       <h1>그대의 금서를 간직하거라.</h1>
       <section className="card gold checkout-product">
         <div className="checkout-product-summary">
-          <h2>종합 운명서 · 9장</h2>
+          <h2>
+            종합 운명서
+            <span className="checkout-page-count">
+              {REPORT_WEB_PAGE_COUNT}페이지 구성
+            </span>
+          </h2>
           <p className="price">{PRODUCT_PRICE_TEXT}원</p>
         </div>
         <p>{r.chart.target}년 흐름 · 웹·PDF · 1년 재열람 · 구독 없음</p>
+        <p className="hint">
+          핵심 풀이 9개 주제와 부가 풀이·자문·전체보기 포함 · 웹 화면 기준
+        </p>
         <p className="hint">
           {mode === "live"
             ? "최종 결제총액 · 일시불 · 카드 확인 후 작성"
@@ -229,7 +237,7 @@ export default function Checkout({
             확인할 수 있습니다. 실제 청구는 없습니다.
           </p>
         ) : !verified ? (
-          <EmailAuth onVerified={() => setVerified(true)} />
+          <EmailAuth purpose="purchase" onVerified={() => setVerified(true)} />
         ) : (
           <p className="success">구매 이메일 인증이 완료되었습니다.</p>
         )}
@@ -297,10 +305,7 @@ export default function Checkout({
                   />
                   <span>
                     필수 사항 모두 동의{" "}
-                    <small>
-                      만 19세 이상·출생정보·약관·개인정보·철회 안내. 선택 동의는
-                      제외합니다.
-                    </small>
+                    <small>필수 5개 항목 · 선택 동의 제외</small>
                   </span>
                 </label>
                 <details className="checkout-consent-details">

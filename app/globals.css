@@ -5046,3 +5046,23 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 @media(prefers-reduced-motion:reduce) {.writing-scene.active img,.writing-scene.active figcaption,.unsealing-orbit {animation:none;}}
 
 .unsealing-personal-line {max-width:32rem;min-height:3.8em;text-wrap:balance;}
+
+.checkout-page-count {display:block;margin-top:5px;font-size:13px;font-weight:400;color:#d5ba82;}
+@media (max-height:650px) {
+  body:has(.checkout-flow) .checkout-flow {padding-top:32px;}
+  .checkout-page-count {margin-top:2px;font-size:12px;}
+  .checkout-flow .checkout-product > p {margin:6px 0 0;font-size:11px;line-height:1.5;}
+}
+@media (max-height:650px) {
+  .checkout-flow > .card.gold {margin:6px 0;padding:10px 12px;}
+  .checkout-flow > div > .card {margin:6px 0;}
+  body:not(:has(.test-banner)):has(.checkout-flow) .checkout-flow {padding-top:56px;}
+}
+@media (max-height:650px) {
+  .checkout-flow .checkout-consents {padding:8px;}
+  .checkout-flow .consent-all {margin:5px 0;}
+  .checkout-flow .success {margin:2px 0;padding:2px 0;}
+}
+@media (max-height:650px) {
+  .checkout-flow .checkout-consent-details {padding:4px 0;}
+}

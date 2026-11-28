@@ -106,7 +106,7 @@ export async function reportPdf(
         align: "center",
         width: W - 116,
       });
-    doc.fontSize(12).text(`${data.name} 님을 위한 아홉 장의 이야기`, 58, 511, {
+    doc.fontSize(12).text(`${data.name} 님만을 위한 한 권의 이야기`, 58, 511, {
       align: "center",
       width: W - 116,
     });
@@ -116,7 +116,7 @@ export async function reportPdf(
       .fontSize(9)
       .fillColor(gold)
       .text(
-        `${data.report.year}년 흐름 · 발행 ${date(data.created)} · 버전 ${data.order.version}`,
+        `${data.report.year}년 흐름 · 발행 ${date(data.created)}`,
         58,
         560,
         { align: "center", width: W - 116 },

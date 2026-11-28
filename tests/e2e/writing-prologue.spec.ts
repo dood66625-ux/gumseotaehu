@@ -11,7 +11,7 @@ test("writing story advances into the breathing wait without API requests", asyn
   });
   await page.goto("/preview/unsealing");
   await expect(page.getByLabel("운명서를 여는 이야기")).toBeVisible();
-  await page.clock.runFor(3001);
+  await page.clock.runFor(5001);
   await expect(page.locator(".writing-scene.active figcaption")).toContainText(
     "갑목은 곧 큰 나무",
   );
@@ -19,7 +19,7 @@ test("writing story advances into the breathing wait without API requests", asyn
   await expect(page.locator(".writing-scene.active figcaption")).toContainText(
     "목의 글자가 눈에 띄는구나",
   );
-  await page.clock.runFor(8001);
+  await page.clock.runFor(12001);
   await expect(
     page.getByRole("heading", { name: "운명서 펼치는 중…" }),
   ).toBeVisible();

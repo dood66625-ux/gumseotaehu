@@ -55,7 +55,13 @@ export function Loading() {
     </div>
   );
 }
-export function EmailAuth({ onVerified }: { onVerified: () => void }) {
+export function EmailAuth({
+  onVerified,
+  purpose = "recover",
+}: {
+  onVerified: () => void;
+  purpose?: "purchase" | "recover";
+}) {
   const [demoMail, setDemoMail] = useState(false);
   const [email, setEmail] = useState(""),
     [challenge, setChallenge] = useState(""),
@@ -111,8 +117,9 @@ export function EmailAuth({ onVerified }: { onVerified: () => void }) {
     <div className="card">
       <h2>이메일로 안전하게 인증</h2>
       <p className="hint">
-        구매할 때 사용한 이메일로 인증번호를 받아 운명서를 다시 열람할 수
-        있습니다.
+        {purpose === "purchase"
+          ? "주문 확인·운명서 재열람에 쓸 이메일을 인증해 주거라."
+          : "구매할 때 사용한 이메일로 인증번호를 받아 운명서를 다시 열람할 수 있습니다."}
       </p>
       <form onSubmit={request}>
         <div className="field">

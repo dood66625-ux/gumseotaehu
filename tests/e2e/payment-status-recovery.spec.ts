@@ -44,7 +44,7 @@ test("slow order lookup never overlaps polling and refresh recovers without anot
   ).toBeVisible();
   await page.clock.fastForward(10000);
   expect(calls).toBe(2);
-  await page.getByRole("button", { name: "잠시 후에 보겠노라" }).click();
+  await page.getByRole("button", { name: "잠시 후에 읽어보겠습니다" }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page
     .getByRole("button", { name: "운명서 펼치기", exact: true })

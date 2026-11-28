@@ -69,7 +69,7 @@ export default function ReportUnsealing({
     const timer = setTimeout(() => {
       if (scene < writingScenes.length - 1) setScene(scene + 1);
       else finishIntro();
-    }, 4000);
+    }, 6000);
     return () => clearTimeout(timer);
   }, [intro, scene, id, preview, ready]);
   useEffect(() => {
@@ -218,7 +218,7 @@ export default function ReportUnsealing({
           className="unsealing-later"
           onClick={() => dialog.current?.close()}
         >
-          잠시 후에 보겠노라
+          잠시 후에 읽어보겠습니다
         </button>
       </dialog>
     </section>

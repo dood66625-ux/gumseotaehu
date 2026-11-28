@@ -236,7 +236,7 @@ export default function ReportReader({
         </p>
         <div className="report-cover illustrated-cover">
           <strong>禁書</strong>
-          <p>{d.name} 님을 위해 펼친 아홉 장의 이야기</p>
+          <p>{d.name} 님만을 위해 펼친 한 권의 이야기</p>
           <small>금서태후의 종합 운명서 · {d.report.year}</small>
         </div>
         <div className="card gold">
@@ -306,8 +306,8 @@ export default function ReportReader({
           <p className="eyebrow">IN EVERYDAY WORDS</p>
           <h2 id="reading-guide-title">쉽게 읽는 내 운명서</h2>
           <p className="hint">
-            아홉 장의 이야기가 마음에 닿았느냐? 이제 그대의 일상에 가져갈 말을
-            쉬이 풀어 주겠노라.
+            그대의 이야기가 마음에 닿았느냐? 이제 그대의 일상에 가져갈 말을 쉬이
+            풀어 주겠노라.
           </p>
           <figure>
             <img
