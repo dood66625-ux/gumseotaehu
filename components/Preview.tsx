@@ -1,10 +1,10 @@
 "use client";
+import DiscountCheckoutLabel from "./DiscountCheckoutLabel";
 import ReportType from "./ReportType";
 import { useEffect, useRef } from "react";
 import { preload } from "react-dom";
 import { taehouNarration } from "../lib/taehou-narration";
 import {
-  PRODUCT_PRICE_TEXT,
   PRODUCT_REGULAR_PRICE_TEXT,
   REPORT_WEB_PAGE_COUNT,
   REPORT_WEB_PAGE_NOTE,
@@ -90,12 +90,12 @@ export default function Preview({ id }: { id: string }) {
                 r.input.age !== "14-18" &&
                 r.input.age !== "under14" ? (
                   <div className="preview-discount">
-                    <p className="discount-comparison">
-                      <del>{PRODUCT_REGULAR_PRICE_TEXT}원</del>
-                      <strong>{PRODUCT_PRICE_TEXT}원</strong>
-                    </p>
-                    <Link className="button" href={"/checkout?id=" + id}>
-                      {PRODUCT_PRICE_TEXT}원 할인 결제하기
+                    <Link
+                      className="button"
+                      href={"/checkout?id=" + id}
+                      aria-description={`정상가 ${PRODUCT_REGULAR_PRICE_TEXT}원에서 할인된 금액입니다.`}
+                    >
+                      <DiscountCheckoutLabel />
                     </Link>
                   </div>
                 ) : (

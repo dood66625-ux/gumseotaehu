@@ -1,4 +1,5 @@
 "use client";
+import DiscountCheckoutLabel from "./DiscountCheckoutLabel";
 import {
   PRODUCT_PRICE_TEXT,
   PRODUCT_REGULAR_PRICE_TEXT,
@@ -211,12 +212,7 @@ export default function Checkout({
               {REPORT_WEB_PAGE_COUNT}페이지 구성
             </span>
           </h2>
-          <p className="price sale-price">
-            <del className="regular-price" aria-label="정상가 44,000원">
-              {PRODUCT_REGULAR_PRICE_TEXT}원
-            </del>
-            {PRODUCT_PRICE_TEXT}원
-          </p>
+          <p className="price">{PRODUCT_PRICE_TEXT}원</p>
         </div>
         <p>{r.chart.target}년 흐름 · 웹·PDF · 1년 재열람 · 구독 없음</p>
         <p className="hint">
@@ -447,17 +443,26 @@ export default function Checkout({
                 <button
                   className="button"
                   style={{ width: "100%" }}
+                  aria-description={
+                    mode === "live" && liveOrder && widget.current
+                      ? `정상가 ${PRODUCT_REGULAR_PRICE_TEXT}원에서 할인된 금액입니다.`
+                      : undefined
+                  }
                   disabled={busy || submitted || !verified || !mode}
                 >
-                  {busy
-                    ? "주문 확인 중…"
-                    : mode === "live"
-                      ? liveOrder && widget.current
-                        ? `${PRODUCT_PRICE_TEXT}원 할인 결제하기`
-                        : "카드 결제 수단 선택"
-                      : testReviewHref
-                        ? "운명서 펼치기 · 토스 테스트 결제"
-                        : "운명서 펼치기 · 체험 결제"}
+                  {busy ? (
+                    "주문 확인 중…"
+                  ) : mode === "live" ? (
+                    liveOrder && widget.current ? (
+                      <DiscountCheckoutLabel />
+                    ) : (
+                      "카드 결제 수단 선택"
+                    )
+                  ) : testReviewHref ? (
+                    "운명서 펼치기 · 토스 테스트 결제"
+                  ) : (
+                    "운명서 펼치기 · 체험 결제"
+                  )}
                 </button>
               </>
             )}
