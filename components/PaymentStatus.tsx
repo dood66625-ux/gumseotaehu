@@ -50,7 +50,7 @@ export default function PaymentStatus({ id }: { id: string }) {
   const ready = view.canRead;
   if (view.state === "working" || ready)
     return (
-      <ReportUnsealing id={id} ready={ready}>
+      <ReportUnsealing id={id} ready={ready} writingLines={o.writingLines}>
         {ready && o.livePayment && <PaymentReceipt key={id} id={id} />}
       </ReportUnsealing>
     );

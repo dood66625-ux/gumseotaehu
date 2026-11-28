@@ -1,3 +1,4 @@
+import { writingLinesForChart } from "./writing-lines";
 import { validAdminToken } from "./admin-token";
 import { requireMockPayment, isLiveTossOrder } from "./toss-mode";
 import { requireLocalMailAccess } from "./local-mail-access";
@@ -694,6 +695,31 @@ export function orderView(o: Record<string, any>) {
     created: o.created,
     deleted: Boolean(o.content_deleted),
   };
+}
+export function orderStatusView(s: Session, oid: string) {
+  const o = ownOrder(s, oid);
+  const view = orderView(o);
+  if (
+    o.payment_status !== "paid" ||
+    o.content_deleted ||
+    !o.expires ||
+    o.expires <= Date.now()
+  )
+    return view;
+  const reading = one(
+    "SELECT chart_enc FROM readings WHERE id=?",
+    o.reading_id,
+  );
+  if (!reading?.chart_enc) return view;
+  try {
+    return {
+      ...view,
+      writingLines: writingLinesForChart(open(reading.chart_enc)),
+    };
+  } catch {
+    // Optional narration must never prevent access to the authoritative order state.
+    return view;
+  }
 }
 export function listOrders(s: Session) {
   requireEmail(s);

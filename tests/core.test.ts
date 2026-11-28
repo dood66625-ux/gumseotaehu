@@ -1173,3 +1173,22 @@ it("gives rich paid AI jobs a lease longer than their HTTP deadline", async () =
   }
   expect(remaining).toBeGreaterThan(120000);
 });
+
+it("personal writing narration is restricted to the owned valid paid order", () => {
+  const o = paid();
+  const view = svc.orderStatusView(o.s, o.oid);
+  expect(view).toHaveProperty("writingLines");
+  expect(view).not.toHaveProperty("chart");
+  expect(view).not.toHaveProperty("birth");
+  const stranger = verified("unrelated@example.invalid");
+  expect(() => svc.orderStatusView(stranger, o.oid)).toThrow();
+  run("UPDATE orders SET payment_status='refunded' WHERE id=?", o.oid);
+  expect(svc.orderStatusView(o.s, o.oid)).not.toHaveProperty("writingLines");
+  run(
+    "UPDATE orders SET payment_status='paid',content_deleted=1 WHERE id=?",
+    o.oid,
+  );
+  expect(svc.orderStatusView(o.s, o.oid)).not.toHaveProperty("writingLines");
+  run("UPDATE orders SET content_deleted=0,expires=1 WHERE id=?", o.oid);
+  expect(svc.orderStatusView(o.s, o.oid)).not.toHaveProperty("writingLines");
+});

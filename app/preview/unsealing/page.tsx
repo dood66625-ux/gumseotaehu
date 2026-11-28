@@ -1,3 +1,4 @@
+import { writingLinesForChart, previewWritingChart } from "@/lib/writing-lines";
 import ReportUnsealing from "@/components/ReportUnsealing";
 
 export const metadata = {
@@ -8,7 +9,7 @@ export const metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string }>;
+  searchParams: Promise<{ stage?: string; day?: string }>;
 }) {
   const params = await searchParams;
   return (
@@ -16,6 +17,7 @@ export default async function Page({
       id=""
       ready={false}
       preview
+      writingLines={writingLinesForChart(previewWritingChart(params.day))}
       skipIntro={params.stage === "wait"}
     />
   );

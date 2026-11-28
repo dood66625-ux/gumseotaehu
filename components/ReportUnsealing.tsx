@@ -1,21 +1,19 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { defaultWritingLines } from "../lib/writing-lines";
 const writingScenes = [
   {
     image: "/empress-royal-v2.webp",
     alt: "금서를 살피는 금서태후",
-    caption: "그대가 태어난 순간의 기운을 살피고 있느니라.",
   },
   {
     image: "/story/scene-4.webp",
     alt: "금서를 조심스럽게 펼치는 태후",
-    caption: "흩어진 이야기를 모아, 그대만의 금서를 적고 있느니라.",
   },
   {
     image: "/story/scene-5.webp",
     alt: "어둠 속에서 금빛을 머금은 금서",
-    caption: "잠시 기다리거라. 그대의 이야기를 곧 펼쳐 주마.",
   },
 ];
 export default function ReportUnsealing({
@@ -24,13 +22,25 @@ export default function ReportUnsealing({
   children,
   preview = false,
   skipIntro = false,
+  writingLines,
 }: {
   id: string;
   ready: boolean;
   children?: ReactNode;
   preview?: boolean;
   skipIntro?: boolean;
+  writingLines?: string[];
 }) {
+  const lines =
+    Array.isArray(writingLines) &&
+    writingLines.length === 3 &&
+    writingLines.every(
+      (line) =>
+        typeof line === "string" && line.length > 0 && line.length <= 160,
+    )
+      ? writingLines
+      : defaultWritingLines;
+  const [waitingLine, setWaitingLine] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
   const [intro, setIntro] = useState(!ready && !skipIntro);
   const [scene, setScene] = useState(0);
@@ -61,6 +71,11 @@ export default function ReportUnsealing({
   useEffect(() => {
     if (ready && !intro && !dialog.current?.open) dialog.current?.showModal();
   }, [ready, intro]);
+  useEffect(() => {
+    if (intro || ready) return;
+    const timer = setInterval(() => setWaitingLine((n) => (n + 1) % 3), 6000);
+    return () => clearInterval(timer);
+  }, [intro, ready]);
   if (intro)
     return (
       <section
@@ -83,7 +98,7 @@ export default function ReportUnsealing({
                 height="1200"
                 decoding="async"
               />
-              <figcaption>{item.caption}</figcaption>
+              <figcaption>{lines[index]}</figcaption>
             </figure>
           ))}
         </div>
@@ -159,10 +174,8 @@ export default function ReportUnsealing({
       <h1 aria-live="polite">
         {ready ? "그대의 금서가 준비되었느니라" : "운명서 펼치는 중…"}
       </h1>
-      <p>
-        {ready
-          ? "이제 그대의 이야기를 만나 보거라."
-          : "그대의 기운을 한 장씩 금서에 담고 있느니라."}
+      <p className="unsealing-personal-line">
+        {ready ? "이제 그대의 이야기를 만나 보거라." : lines[waitingLine]}
       </p>
       {!ready && !preview && (
         <p className="unsealing-recovery">

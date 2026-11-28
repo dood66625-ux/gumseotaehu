@@ -160,7 +160,7 @@ async function handler(
           ),
         );
       if (/^orders\/[^/]+$/.test(p))
-        return json(svc.orderView(svc.ownOrder(s, p.split("/")[1])));
+        return json(svc.orderStatusView(s, p.split("/")[1]));
       if (/^reports\/[^/]+\/pdf$/.test(p)) {
         const oid = p.split("/")[1];
         limit("pdf:" + s.id, 15);

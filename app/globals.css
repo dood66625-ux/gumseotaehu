@@ -5044,3 +5044,5 @@ a,button,summary {-webkit-tap-highlight-color:transparent;}
 @keyframes writing-image-in {from {opacity:0;transform:translateY(24px);}to {opacity:1;transform:translateY(0);}}
 @keyframes writing-caption-in {from {opacity:0;transform:translateY(8px);}to {opacity:1;transform:translateY(0);}}
 @media(prefers-reduced-motion:reduce) {.writing-scene.active img,.writing-scene.active figcaption,.unsealing-orbit {animation:none;}}
+
+.unsealing-personal-line {max-width:32rem;min-height:3.8em;text-wrap:balance;}
